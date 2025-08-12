@@ -9,6 +9,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.12.9"
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/sitemap": "^3.4.2",
+    "@tailwindcss/vite": "^4.1.11",
+    "astro": "^5.12.9",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2"
   }
 }

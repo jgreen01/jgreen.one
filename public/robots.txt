@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jgreen.one/sitemap-index.xml
