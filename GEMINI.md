@@ -1,33 +1,50 @@
 # Project Overview
 
-This directory contains the source code for the jgreen.one website. It is a static website built with Astro and Tailwind CSS.
+This directory contains the source code for the jgreen.one website. It is a static website built with [Astro](https://astro.build/) and [Tailwind CSS](https://tailwindcss.com/).
 
 ## Key Files
 
-*   `src/`: This directory contains the source code for the website.
-*   `public/`: This directory contains the static assets for the website.
-*   `package.json`: This file contains the project dependencies and scripts.
-*   `astro.config.mjs`: This file contains the configuration for the Astro build system.
-*   `tailwind.config.cjs`: This file contains the configuration for Tailwind CSS.
+*   `astro.config.mjs`: Astro configuration file.
+*   `package.json`: Project dependencies and scripts.
+*   `public/`: Static assets.
+    *   `robots.txt`: SEO configuration for web crawlers.
+*   `src/`: Source code.
+    *   `content/`: Content collections for blog posts and projects.
+    *   `layouts/`: Astro layouts.
+    *   `pages/`: Astro pages.
+    *   `styles/`: Global styles.
 
-## Usage
+## Getting Started
 
-To get started with this project, you will need to have Node.js and npm installed.
+1.  **Install dependencies:**
 
-1.  Install the project dependencies:
+    ```bash
+    npm install
+    ```
 
-```bash
-npm install
-```
+2.  **Run the development server:**
 
-2.  Start the development server:
+    ```bash
+    npm run dev
+    ```
 
-```bash
-npm run dev
-```
+3.  **Build for production:**
 
-3.  Build the website for production:
+    ```bash
+    npm run build
+    ```
 
-```bash
-npm run build
-```
+## Content Management
+
+This project uses [Astro Content Collections](https://docs.astro.build/en/guides/content-collections/) to manage blog posts and projects.
+
+*   Content is stored in `src/content/posts/` as Markdown files.
+*   The schema for the content is defined in `src/content/config.ts`.
+*   Each post has a `category` field which can be either `blog` or `project`.
+
+To add a new post, create a new Markdown file in `src/content/posts/` and fill in the frontmatter according to the schema.
+
+## SEO
+
+*   A `sitemap-index.xml` is automatically generated at build time.
+*   The `public/robots.txt` file is configured to allow all user agents and points to the sitemap.
