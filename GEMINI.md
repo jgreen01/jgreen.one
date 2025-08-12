@@ -49,7 +49,11 @@ To add a new post, create a new Markdown file in `src/content/posts/` and fill i
 *   A `sitemap-index.xml` is automatically generated at build time.
 *   The `public/robots.txt` file is configured to allow all user agents and points to the sitemap.
 
-## Note-Taking
+## LLM Instructions
+
+This section contains instructions for the LLM agent working on this project.
+
+### Note-Taking
 
 To ensure project continuity, we maintain a practice of taking notes during each development session. This helps us to quickly get back up to speed after a break or an unexpected interruption.
 
@@ -58,7 +62,7 @@ To ensure project continuity, we maintain a practice of taking notes during each
 *   **Content:** The notes should include a summary of the work done, any decisions made, and any questions or issues that arose.
 *   **Git:** The `.notes/` directory is included in the `.gitignore` file, so notes are not committed to the repository.
 
-## Creating Useful Guides
+### Creating Useful Guides
 
 We create useful guides to document processes, best practices, and other important information.
 
@@ -67,15 +71,15 @@ We create useful guides to document processes, best practices, and other importa
 *   **Format:** Guides are Markdown files.
 *   **Content:** Guides should be well-structured and easy to understand.
 
-### Template
+#### Template
 
 A template for new guides is available at `guides/TEMPLATE.md`. To create a new guide, copy the template and fill in the sections.
 
-### Security
+#### Security
 
 **Do not commit any secrets or private information to the repository.** This includes, but is not limited to, passwords, API keys, and personal information.
 
-### Validation
+#### Validation
 
 Before committing any changes to the `guides/` directory, run the validation script to check for secrets:
 
