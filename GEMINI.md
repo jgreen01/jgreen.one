@@ -48,3 +48,12 @@ To add a new post, create a new Markdown file in `src/content/posts/` and fill i
 
 *   A `sitemap-index.xml` is automatically generated at build time.
 *   The `public/robots.txt` file is configured to allow all user agents and points to the sitemap.
+
+## Note-Taking
+
+To ensure project continuity, we maintain a practice of taking notes during each development session. This helps us to quickly get back up to speed after a break or an unexpected interruption.
+
+*   **Location:** Notes are stored in the `.notes/` directory.
+*   **Format:** Each note file is a Markdown file named with the date of the session (e.g., `YYYY-MM-DD.md`).
+*   **Content:** The notes should include a summary of the work done, any decisions made, and any questions or issues that arose.
+*   **Git:** The `.notes/` directory is included in the `.gitignore` file, so notes are not committed to the repository.
