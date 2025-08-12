@@ -63,8 +63,13 @@ To ensure project continuity, we maintain a practice of taking notes during each
 We create useful guides to document processes, best practices, and other important information.
 
 *   **Location:** Guides are stored in the `guides/` directory.
+*   **File Naming Convention:** `YYYY-MM-DD_descriptive-name.md`
 *   **Format:** Guides are Markdown files.
 *   **Content:** Guides should be well-structured and easy to understand.
+
+### Template
+
+A template for new guides is available at `guides/TEMPLATE.md`. To create a new guide, copy the template and fill in the sections.
 
 ### Security
 
