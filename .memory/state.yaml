@@ -1,0 +1,5 @@
+last_session_at: 2025-08-13T05:13:33+00:00
+next_entry_point: "Apply the Terraform bootstrap to create the S3 state bucket."
+pins: []
+counters:
+  next_task_id: T-0000-0000-00
