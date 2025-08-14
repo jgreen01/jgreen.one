@@ -27,7 +27,8 @@ pnpm-debug.log*
 .notes/
 
 # memory
-.memory/
+.memory/private/
 
 # temporary files
 tmp/
+tfstate
