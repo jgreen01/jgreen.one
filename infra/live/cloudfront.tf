@@ -6,6 +6,15 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_cloudfront_function" "subdirectory_index_rewrite" {
+  name    = "subdirectory-index-rewrite"
+  runtime = "cloudfront-js-1.0"
+  comment = "Rewrites subdirectory requests to index.html"
+  publish = true # Automatically publishes the function
+
+  code = file("${path.module}/function.js")
+}
+
 # CloudFront distribution
 locals {
   s3_origin_id = "s3-origin-${var.site_bucket_name}"
@@ -34,6 +43,11 @@ resource "aws_cloudfront_distribution" "cdn" {
     cached_methods         = ["GET", "HEAD"]
     cache_policy_id        = local.caching_optimized_policy_id
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.subdirectory_index_rewrite.arn
+    }
   }
 
   price_class = var.price_class
