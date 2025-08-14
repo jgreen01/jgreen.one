@@ -31,4 +31,6 @@ pnpm-debug.log*
 
 # temporary files
 tmp/
-tfstate
+
+# don't commit tfstate
+*.tfstate
