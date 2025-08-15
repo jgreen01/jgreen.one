@@ -1,15 +1,47 @@
 ---
-// e.g., src/layouts/Base.astro (create if needed)
-import "../styles/global.css";
-const { title = "My Site", description = "Portfolio & Blog" } = Astro.props;
+/**
+ * Props:
+ * - title: string (page title)
+ * - description: string (meta description; keep under ~160 chars)
+ * - ogImage?: string (optional social image path/URL)
+ */
+const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage } = Astro.props;
 ---
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>{title}</title>
     <meta name="description" content={description} />
+
+    <!-- Basic social/SEO placeholders; replace values later -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Add stylesheet links or Tailwind import later -->
   </head>
-  <body class="min-h-screen antialiased">
-    <slot />
+  <body>
+    <header>
+      <nav aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/projects/">Projects</a>
+        <a href="/blog/">Blog</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer>
+      <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
+      <small>© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
+    </footer>
   </body>
 </html>

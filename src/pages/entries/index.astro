@@ -1,0 +1,21 @@
+---
+import Base from "../../layouts/Base.astro";
+import EntryCard from "../../components/EntryCard.astro";
+import { getCollection } from "astro:content";
+
+const all = (await getCollection("entries", e => !e.data.draft))
+  .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
+---
+<Base title="All Entries — Placeholder" description="Combined list of projects and posts.">
+  <h1>All Entries</h1>
+  {all.map(({ slug, data }) => (
+    <EntryCard
+      href={`/entries/${slug}/`}
+      title={data.title}
+      description={data.description}
+      kind={data.kind}
+      pubDate={data.pubDate}
+      tags={data.tags}
+    />
+  ))}
+</Base>

@@ -1,0 +1,32 @@
+---
+import Article from "../../layouts/Article.astro";
+import { getEntryBySlug, getCollection } from "astro:content";
+import MarkdownIt from 'markdown-it';
+
+const md = new MarkdownIt();
+
+export async function getStaticPaths() {
+  const entries = await getCollection("entries", e => !e.data.draft);
+  return entries.map(entry => ({
+    params: { slug: entry.slug },
+  }));
+}
+
+const { slug } = Astro.params;
+if (!slug) throw new Error("Missing slug param");
+
+const entry = await getEntryBySlug("entries", slug);
+if (!entry) return Astro.redirect("/");
+
+const { title, description, pubDate, updatedDate, heroImage } = entry.data;
+const htmlContent = md.render(entry.body); // Render Markdown body to HTML
+---
+<Article
+  title={title}
+  description={description}
+  pubDate={pubDate}
+  updatedDate={updatedDate}
+  heroImage={heroImage}
+>
+  <Fragment set:html={htmlContent} />
+</Article>

@@ -1,0 +1,47 @@
+---
+/**
+ * Article layout for both projects & blog posts.
+ * Props:
+ * - title, description, pubDate, updatedDate?, heroImage?
+ */
+const { 
+  title = "Untitled",
+  description = "",
+  pubDate,
+  updatedDate,
+  heroImage
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Breadcrumb">
+        <a href="/">Home</a> / <a href="/entries/">Entries</a>
+      </nav>
+    </header>
+
+    <article>
+      <h1>{title}</h1>
+      <p>
+        <time datetime={pubDate?.toISOString?.() ?? ""}>Published: {pubDate?.toDateString?.()}</time>
+        {updatedDate && <> • <time datetime={updatedDate.toISOString()}>Updated: {updatedDate.toDateString()}</time></>}
+      </p>
+
+      {heroImage && <img src={heroImage} alt="" />}
+
+      <slot />
+    </article>
+
+    <footer>
+      <p><a href="/tags/">Browse by tag</a> • <a href="/blog/">Blog</a> • <a href="/projects/">Projects</a></p>
+    </footer>
+  </body>
+</html>

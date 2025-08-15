@@ -1,0 +1,26 @@
+---
+/**
+ * Minimal card for either a 'project' or 'blog' entry.
+ * Props:
+ * - href: string
+ * - title: string
+ * - description: string
+ * - kind: "project" | "blog"
+ * - pubDate?: Date
+ * - tags?: string[]
+ */
+const { href, title, description, kind, pubDate, tags = [] } = Astro.props;
+---
+<article>
+  <h3><a href={href}>{title}</a></h3>
+  <p>{description}</p>
+  <p>
+    <strong>{kind}</strong>
+    {pubDate && <> • <time datetime={pubDate.toISOString()}>{pubDate.toDateString()}</time></>}
+  </p>
+  {tags.length > 0 && (
+    <p>
+      {tags.map((t: string) => <a href={`/tags/${encodeURIComponent(t)}/`} style="margin-right:.5rem">#{t}</a>)}
+    </p>
+  )}
+</article>

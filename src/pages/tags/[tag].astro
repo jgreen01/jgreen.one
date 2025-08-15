@@ -1,0 +1,32 @@
+---
+import Base from "../../layouts/Base.astro";
+import EntryCard from "../../components/EntryCard.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("entries", e => !e.data.draft);
+  const tagSet = new Set<string>();
+  for (const e of entries) (e.data.tags ?? []).forEach(t => tagSet.add(t));
+  return Array.from(tagSet).map(tag => ({ params: { tag } }));
+}
+
+const { tag } = Astro.params;
+const all = await getCollection("entries", e => !e.data.draft && (e.data.tags ?? []).includes(String(tag)));
+const matches = all.sort((a, b) => +b.data.pubDate - +a.data.pubDate);
+---
+<Base title={`Tag: ${tag} — Placeholder`} description={`Entries tagged with "${tag}".`}>
+  <h1>Tag: {tag}</h1>
+  {matches.length === 0
+    ? <p>No entries found for this tag.</p>
+    : matches.map(({ slug, data }) => (
+        <EntryCard
+          href={`/entries/${slug}/`}
+          title={data.title}
+          description={data.description}
+          kind={data.kind}
+          pubDate={data.pubDate}
+          tags={data.tags}
+        />
+      ))
+  }
+</Base>

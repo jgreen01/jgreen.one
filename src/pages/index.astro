@@ -1,28 +1,39 @@
 ---
 import Base from "../layouts/Base.astro";
+import EntryCard from "../components/EntryCard.astro";
 import { getCollection } from "astro:content";
 
-const posts = (await getCollection("posts")).sort(
-  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
-);
----
+/**
+ * Fetch all published entries (both kinds), newest first.
+ * You can later add "featured: true" to frontmatter to curate.
+ */
+const all = (await getCollection("entries", e => !e.data.draft))
+  .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
 
-<Base title="Home — My Site" description="Portfolio & Blog">
-  <main class="max-w-3xl mx-auto p-6">
-    <h1 class="text-3xl font-bold">Hello!</h1>
-    <p>Welcome to my corner of the web.</p>
-    <ul class="mt-8 space-y-4">
-      {posts.map((post) => (
-        <li>
-          <a href={`/posts/${post.slug}/`} class="text-xl font-semibold hover:underline">
-            {post.data.title}
-          </a>
-          <p class="text-gray-600">{post.data.description}</p>
-          <p class="text-sm text-gray-500">
-            {post.data.pubDate.toDateString()} | {post.data.category}
-          </p>
-        </li>
-      ))}
-    </ul>
-  </main>
+// Select top N to feature on the homepage
+const featured = all.slice(0, 4);
+---
+<Base title="Site Title Placeholder" description="Short site description for the homepage.">
+  <section>
+    <h1>Hero Headline Placeholder</h1>
+    <p>1–2 sentence tagline that describes focus (e.g., projects + writing in tech/AI/ML).</p>
+    <!-- Add a prominent call-to-action or quick nav later -->
+  </section>
+
+  <section>
+    <h2>Latest Entries</h2>
+    {featured.map(({ slug, data }) => (
+      <EntryCard
+        href={`/entries/${slug}/`}
+        title={data.title}
+        description={data.description}
+        kind={data.kind}
+        pubDate={data.pubDate}
+        tags={data.tags}
+      />
+    ))}
+    <p>
+      <a href="/projects/">Browse Projects</a> • <a href="/blog/">Read the Blog</a>
+    </p>
+  </section>
 </Base>

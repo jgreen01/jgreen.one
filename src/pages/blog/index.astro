@@ -1,0 +1,25 @@
+---
+import Base from "../../layouts/Base.astro";
+import EntryCard from "../../components/EntryCard.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("entries", e => !e.data.draft && e.data.kind === "blog"))
+  .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
+---
+<Base title="Blog — Placeholder" description="Articles, notes, and write-ups.">
+  <h1>Blog</h1>
+  {posts.length === 0 ? (
+    <p>No posts yet. Add files to <code>src/content/entries/</code> with <code>kind: "blog"</code>.</p>
+  ) : (
+    posts.map(({ slug, data }) => (
+      <EntryCard
+        href={`/entries/${slug}/`}
+        title={data.title}
+        description={data.description}
+        kind={data.kind}
+        pubDate={data.pubDate}
+        tags={data.tags}
+      />
+    ))
+  )}
+</Base>
