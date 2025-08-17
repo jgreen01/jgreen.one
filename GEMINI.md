@@ -1,32 +1,31 @@
-# CLI LLM Operating Manual — Persistent Memory & Tasks
+# CLI LLM Manual — Memory, Tasks & Quicknotes (Emoji‑First)
 
-> Working agreement for a CLI‑enabled LLM that must **remember context, decisions, and tasks across sessions**.
+> Operating rules for a CLI‑enabled LLM that must **remember across sessions** and **take quick notes before every reply**.
 
 ---
 
 ## 1) Purpose & Scope
 
-* Keep work moving smoothly across breaks, crashes, and context switches.
-* Persist **what changed, why it changed, and what happens next**.
-* Ensure no secrets are ever committed.
+* Keep momentum across breaks and crashes by persisting **what changed, why, and what’s next**.
+* Replace heavy session logs with a **fast, emoji‑dense running log**.
+* Ensure secrets never land in git.
 
 ---
 
 ## 2) Directory Layout (authoritative)
 
 ```
-.notes/                 # Per‑session logs (local only; gitignored)
-.memory/                # Lightweight, structured state persisted in git
+.memory/                # Structured, committed state (except /private)
   tasks.md              # Human‑readable backlog with due dates/priorities
-  state.yaml            # Small machine-oriented state (last session, pins)
-  adr/                  # Architecture Decision Records
-  private/              # Optional private notes (gitignored)
-    scratch.md
+  state.yaml            # Machine state (last_note_at, note_file, next_entry_point, pins)
+  adr/                  # Architecture Decision Records (ADRs)
+  private/              # Local-only notes (gitignored)
+    note-YYYY-MM-DD_HHMM-TZ.md  # Running quicknotes for a session (append-only)
 
-guides/                 # How-tos, runbooks, checklists
+guides/                 # How‑tos, runbooks, checklists
   TEMPLATE.md
 
-scripts/                # Repo scripts, incl. docs validation
+scripts/                # Repo scripts (e.g., validator)
   validate_guides.mjs
 
 .githooks/              # Local git hooks (optional)
@@ -35,86 +34,71 @@ scripts/                # Repo scripts, incl. docs validation
 **Git policy**
 
 * Commit `.memory/*` **except** `.memory/private/**`.
-* **Never** commit `.notes/**`.
+* Do **not** use a separate `.notes/` directory.
 
 Recommended `.gitignore` additions:
 
 ```
-# session notes and private memory
-.notes/
+# private memory and local artefacts
 .memory/private/
-# common local files
 .env*
 .DS_Store
 ```
 
 ---
 
-## 3) Session Workflow (Start → During → End)
+## 3) Interaction Loop (hard rule)
 
-### A) Start-of-Session Ritual
+**Before returning ANY response to the user, the LLM MUST append a quicknote.**
 
-1. **Load state** from `.memory/state.yaml`.
-2. **Scan last 2 session logs** in `.notes/` if present.
-3. **Review backlog** in `.memory/tasks.md` for any P1 items due/overdue.
-4. **Write a session goal** (1–2 lines) in a new note file.
+Checklist executed **every time** before replying:
 
-### B) During Session
+1. **Time check:** compute `elapsed = now - state.last_note_at` (fallback: `0m`).
+2. **Select note file:** use `state.note_file` if set and `elapsed < SESSION_ROLL_MIN` (default 20m). Otherwise, create a new file named `note-YYYY-MM-DD_HHMM-TZ.md` in `.memory/private/` and set `state.note_file`.
+3. **Append quicknote** line to that file using the schema in §4.
+4. **Update tasks** in `.memory/tasks.md` for any new todos or completions mentioned.
+5. **Update state** in `.memory/state.yaml`: `last_note_at`, `note_file`, `next_entry_point` (if clear), and any refreshed `pins`.
+6. **(Optional)** If there are exactly 1–3 concrete next steps, mirror them to `.memory/NEXT.md`.
 
-* Keep a running log in `.notes/YYYY‑MM‑DD_HHMM‑TZ.md` (template below).
-* When a decision is made, create/append an **ADR** (see §6).
-* When a new task emerges, add it to `tasks.md` immediately with due/priority.
-
-### C) End-of-Session Checklist (must do)
-
-1. **Summarize**: fill “Summary/Decisions/Next 1–3 actions” in the note.
-2. **Update backlog**: reflect completed work, add follow-ups, set owners/dates.
-3. **Update state.yaml**: `last_session_at`, `next_entry_point`, `pins`.
-4. **Commit** `.memory/**` changes with a clear message:
-
-   * `chore(memory): update tasks & state for {YYYY‑MM‑DD}`
-5. Leave a breadcrumb file `.memory/NEXT.md` with the top **3 next actions** (copy from the note).
+> If truly nothing changed, write a **heartbeat** quicknote (see §4) so we still get a timestamped breadcrumb.
 
 ---
 
-## 4) Notes — Format & Template
+## 4) Quicknotes — Running, Emoji‑Dense Log
 
-**Location:** `.notes/`
+**Location:** `.memory/private/note-YYYY-MM-DD_HHMM-TZ.md` (append‑only per session)
 
-**File name:** `YYYY‑MM‑DD_HHMM‑TZ.md` (e.g., `2025‑08‑11_2210‑PDT.md`)
+**Style:** One line per entry, ultra‑concise, emoji labels carry meaning. Prefer < 200 chars.
 
-**Template**
+**Schema (fields are optional; include only what applies):**
 
-```markdown
-# Session {YYYY‑MM‑DD HH:MM TZ}
-
-## Goal
-<!-- One‑liner of what “done” looks like for this session. -->
-
-## Summary (What changed)
-- 
-
-## Decisions (Why it changed)
-- Decision: <statement>
-- Context: <tradeoffs>
-- Consequence: <what we accept>
-
-## Next 1–3 Actions (Breadcrumbs)
-1.
-2.
-3.
-
-## Open Questions
-- 
-
-## Blockers
-- 
-
-## References / Links
-- 
+```
+- {YYYY-MM-DD HH:MM TZ} ⏱️+{Xm} | 🧠 {lesson} | 🐛 {bug} | 🔧 {fix/how} | ✅ {done} | 🔜 {next 1–3} | 🧭 {decision} | 🚧 {blocker} | ⚠️ {risk} | 🧪 {test} | 📎 {refs}
 ```
 
-> **Rule of Three:** cap “Next Actions” at 3; defer everything else to `tasks.md`.
+**Emoji legend**
+
+* 🧠 lesson learned
+* 🐛 bug found
+* 🔧 fix/how we fixed it
+* ✅ done/verified
+* 🔜 next actions (max 3)
+* 🧭 decision made
+* 🚧 blocker
+* ⚠️ risk
+* 🧪 test/verification
+* 📎 refs/links/IDs
+* ⏱️ minutes since previous note
+* 🫀 heartbeat (no change)
+* 📌 pin (important file/line)
+
+**Examples**
+
+```
+- 2025-08-16 19:05 PDT ⏱️+7m | 🐛 SEO build loops | 🔧 pinned vite dep=5.4 | 🧪 build ok | ✅ guide compiles | 🔜 ship #T-2025-0816-01 | 📎 PR#42
+- 2025-08-16 19:12 PDT ⏱️+7m | 🧠 “astro check” catches tsconfig drift | 🔜 add to CI
+- 2025-08-16 19:15 PDT ⏱️+3m | 🫀 heartbeat (reviewed issues; no change)
+```
 
 ---
 
@@ -122,40 +106,38 @@ Recommended `.gitignore` additions:
 
 **Location:** `.memory/tasks.md` (committed)
 
-**Format:** Markdown checkboxes; one task per line with tags:
+**Format:** Markdown checkboxes; one task per line with tags/IDs:
 
 ```
-- [ ] P1 2025-08-15 [infra] Migrate SEO plugin to v3  #id:T-2025-0811-01
-- [ ] P2 2025-08-20 [docs] Draft Astro deploy guide     #id:T-2025-0811-02
-- [x] P3 2025-08-10 [chore] Update .gitignore           #id:T-2025-0810-01
+- [ ] P1 2025-08-20 [infra] Upgrade vite to 5.4  #id:T-2025-0816-01
+- [ ] P2 2025-08-22 [docs] Add “astro check” to CI #id:T-2025-0816-02
+- [x] P3 2025-08-16 [chore] Update .gitignore       #id:T-2025-0816-03
 ```
 
 **Conventions**
 
-* **Priority:** `P1` (urgent), `P2` (soon), `P3` (nice‑to‑have).
-* **Due date:** ISO `YYYY‑MM‑DD`. If unknown, omit and add a tag `[triage]`.
-* **ID:** Stable anchor `#id:` for cross‑referencing in notes/ADRs.
-* **Owner:** When multi‑user, append ` @owner`.
+* **Priority:** `P1` urgent, `P2` soon, `P3` nice‑to‑have.
+* **Due date:** ISO `YYYY‑MM‑DD` when known; else tag `[triage]`.
+* **ID:** Stable `#id:` for references in notes/ADRs/commits.
+* **Owner:** Append ` @owner` in multi‑user repos.
 
 **Overdue behavior**
 
-* At session start, surface all unchecked tasks with due ≤ today.
-* If still relevant, **snooze** by editing the date; otherwise **close** with a reason.
+* During the first reply of a session, surface all unchecked tasks due ≤ today; propose snooze/close.
 
-**Optional machine‑friendly mirror**
-
-* Keep `.memory/state.yaml` with lightweight counters, last IDs, quick pins.
+**Machine mirror** (lightweight, optional): keep key pointers in `state.yaml`.
 
 Example `state.yaml`:
 
 ```yaml
-last_session_at: 2025-08-11T22:10:00-07:00
-next_entry_point: "Finish Step 3 of SEO audit (#T-2025-0811-01)"
+last_note_at: 2025-08-16T19:15:00-07:00
+note_file: .memory/private/note-2025-08-16_1915-PDT.md
+next_entry_point: "Release vite upgrade (#T-2025-0816-01)"
 pins:
-  - file: guides/astro_seo.md
-  - file: .memory/tasks.md#line-12
+  - file: guides/astro_build.md
+  - file: .memory/tasks.md#line-2
 counters:
-  next_task_id: T-2025-0811-03
+  next_task_id: T-2025-0816-04
 ```
 
 ---
@@ -174,21 +156,21 @@ Date: YYYY‑MM‑DD
 Status: Accepted | Superseded by <ADR#> | Proposed
 
 ## Context
-- What problem are we solving? What constraints exist?
+- Problem + constraints
 
 ## Decision
-- The decision in one or two sentences.
+- The decision in one or two sentences
 
 ## Consequences
-- Positive and negative ramifications, trade‑offs, migrations required.
+- Positive/negative trade‑offs; migrations
 
 ## Links
-- Related PRs, issues, sessions, tasks (by #id)
+- PRs, issues, tasks (#id), related quicknotes timestamps
 ```
 
 ---
 
-## 7) Guides — Structure & Review
+## 7) Guides — Structure & Review (industry‑aligned)
 
 **Location:** `guides/`
 
@@ -205,37 +187,40 @@ summary: one‑sentence purpose
 ---
 ```
 
-**Content checklist**
+**Doc types (keep separate)**
 
-* Purpose → Prereqs → Steps → Verification → Troubleshooting → Links.
-* Use fenced code blocks; prefer copy‑pasteable commands.
-* Include a **Verification** section (how to know it worked).
+* **Tutorials** — step‑by‑step learning paths; one outcome; assume zero prior knowledge.
+* **How‑to guides** — precise task recipes for users “at work”; short, pragmatic.
+* **Reference** — complete, accurate description of APIs/CLI/config; no narrative.
+* **Explanation** — background, rationale, design, and trade‑offs.
 
-**Template:** `guides/TEMPLATE.md` (copy, then fill sections).
+**Content checklist (concise)**
 
-**Validation before commit**
+* **Each doc**: clear scope/non‑scope at top; prerequisites; steps with copy‑paste blocks; verification checks; troubleshooting; links.
+* **README baseline**: problem statement, quickstart, minimal example, install, usage, config, support/issue links, license, contributing.
+* **Style**: second person, present tense, active voice; consistent terminology; code‑first examples; keep one purpose per doc.
+
+**Template:** `guides/TEMPLATE.md`
+
+**Validation**
 
 ```bash
 node scripts/validate_guides.mjs
 ```
 
-* Fails on secret‑like tokens and other repo‑specific checks.
-* Extendable to lint links, enforce front‑matter, etc.
+* Fails on secret‑like tokens; extensible for link linting & front‑matter.
 
 ---
 
 ## 8) Security & Secrets
 
 * **Never commit secrets** (passwords, API keys, tokens, private URLs).
-* Use environment managers (e.g., `.env.local`) stored **outside git** or via a secret manager.
-* Redact tokens in notes: `sk_live_…` → `sk_live_****last4`.
-* If a secret appears in working files, rotate it and force‑remove from history.
+* Keep secrets in `.env.local` or a secret manager; redact in quicknotes: `sk_live_…` → `sk_live_****last4`.
+* If a secret leaks, rotate and purge from history.
 
-Suggested `scripts/validate_guides.mjs` checks:
+Suggested validator checks:
 
-* Regexes for common key patterns (AWS, OpenAI, GitHub tokens).
-* Search for `BEGIN PRIVATE KEY` blocks.
-* Flag accidental `.env` content.
+* Regexes for AWS/OpenAI/GitHub tokens, `BEGIN PRIVATE KEY` blocks, `.env` patterns.
 
 Optional local pre‑commit hook (not versioned):
 
@@ -248,15 +233,15 @@ Optional local pre‑commit hook (not versioned):
 ## 9) Git Hygiene
 
 * Small, focused commits; prefix types: `feat|fix|docs|chore|refactor`.
-* Reference tasks/ADRs by ID in commit body when relevant.
-* Do **not** commit `.notes/**` or `.memory/private/**`.
+* Reference tasks/ADRs by ID in commit bodies when relevant.
+* Do **not** commit `.memory/private/**`.
 
 ---
 
 ## 10) Crash/Interruption Recovery
 
-* On restart, open the most recent `.notes/*` and resume from **Next 1–3 Actions**.
-* If the last note lacks a summary, create a retro‑summary before proceeding.
+* On restart, open the most recent `.memory/private/note-*.md`, read the last 3 entries, and resume from the most recent `🔜` or `📌`.
+* If the last entries lack `🔜`, create a new quicknote with next 1–3.
 
 ---
 
@@ -264,50 +249,53 @@ Optional local pre‑commit hook (not versioned):
 
 ```bash
 # create folders
-mkdir -p .notes .memory/adr .memory/private guides scripts .githooks
+mkdir -p .memory/adr .memory/private guides scripts .githooks
 
 # seed files
-printf "# Tasks\n\n" > .memory/tasks.md
+printf "# Tasksnn" > .memory/tasks.md
 cat > .memory/state.yaml <<'YAML'
-last_session_at: null
+last_note_at: null
+note_file: null
 next_entry_point: null
 pins: []
 counters:
   next_task_id: T-0000-0000-00
 YAML
-
-# copy in guides/TEMPLATE.md and scripts/validate_guides.mjs per repo
 ```
 
 ---
 
 ## 12) Behavioral Rules for the LLM Agent
 
-*   **Be explicit.** Write notes and tasks as if someone else will continue the work.
-*   **Bias to structure.** Prefer checklists, numbered steps, and IDs.
-*   **Cap next steps at 3.** Prevents thrash and preserves momentum.
-*   **Surface risks early.** Log blockers and unknowns in the note/open questions.
-*   **Leave breadcrumbs.** Always update `.memory/NEXT.md` at session end.
+* **Always note before reply.** A quicknote precedes every message back to the user.
+* **Bias to emojis.** Emojis compress meaning (🧠🐛🔧✅🔜📎); keep text lean.
+* **Cap next steps at 3.** Prevents thrash; overflow goes to `tasks.md`.
+* **Make fixes reproducible.** Include the essence of “how” in `🔧` and verification in `🧪`.
+* **Leave breadcrumbs.** Keep `next_entry_point` and `note_file` up to date and pin key files.
 
 ---
 
-## 13) Examples (copy‑paste)
+## 13) Snippets (copy‑paste)
 
-**Add a task**
+**Append a quicknote (POSIX sh)**
 
+```sh
+TS="$(date '+%F %R %Z')"
+NOTE_FILE=".memory/private/note-$(date '+%F_%H%M-%Z').md"
+ELAPSED_MIN=0
+# Optionally compute ELAPSED_MIN from .memory/state.yaml in your environment
+printf -- "- %s ⏱️+%sm | 🧠 lesson:… | 🐛 … | 🔧 … | ✅ … | 🔜 … | 📎 …n" "$TS" "$ELAPSED_MIN" >> "$NOTE_FILE"
 ```
-echo "- [ ] P2 2025-08-20 [docs] Draft Astro SEO guide  #id:T-2025-0811-03" >> .memory/tasks.md
-```
 
-**Start a session**
+**Mark a task done**
 
-```
-note=".notes/$(date +%F_%H%M-%Z).md" && cp guides/TEMPLATE.md "$note" && sed -i '' "1s/.*/# Session $(date '+%F %R %Z')/" "$note" && $EDITOR "$note"
+```sh
+sed -i'' -e 's/^(- [ ] .*#id:T-2025-0816-01)$/[x] 1/' .memory/tasks.md
 ```
 
 **Validate guides**
 
-```
+```sh
 node scripts/validate_guides.mjs
 ```
 
@@ -315,4 +303,4 @@ node scripts/validate_guides.mjs
 
 ### That’s it
 
-These conventions make the agent predictable, auditable, and easy to hand off. If something isn’t covered, add a short guide or ADR so the rule lives in the repo, not just in your head.
+Timestamped `note-*.md` files + mandatory pre‑reply quicknotes give you fast, searchable memory with minimal overhead—and the emojis carry the load. 🛡️⚔️

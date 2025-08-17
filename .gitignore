@@ -23,8 +23,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 
-# notes
-.notes/
+
 
 # memory
 .memory/private/
