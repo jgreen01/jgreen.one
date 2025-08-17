@@ -232,6 +232,34 @@ Optional local pre‑commit hook (not versioned):
 
 ## 9) Git Hygiene
 
+### 9.1) Conventional Commits
+
+A specification for adding human and machine readable meaning to commit messages. It provides an easy set of rules for creating an explicit commit history, which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages.
+
+**Structure:**
+`<type>[optional scope]: <description>`
+`[optional body]`
+`[optional footer(s)]`
+
+**Key Elements:**
+*   **`type`**: A noun like `feat` (new feature, MINOR in SemVer), `fix` (bug fix, PATCH in SemVer), etc.
+*   **`scope` (optional)**: A noun describing a section of the codebase, e.g., `feat(parser):`.
+*   **`description`**: A short summary of the code changes.
+*   **`body` (optional)**: A longer, free-form description.
+*   **`footer(s)` (optional)**: Can include `BREAKING CHANGE:` or other metadata.
+*   **`BREAKING CHANGE`**: Indicated by `BREAKING CHANGE:` in a footer or `!` after type/scope. Correlates with MAJOR in SemVer.
+
+**Rules (concise):**
+*   Commits MUST be prefixed with a `type`, followed by `OPTIONAL scope`, `OPTIONAL !`, and `REQUIRED :<space>`.
+*   `feat` MUST be used for new features.
+*   `fix` MUST be used for bug fixes.
+*   `description` MUST immediately follow the colon and space.
+*   `body` MAY be provided one blank line after the description.
+*   `footers` MAY be provided one blank line after the body.
+*   `BREAKING CHANGE` MUST be indicated in the type/scope prefix (with `!`) or as a footer.
+*   Types other than `feat` and `fix` MAY be used (e.g., `docs`, `chore`, `refactor`).
+
+* Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages.
 * Small, focused commits; prefix types: `feat|fix|docs|chore|refactor`.
 * Reference tasks/ADRs by ID in commit bodies when relevant.
 * Do **not** commit `.memory/private/**`.
