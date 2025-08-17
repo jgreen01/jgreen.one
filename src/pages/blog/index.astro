@@ -11,15 +11,6 @@ const posts = (await getCollection("entries", e => !e.data.draft && e.data.kind 
   {posts.length === 0 ? (
     <p>No posts yet. Add files to <code>src/content/entries/</code> with <code>kind: "blog"</code>.</p>
   ) : (
-    posts.map(({ slug, data }) => (
-      <EntryCard
-        href={`/entries/${slug}/`}
-        title={data.title}
-        description={data.description}
-        kind={data.kind}
-        pubDate={data.pubDate}
-        tags={data.tags}
-      />
-    ))
+    posts.map((entry) => <EntryCard entry={entry} />)
   )}
 </Base>

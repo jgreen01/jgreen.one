@@ -18,15 +18,8 @@ const matches = all.sort((a, b) => +b.data.pubDate - +a.data.pubDate);
   <h1>Tag: {tag}</h1>
   {matches.length === 0
     ? <p>No entries found for this tag.</p>
-    : matches.map(({ slug, data }) => (
-        <EntryCard
-          href={`/entries/${slug}/`}
-          title={data.title}
-          description={data.description}
-          kind={data.kind}
-          pubDate={data.pubDate}
-          tags={data.tags}
-        />
+    : matches.map((entry) => (
+        <EntryCard entry={entry} />
       ))
   }
 </Base>
