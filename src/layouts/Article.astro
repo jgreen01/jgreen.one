@@ -1,47 +1,16 @@
 ---
-/**
- * Article layout for both projects & blog posts.
- * Props:
- * - title, description, pubDate, updatedDate?, heroImage?
- */
-const { 
-  title = "Untitled",
-  description = "",
-  pubDate,
-  updatedDate,
-  heroImage
-} = Astro.props;
+import Base from './Base.astro';
+
+const { frontmatter } = Astro.props;
 ---
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>{title}</title>
-    <meta name="description" content={description} />
-  </head>
-  <body>
-    <header>
-      <nav aria-label="Breadcrumb">
-        <a href="/">Home</a> / <a href="/entries/">Entries</a>
-      </nav>
-    </header>
-
-    <article>
-      <h1>{title}</h1>
-      <p>
-        <time datetime={pubDate?.toISOString?.() ?? ""}>Published: {pubDate?.toDateString?.()}</time>
-        {updatedDate && <> • <time datetime={updatedDate.toISOString()}>Updated: {updatedDate.toDateString()}</time></>}
-      </p>
-
-      {heroImage && <img src={heroImage} alt="" />}
-
-      <slot />
-    </article>
-
-    <footer>
-      <p><a href="/tags/">Browse by tag</a> • <a href="/blog/">Blog</a> • <a href="/projects/">Projects</a></p>
-    </footer>
-  </body>
-</html>
+<Base title={frontmatter.title} description={frontmatter.description}>
+  <article class="prose dark:prose-invert mx-auto">
+    <h1>{frontmatter.title}</h1>
+    <p class="text-muted-foreground dark:text-mutedDark-foreground">
+      Published on {new Date(frontmatter.pubDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}
+      {frontmatter.updatedDate && ` • Updated on ${new Date(frontmatter.updatedDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}`}
+    </p>
+    {frontmatter.heroImage && <img src={frontmatter.heroImage} alt="" class="w-full h-auto rounded-lg" />}
+    <slot />
+  </article>
+</Base>

@@ -6,9 +6,10 @@
  * - ogImage?: string (optional social image path/URL)
  */
 const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage } = Astro.props;
+import "../styles/global.css";
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" class="bg-background text-foreground dark:bg-backgroundDark dark:text-foregroundDark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,26 +23,28 @@ const { title = "Site Title Placeholder", description = "Describe this site in o
     {ogImage && <meta property="og:image" content={ogImage} />}
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Add stylesheet links or Tailwind import later -->
+    <!-- Styles are imported via global.css -->
   </head>
-  <body>
-    <header>
-      <nav aria-label="Primary">
-        <a href="/">Home</a>
-        <a href="/projects/">Projects</a>
-        <a href="/blog/">Blog</a>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-      </nav>
-    </header>
+  <body class="font-sans">
+    <div class="max-w-prose mx-auto px-4">
+      <header class="py-8">
+        <nav aria-label="Primary" class="flex justify-center space-x-6">
+          <a href="/" class="text-foreground/80 dark:text-foregroundDark/80 hover:text-accent dark:hover:text-accentDark transition-colors">Home</a>
+          <a href="/projects/" class="text-foreground/80 dark:text-foregroundDark/80 hover:text-accent dark:hover:text-accentDark transition-colors">Projects</a>
+          <a href="/blog/" class="text-foreground/80 dark:text-foregroundDark/80 hover:text-accent dark:hover:text-accentDark transition-colors">Blog</a>
+          <a href="/about" class="text-foreground/80 dark:text-foregroundDark/80 hover:text-accent dark:hover:text-accentDark transition-colors">About</a>
+          <a href="/contact" class="text-foreground/80 dark:text-foregroundDark/80 hover:text-accent dark:hover:text-accentDark transition-colors">Contact</a>
+        </nav>
+      </header>
 
-    <main>
-      <slot />
-    </main>
+      <main class="py-8">
+        <slot />
+      </main>
 
-    <footer>
-      <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
-      <small>© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
-    </footer>
+      <footer class="py-8 border-t border-muted dark:border-mutedDark">
+        <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
+        <small class="block text-center text-muted-foreground dark:text-mutedDark-foreground">© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
+      </footer>
+    </div>
   </body>
 </html>

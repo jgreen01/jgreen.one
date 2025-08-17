@@ -1,26 +1,20 @@
 ---
 /**
- * Minimal card for either a 'project' or 'blog' entry.
  * Props:
- * - href: string
- * - title: string
- * - description: string
- * - kind: "project" | "blog"
- * - pubDate?: Date
- * - tags?: string[]
+ * - entry: a single content collection entry
  */
-const { href, title, description, kind, pubDate, tags = [] } = Astro.props;
+import { type CollectionEntry } from "astro:content";
+const { entry } = Astro.props;
+const { data, collection } = entry;
 ---
-<article>
-  <h3><a href={href}>{title}</a></h3>
-  <p>{description}</p>
-  <p>
-    <strong>{kind}</strong>
-    {pubDate && <> • <time datetime={pubDate.toISOString()}>{pubDate.toDateString()}</time></>}
+
+<a href={`/${collection}/${entry.slug}`} class="block p-6 bg-background dark:bg-backgroundDark border border-muted dark:border-mutedDark rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+  <h3 class="text-xl font-bold text-foreground dark:text-foregroundDark mb-2">{data.title}</h3>
+  <p class="text-foreground/80 dark:text-foregroundDark/80 mb-4">{data.description}</p>
+  <p class="text-sm text-muted-foreground dark:text-mutedDark-foreground mb-4">
+    <span class="capitalize">{collection}</span> &bull; {data.pubDate.toLocaleDateString('en-us', { year:"numeric", month:"short", day:"numeric"})}
   </p>
-  {tags.length > 0 && (
-    <p>
-      {tags.map((t: string) => <a href={`/tags/${encodeURIComponent(t)}/`} style="margin-right:.5rem">#{t}</a>)}
-    </p>
-  )}
-</article>
+  <div class="flex flex-wrap gap-2">
+    {data.tags.map((tag) => <span class="text-xs font-semibold text-accent dark:text-accentDark bg-accent/10 dark:bg-accentDark/10 px-2 py-1 rounded-full">#{tag}</span>)}
+  </div>
+</a>
