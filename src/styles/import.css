@@ -1,0 +1,6 @@
+/*
+ * IMPORTANT: Do not replace @import "tailwindcss"; with @tailwind.config.mjs directives.
+ * For this specific project setup, using the @tailwind.config.mjs directives breaks the site's styles.
+ * The @import statement is required for Tailwind to be processed correctly.
+ */
+ @import "tailwindcss";

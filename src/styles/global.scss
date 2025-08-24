@@ -1,0 +1,111 @@
+/* LIGHT MODE — updated to match design.png palette */
+:root {
+  /* Background: warm peach from the artwork */
+  --bg-color: #fad9b6;
+
+  /* Body text: deep charcoal for 10.5:1 contrast on peach */
+  --text-color: #362827;
+
+  /* Accent: vivid orange circle */
+  --accent-color: #f6780a;
+
+  /* Muted / borders / subtle UI: slate-blue column */
+  --muted-color: #6e797f;
+}
+
+/* Automatically switches to dark mode colors when the user's OS is in dark mode. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #212737;
+    --text-color: #eaeef3;
+    --accent-color: #38bdf8;
+    --muted-color: #374151;
+  }
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#mobile-menu {
+  background-color: var(--bg-color);
+}
+
+/* === Geometry v2: large top-right accent circle + optional slate band/spine === */
+.bg-geo-v2 {
+  --geo-opacity: 0.4;            /* tweak per section */
+  --geo-r: clamp(26vmin, 36vmin, 48vmin);
+  --geo-x: 90%;
+  --geo-y: -5%;
+  --geo-band: 0;                  /* set >0 (e.g., 7%) to add a left slate band */
+  --geo-spine: 0px;               /* set >0 (e.g., 2px) for a thin center spine */
+  position: relative;
+  isolation: isolate;
+}
+.bg-geo-v2::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    /* Big accent circle intruding from top-right */
+    radial-gradient(circle var(--geo-r) at var(--geo-x) var(--geo-y),
+      var(--accent-color) 0 99%, transparent 100%),
+    /* Optional slate band on the left edge */
+    linear-gradient(90deg, var(--muted-color) 0 var(--geo-band), transparent var(--geo-band)),
+    /* Optional thin slate spine somewhere across the page (60% by default) */
+    linear-gradient(90deg, transparent 60%, var(--muted-color) 0 calc(60% + var(--geo-spine)), transparent 0);
+  opacity: var(--geo-opacity);
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Quick presets */
+.bg-geo-hero-v2 { --geo-opacity: 0.34; --geo-r: clamp(30vmin, 42vmin, 56vmin); }
+ /* @media (max-width: 640px) {
+  .bg-geo-v2 { --geo-r: clamp(22vmin, 30vmin, 40vmin); --geo-x: 105%; --geo-y: -12%; }
+} */
+
+/* === Nav readability over geometry === */
+.site-nav a {
+  color: var(--text-color);
+  font-weight: 600;
+  text-underline-offset: 0.18em;
+  text-decoration-color: var(--accent-color);
+}
+.site-nav a:hover { color: var(--accent-color); }
+
+/* Optional: peach chips behind nav when it overlaps the circle */
+.site-nav-chip a {
+  background: rgba(250, 217, 182, 0.75); /* peach w/ alpha */
+  backdrop-filter: blur(2px);
+  border-radius: 9999px;
+  padding: 0.15rem 0.5rem;
+}
+
+/* === Tag pills === */
+.tag {
+  display: inline-block;
+  font-size: 0.82rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(110, 121, 127, 0.35);     /* slate */
+  background: rgba(246, 120, 10, 0.08);            /* accent wash */
+  color: color-mix(in srgb, var(--text-color) 80%, var(--accent-color) 20%);
+  margin-right: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+/* === Link underlines site-wide (subtle, on-brand) === */
+a {
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+  text-decoration-color: color-mix(in srgb, var(--accent-color) 70%, currentColor 30%);
+}
+a:hover { color: var(--accent-color); }
+
+/* === Spacing helper to open the hero rhythm === */
+.section-after-hero { margin-top: clamp(1.5rem, 4vw, 2.75rem); }

@@ -6,7 +6,8 @@
  * - ogImage?: string (optional social image path/URL)
  */
 const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage } = Astro.props;
-import "../styles/global.css";
+import "../styles/global.scss";
+import "../styles/import.css";
 ---
 <!doctype html>
 <html lang="en">
@@ -23,19 +24,19 @@ import "../styles/global.css";
     {ogImage && <meta property="og:image" content={ogImage} />}
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Styles are imported via global.css -->
+    <!-- Styles are imported via import.css and global.scss -->
   </head>
-  <body>
+  <body class="bg-geo-v2">
     <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between relative">
-      <h1 class="text-2xl font-bold"><a href="/" class="text-foreground">MyBlog</a></h1>
+      <div class="text-xl font-bold"><a href="/" class="text-foreground">MyBlog</a></div>
 
       <!-- Desktop Nav -->
-      <nav class="hidden min-[450px]:flex space-x-4 text-sm">
-        <a href="/" class="text-accent hover:underline">Home</a>
-        <a href="/projects/" class="text-accent hover:underline">Projects</a>
-        <a href="/blog/" class="text-accent hover:underline">Blog</a>
-        <a href="/about" class="text-accent hover:underline">About</a>
-        <a href="/contact" class="text-accent hover:underline">Contact</a>
+      <nav class="site-nav hidden min-[450px]:flex space-x-4 text-sm">
+        <a href="/">Home</a>
+        <a href="/projects/">Projects</a>
+        <a href="/blog/">Blog</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
       </nav>
 
       <!-- Hamburger button -->
@@ -47,12 +48,12 @@ import "../styles/global.css";
 
       <!-- Mobile Menu -->
       <div id="mobile-menu" class="min-[450px]:hidden hidden absolute top-16 right-4 border border-muted rounded-lg shadow-lg p-4">
-        <nav class="flex flex-col space-y-2">
-            <a href="/" class="text-accent hover:underline">Home</a>
-            <a href="/projects/" class="text-accent hover:underline">Projects</a>
-            <a href="/blog/" class="text-accent hover:underline">Blog</a>
-            <a href="/about" class="text-accent hover:underline">About</a>
-            <a href="/contact" class="text-accent hover:underline">Contact</a>
+        <nav class="site-nav flex flex-col space-y-2">
+            <a href="/">Home</a>
+            <a href="/projects/">Projects</a>
+            <a href="/blog/">Blog</a>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
         </nav>
       </div>
     </header>
