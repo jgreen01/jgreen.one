@@ -4,7 +4,7 @@ import Base from './Base.astro';
 const { frontmatter } = Astro.props;
 ---
 <Base title={frontmatter.title} description={frontmatter.description}>
-  <article class="prose dark:prose-invert mx-auto">
+  <article class="prose dark:prose-invert">
     <h1>{frontmatter.title}</h1>
     <p class="text-muted-foreground dark:text-mutedDark-foreground">
       Published on {new Date(frontmatter.pubDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}

@@ -8,7 +8,9 @@ const all = (await getCollection("entries", e => !e.data.draft))
 ---
 <Base title="All Entries — Placeholder" description="Combined list of projects and posts.">
   <h1>All Entries</h1>
-  {all.map((entry) => (
-    <EntryCard entry={entry} />
-  ))}
+  <ul class="list-none mt-8">
+    {all.map((entry) => (
+      <EntryCard entry={entry} />
+    ))}
+  </ul>
 </Base>

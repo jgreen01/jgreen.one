@@ -14,16 +14,18 @@ const all = (await getCollection("entries", e => !e.data.draft))
 const featured = all.slice(0, 4);
 ---
 <Base title="Site Title Placeholder" description="Short site description for the homepage.">
-  <section class="max-w-prose mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <section>
     <h1>Hero Headline Placeholder</h1>
     <p>1–2 sentence tagline that describes focus (e.g., projects + writing in tech/AI/ML).</p>
     <!-- Add a prominent call-to-action or quick nav later -->
   </section>
 
-  <section class="max-w-prose mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <section class="mt-8">
     <h2>Latest Entries</h2>
-    {featured.map((entry) => <EntryCard entry={entry} />)}
-    <p>
+    <ul class="list-none mt-4">
+      {featured.map((entry) => <EntryCard entry={entry} />)}
+    </ul>
+    <p class="mt-4">
       <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Browse Projects</a> • <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Read the Blog</a>
     </p>
   </section>
