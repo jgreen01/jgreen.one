@@ -9,14 +9,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#fdfdfd",
-        foreground: "#282728",
-        accent: "#0ea5e9",
-        muted: "#e5e7eb",
-        backgroundDark: "#212737",
-        foregroundDark: "#eaeef3",
-        accentDark: "#38bdf8",
-        mutedDark: "#374151"
+        // These custom color names are mapped to the CSS variables defined in `src/styles/global.css`.
+        // The light/dark mode color switching is handled automatically by the CSS media query in that file.
+        background: 'var(--bg-color)',
+        foreground: 'var(--text-color)',
+        accent: 'var(--accent-color)',
+        muted: 'var(--muted-color)',
       },
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

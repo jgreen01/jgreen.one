@@ -9,7 +9,7 @@ const { title = "Site Title Placeholder", description = "Describe this site in o
 import "../styles/global.css";
 ---
 <!doctype html>
-<html lang="en" class="bg-[#fdfdfd] text-[#282728] dark:bg-[#212737] dark:text-[#eaeef3]">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -25,17 +25,17 @@ import "../styles/global.css";
 
     <!-- Styles are imported via global.css -->
   </head>
-  <body class="font-sans">
+  <body>
     <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between relative">
-      <h1 class="text-2xl font-bold"><a href="/" class="text-foreground dark:text-foregroundDark">MyBlog</a></h1>
+      <h1 class="text-2xl font-bold"><a href="/" class="text-foreground">MyBlog</a></h1>
 
       <!-- Desktop Nav -->
       <nav class="hidden min-[450px]:flex space-x-4 text-sm">
-        <a href="/" class="text-accent dark:text-accentDark hover:underline">Home</a>
-        <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Projects</a>
-        <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Blog</a>
-        <a href="/about" class="text-accent dark:text-accentDark hover:underline">About</a>
-        <a href="/contact" class="text-accent dark:text-accentDark hover:underline">Contact</a>
+        <a href="/" class="text-accent hover:underline">Home</a>
+        <a href="/projects/" class="text-accent hover:underline">Projects</a>
+        <a href="/blog/" class="text-accent hover:underline">Blog</a>
+        <a href="/about" class="text-accent hover:underline">About</a>
+        <a href="/contact" class="text-accent hover:underline">Contact</a>
       </nav>
 
       <!-- Hamburger button -->
@@ -46,13 +46,13 @@ import "../styles/global.css";
       </button>
 
       <!-- Mobile Menu -->
-      <div id="mobile-menu" class="min-[450px]:hidden hidden absolute top-16 right-4 bg-white dark:bg-[#212737] border border-muted dark:border-mutedDark rounded-lg shadow-lg p-4">
+      <div id="mobile-menu" class="min-[450px]:hidden hidden absolute top-16 right-4 border border-muted rounded-lg shadow-lg p-4">
         <nav class="flex flex-col space-y-2">
-            <a href="/" class="text-accent dark:text-accentDark hover:underline">Home</a>
-            <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Projects</a>
-            <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Blog</a>
-            <a href="/about" class="text-accent dark:text-accentDark hover:underline">About</a>
-            <a href="/contact" class="text-accent dark:text-accentDark hover:underline">Contact</a>
+            <a href="/" class="text-accent hover:underline">Home</a>
+            <a href="/projects/" class="text-accent hover:underline">Projects</a>
+            <a href="/blog/" class="text-accent hover:underline">Blog</a>
+            <a href="/about" class="text-accent hover:underline">About</a>
+            <a href="/contact" class="text-accent hover:underline">Contact</a>
         </nav>
       </div>
     </header>
@@ -61,9 +61,9 @@ import "../styles/global.css";
       <slot />
     </main>
 
-    <footer class="max-w-3xl mx-auto py-8 px-4 border-t border-muted dark:border-mutedDark">
+    <footer class="max-w-3xl mx-auto py-8 px-4 border-t border-muted">
       <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
-      <small class="block text-center text-muted-foreground dark:text-mutedDark-foreground">© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
+      <small class="block text-center text-muted-foreground">© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
     </footer>
     <script>
       const btn = document.getElementById('menu-btn');
