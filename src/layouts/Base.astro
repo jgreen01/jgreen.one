@@ -26,15 +26,35 @@ import "../styles/global.css";
     <!-- Styles are imported via global.css -->
   </head>
   <body class="font-sans">
-    <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between">
+    <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between relative">
       <h1 class="text-2xl font-bold"><a href="/" class="text-foreground dark:text-foregroundDark">MyBlog</a></h1>
-      <nav class="space-x-4 text-sm">
+
+      <!-- Desktop Nav -->
+      <nav class="hidden min-[450px]:flex space-x-4 text-sm">
         <a href="/" class="text-accent dark:text-accentDark hover:underline">Home</a>
         <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Projects</a>
         <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Blog</a>
         <a href="/about" class="text-accent dark:text-accentDark hover:underline">About</a>
         <a href="/contact" class="text-accent dark:text-accentDark hover:underline">Contact</a>
       </nav>
+
+      <!-- Hamburger button -->
+      <button id="menu-btn" class="min-[450px]:hidden focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      </button>
+
+      <!-- Mobile Menu -->
+      <div id="mobile-menu" class="min-[450px]:hidden hidden absolute top-16 right-4 bg-white dark:bg-[#212737] border-4 border-red-500 rounded-lg shadow-lg p-4">
+        <nav class="flex flex-col space-y-2">
+            <a href="/" class="text-accent dark:text-accentDark hover:underline">Home</a>
+            <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Projects</a>
+            <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Blog</a>
+            <a href="/about" class="text-accent dark:text-accentDark hover:underline">About</a>
+            <a href="/contact" class="text-accent dark:text-accentDark hover:underline">Contact</a>
+        </nav>
+      </div>
     </header>
 
     <main class="max-w-prose mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -45,5 +65,13 @@ import "../styles/global.css";
       <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
       <small class="block text-center text-muted-foreground dark:text-mutedDark-foreground">© <span id="year">{new Date().getFullYear()}</span> — Site placeholder footer</small>
     </footer>
+    <script>
+      const btn = document.getElementById('menu-btn');
+      const menu = document.getElementById('mobile-menu');
+
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+    </script>
   </body>
 </html>
