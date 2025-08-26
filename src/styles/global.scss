@@ -1,9 +1,9 @@
 /* LIGHT MODE — updated to match design.png palette */
 :root {
-  /* Background: warm peach from the artwork */
-  --bg-color: #fad9b6;
+  /* Background: Lemon Chiffon from the artwork */
+  --bg-color: #f9f7c7;
 
-  /* Body text: deep charcoal for 10.5:1 contrast on peach */
+  /* Body text: deep charcoal for contrast */
   --text-color: #362827;
 
   /* Accent: vivid orange circle */
@@ -64,9 +64,7 @@ body {
 
 /* Quick presets */
 .bg-geo-hero-v2 { --geo-opacity: 0.34; --geo-r: clamp(30vmin, 42vmin, 56vmin); }
- /* @media (max-width: 640px) {
-  .bg-geo-v2 { --geo-r: clamp(22vmin, 30vmin, 40vmin); --geo-x: 105%; --geo-y: -12%; }
-} */
+
 
 /* === Nav readability over geometry === */
 .site-nav a {
