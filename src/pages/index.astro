@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import EntryCard from "../components/EntryCard.astro";
+import Avatar from "../components/Avatar.astro";
 import { getCollection } from "astro:content";
 
 /**
@@ -15,6 +16,7 @@ const featured = all.slice(0, 4);
 ---
 <Base title="Site Title Placeholder" description="Short site description for the homepage.">
   <section>
+    <Avatar class="avatar" />
     <h1>Hero Headline Placeholder</h1>
     <p>1–2 sentence tagline that describes focus (e.g., projects + writing in tech/AI/ML).</p>
     <!-- Add a prominent call-to-action or quick nav later -->
@@ -26,7 +28,7 @@ const featured = all.slice(0, 4);
       {featured.map((entry) => <EntryCard entry={entry} />)}
     </ul>
     <p class="mt-4">
-      <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Browse Projects</a> • <a href="/blog/" class="text-accent dark:text-accentDark hover:underline">Read the Blog</a>
+      <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Browse Projects</a> • <a href="/blog/" class="text-accent dark:text-accentDark hover:-underline">Read the Blog</a>
     </p>
   </section>
 </Base>
