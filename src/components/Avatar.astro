@@ -1,0 +1,12 @@
+---
+import { parse } from 'node-html-parser';
+import rawSvg from '../assets/avatar.svg?raw';
+
+const root = parse(rawSvg);
+const svg = root.querySelector('svg');
+const { attributes, innerHTML } = svg;
+
+const { ...astroProps } = Astro.props;
+const svgAttributes = { ...attributes, ...astroProps, viewBox: '0 0 1000 1000' };
+---
+<svg {...svgAttributes} set:html={innerHTML}></svg>

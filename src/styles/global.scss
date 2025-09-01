@@ -107,3 +107,16 @@ a:hover { color: var(--accent-color); }
 
 /* === Spacing helper to open the hero rhythm === */
 .section-after-hero { margin-top: clamp(1.5rem, 4vw, 2.75rem); }
+
+.avatar {
+  --halo: var(--accent-color);
+  --ink:  var(--text-color);
+  --skin: var(--bg-color);
+  width: 128px;
+  height: 128px;
+
+   svg {
+    width: 100%;
+    height: 100%;
+  }
+}
