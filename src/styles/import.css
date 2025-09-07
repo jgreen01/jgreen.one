@@ -4,3 +4,4 @@
  * The @import statement is required for Tailwind to be processed correctly.
  */
  @import "tailwindcss";
+ @plugin "@tailwindcss/typography";
