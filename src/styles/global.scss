@@ -118,6 +118,24 @@ a:hover { color: var(--accent-color); }
 /* === Spacing helper to open the hero rhythm === */
 .section-after-hero { margin-top: clamp(1.5rem, 4vw, 2.75rem); }
 
+.prose {
+  h2 {
+    font-size: 1.875rem; /* 3xl */
+    font-weight: 700; /* bold */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+  h3 {
+    font-size: 1.5rem; /* 2xl */
+    font-weight: 700; /* bold */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+  h4 {
+    font-size: 1.25rem; /* xl */
+    font-weight: 700; /* bold */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+}
+
 .avatar{
   --ink: #574335;
   --skin: oklch(0.94 0.035 75);
