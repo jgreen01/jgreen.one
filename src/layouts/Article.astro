@@ -6,7 +6,7 @@ const { frontmatter } = Astro.props;
 <Base title={frontmatter.title} description={frontmatter.description}>
   <article class="prose dark:prose-invert prose-lg">
     <h1 class="text-4xl font-bold mb-4">{frontmatter.title}</h1>
-    <p class="text-muted-foreground dark:text-mutedDark-foreground">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">
       Published on {new Date(frontmatter.pubDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}
       {frontmatter.updatedDate && ` • Updated on ${new Date(frontmatter.updatedDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}`}
     </p>
