@@ -11,6 +11,8 @@ const projects = all.sort((a, b) => +b.data.pubDate - +a.data.pubDate);
   {projects.length === 0 ? (
     <p>No projects yet. Add files to <code>src/content/entries/</code> with <code>kind: "project"</code>.</p>
   ) : (
-    projects.map((entry) => <EntryCard entry={entry} />)
+    <ul class="list-none">
+  {projects.map((entry) => <EntryCard entry={entry} />)}
+</ul>
   )}
 </Base>
