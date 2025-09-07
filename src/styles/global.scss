@@ -80,7 +80,10 @@ body {
   text-underline-offset: 0.18em;
   text-decoration-color: var(--accent-color);
 }
-.site-nav a:hover { color: var(--accent-color); }
+.site-nav a:hover {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px #000;
+}
 
 /* Optional: peach chips behind nav when it overlaps the circle */
 .site-nav-chip a {
