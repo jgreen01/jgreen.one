@@ -79,10 +79,16 @@ body {
   font-weight: 600;
   text-underline-offset: 0.18em;
   text-decoration-color: var(--accent-color);
+  padding: 0.05rem 0.1rem;
 }
-.site-nav a:hover {
+.site-nav.hidden a:hover {
   color: var(--accent-color);
-  text-shadow: 0 0 5px #000;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 0.25rem;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
 }
 
 /* Optional: peach chips behind nav when it overlaps the circle */
