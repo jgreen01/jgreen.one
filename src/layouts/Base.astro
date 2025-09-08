@@ -26,8 +26,8 @@ import "../styles/import.css";
 
     <!-- Styles are imported via import.css and global.scss -->
   </head>
-  <body class="bg-geo-v2">
-    <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between relative">
+  <body class="bg-geo-v2 min-h-screen flex flex-col">
+    <header class="max-w-3xl mx-auto py-6 px-4 flex items-center justify-between relative flex-shrink-0 w-full self-center">
       <div class="text-xl font-bold"><a href="/" class="text-foreground">Jon Green</a></div>
 
       <!-- Desktop Nav -->
@@ -58,7 +58,7 @@ import "../styles/import.css";
       </div>
     </header>
 
-    <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
       <slot />
     </main>
 
