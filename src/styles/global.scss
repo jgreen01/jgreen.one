@@ -128,3 +128,41 @@ a:hover { color: var(--accent-color); }
 
   position: relative; display: inline-block; isolation:isolate;
 }
+
+.dark\:prose-invert {
+  --tw-prose-body: var(--text-color);
+  --tw-prose-headings: var(--text-color);
+  --tw-prose-lead: var(--text-color);
+  --tw-prose-links: var(--text-color);
+  --tw-prose-bold: var(--text-color);
+  --tw-prose-counters: var(--text-color);
+  --tw-prose-bullets: var(--text-color);
+  --tw-prose-hr: var(--text-color);
+  --tw-prose-quotes: var(--text-color);
+  --tw-prose-quote-borders: var(--text-color);
+  --tw-prose-captions: var(--text-color);
+  --tw-prose-code: var(--text-color);
+  --tw-prose-pre-code: var(--text-color);
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-th-borders: var(--text-color);
+  --tw-prose-td-borders: var(--text-color);
+}
+
+.prose {
+  --tw-prose-body: var(--text-color);
+  --tw-prose-headings: var(--text-color);
+  --tw-prose-lead: var(--text-color);
+  --tw-prose-links: var(--text-color);
+  --tw-prose-bold: var(--text-color);
+  --tw-prose-counters: var(--text-color);
+  --tw-prose-bullets: var(--text-color);
+  --tw-prose-hr: var(--text-color);
+  --tw-prose-quotes: var(--text-color);
+  --tw-prose-quote-borders: var(--text-color);
+  --tw-prose-captions: var(--text-color);
+  --tw-prose-code: var(--text-color);
+  --tw-prose-pre-code: var(--text-color);
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-th-borders: var(--text-color);
+  --tw-prose-td-borders: var(--text-color);
+}
