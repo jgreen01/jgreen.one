@@ -16,9 +16,9 @@
 
 ```
 .memory/                # Structured, committed state (except /private)
-  tasks.md              # Human‑readable backlog with due dates/priorities
-  state.yaml            # Machine state (last_note_at, note_file, next_entry_point, pins)
-  adr/                  # Architecture Decision Records (ADRs)
+  TODO/                 # Feature-level task tracking
+    README.md           # Index and priority list of tasks
+    feature-name.md     # Detailed notes for a specific feature
   private/              # Local-only notes (gitignored)
     note-YYYY-MM-DD_HHMM-TZ.md  # Running quicknotes for a session (append-only)
 
@@ -56,9 +56,6 @@ Checklist executed **every time** before replying:
 1. **Time check:** compute `elapsed = now - state.last_note_at` (fallback: `0m`).
 2. **Select note file:** use `state.note_file` if set and `elapsed < SESSION_ROLL_MIN` (default 20m). Otherwise, create a new file named `note-YYYY-MM-DD_HHMM-TZ.md` in `.memory/private/` and set `state.note_file`.
 3. **Append quicknote** line to that file using the schema in §4.
-4. **Update tasks** in `.memory/tasks.md` for any new todos or completions mentioned.
-5. **Update state** in `.memory/state.yaml`: `last_note_at`, `note_file`, `next_entry_point` (if clear), and any refreshed `pins`.
-6. **(Optional)** If there are exactly 1–3 concrete next steps, mirror them to `.memory/NEXT.md`.
 
 > If truly nothing changed, write a **heartbeat** quicknote (see §4) so we still get a timestamped breadcrumb.
 
@@ -102,70 +99,66 @@ Checklist executed **every time** before replying:
 
 ---
 
-## 5) Tasks & Reminders (Backlog)
+## 5) Feature-Level Tasks (TODO)
 
-**Location:** `.memory/tasks.md` (committed)
+For larger, more complex features that require more detailed planning and discussion, a separate system is used in the `.memory/TODO/` directory. This approach allows for a more structured and detailed breakdown of tasks than the quicknotes system.
 
-**Format:** Markdown checkboxes; one task per line with tags/IDs:
+**Location:** `.memory/TODO/`
 
-```
-- [ ] P1 2025-08-20 [infra] Upgrade vite to 5.4  #id:T-2025-0816-01
-- [ ] P2 2025-08-22 [docs] Add “astro check” to CI #id:T-2025-0816-02
-- [x] P3 2025-08-16 [chore] Update .gitignore       #id:T-2025-0816-03
-```
+**Format:**
 
-**Conventions**
+*   `.memory/TODO/README.md`: A prioritized list of tasks. Each task should link to a corresponding `.md` file.
+*   `.memory/TODO/<feature-name>.md`: A detailed description of the feature, including requirements, implementation notes, and any open questions.
 
-* **Priority:** `P1` urgent, `P2` soon, `P3` nice‑to‑have.
-* **Due date:** ISO `YYYY‑MM‑DD` when known; else tag `[triage]`.
-* **ID:** Stable `#id:` for references in notes/ADRs/commits.
-* **Owner:** Append ` @owner` in multi‑user repos.
+**Conventions:**
 
-**Overdue behavior**
+*   The `README.md` file serves as the primary index for all major tasks.
+*   The filename of each feature file should be a short, descriptive name of the feature in kebab-case.
+*   **Priority:** `HP` (High), `MP` (Medium), `LP` (Low).
 
-* During the first reply of a session, surface all unchecked tasks due ≤ today; propose snooze/close.
+**Usage:**
 
-**Machine mirror** (lightweight, optional): keep key pointers in `state.yaml`.
+1.  **Create a new feature file:** When a new major task is identified, create a new `.md` file in the `.memory/TODO/` directory. The filename should be a short, descriptive name of the feature in kebab-case (e.g., `add-cloudflare-ddos-protection.md`).
+2.  **Add to README.md:** Add a new entry to the `.memory/TODO/README.md` file with a link to the new feature file and a priority level.
+3.  **Flesh out the feature file:** Use the template below to fill out the details of the feature in the new `.md` file.
+4.  **Update as you go:** As you work on the feature, update the feature file with any new information, implementation details, or decisions.
+5.  **Mark as complete:** When the feature is complete, mark the task as complete in the `README.md` file.
 
-Example `state.yaml`:
-
-```yaml
-last_note_at: 2025-08-16T19:15:00-07:00
-note_file: .memory/private/note-2025-08-16_1915-PDT.md
-next_entry_point: "Release vite upgrade (#T-2025-0816-01)"
-pins:
-  - file: guides/astro_build.md
-  - file: .memory/tasks.md#line-2
-counters:
-  next_task_id: T-2025-0816-04
-```
-
----
-
-## 6) Decisions — ADRs
-
-**Location:** `.memory/adr/`
-
-**File name:** `YYYY‑MM‑DD‑short‑slug.md`
-
-**Template**
+**Template for feature files:**
 
 ```markdown
-# Title (Decision)
-Date: YYYY‑MM‑DD
-Status: Accepted | Superseded by <ADR#> | Proposed
+# Feature: [Feature Name]
 
-## Context
-- Problem + constraints
+## Goal
 
-## Decision
-- The decision in one or two sentences
+A clear and concise description of what you want to achieve with this feature.
 
-## Consequences
-- Positive/negative trade‑offs; migrations
+## Requirements
 
-## Links
-- PRs, issues, tasks (#id), related quicknotes timestamps
+A list of specific requirements for the feature.
+
+- [ ] Requirement 1
+- [ ] Requirement 2
+- [ ] Requirement 3
+
+## Implementation Plan
+
+A step-by-step plan for implementing the feature.
+
+1.  **Step 1:** Description of the first step.
+2.  **Step 2:** Description of the second step.
+3.  **Step 3:** Description of the third step.
+
+## Open Questions
+
+A list of any open questions or points of discussion related to the feature.
+
+- [ ] Question 1
+- [ ] Question 2
+
+## Notes
+
+Any other relevant notes or information.
 ```
 
 ---
@@ -266,9 +259,10 @@ A specification for adding human and machine readable meaning to commit messages
 
 ---
 
-## 10) Crash/Interruption Recovery
+## 9) Crash/Interruption Recovery
 
 * On restart, open the most recent `.memory/private/note-*.md`, read the last 3 entries, and resume from the most recent `🔜` or `📌`.
+* Read the content of `.memory/TODO/README.md` to review the list of major tasks.
 * If the last entries lack `🔜`, create a new quicknote with next 1–3.
 
 ---
@@ -277,27 +271,15 @@ A specification for adding human and machine readable meaning to commit messages
 
 ```bash
 # create folders
-mkdir -p .memory/adr .memory/private guides scripts .githooks
-
-# seed files
-printf "# Tasksnn" > .memory/tasks.md
-cat > .memory/state.yaml <<'YAML'
-last_note_at: null
-note_file: null
-next_entry_point: null
-pins: []
-counters:
-  next_task_id: T-0000-0000-00
-YAML
+mkdir -p .memory/private guides scripts .githooks
 ```
 
 ---
 
-## 12) Behavioral Rules for the LLM Agent
+## 11) Behavioral Rules for the LLM Agent
 
 * **Always note before reply.** A quicknote precedes every message back to the user.
 * **Bias to emojis.** Emojis compress meaning (🧠🐛🔧✅🔜📎); keep text lean.
-* **Cap next steps at 3.** Prevents thrash; overflow goes to `tasks.md`.
 * **Make fixes reproducible.** Include the essence of “how” in `🔧` and verification in `🧪`.
 * **Leave breadcrumbs.** Keep `next_entry_point` and `note_file` up to date and pin key files.
 
@@ -315,12 +297,6 @@ ELAPSED_MIN=0
 printf -- "- %s ⏱️+%sm | 🧠 lesson:… | 🐛 … | 🔧 … | ✅ … | 🔜 … | 📎 …n" "$TS" "$ELAPSED_MIN" >> "$NOTE_FILE"
 ```
 
-**Mark a task done**
-
-```sh
-sed -i'' -e 's/^(- [ ] .*#id:T-2025-0816-01)$/[x] 1/' .memory/tasks.md
-```
-
 **Validate guides**
 
 ```sh
@@ -331,4 +307,4 @@ node scripts/validate_guides.mjs
 
 ### That’s it
 
-Timestamped `note-*.md` files + mandatory pre‑reply quicknotes give you fast, searchable memory with minimal overhead—and the emojis carry the load. 🛡️⚔️
+Timestamped `note-*.md` files + mandatory pre‑reply quicknotes give you fast, searchable memory with minimal overhead—and the emojis carry the load. 🛡️⚔️�
