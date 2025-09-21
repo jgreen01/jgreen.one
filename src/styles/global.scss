@@ -44,8 +44,8 @@ body {
 .bg-geo-v2 {
   --geo-opacity: 0.4;            /* tweak per section */
   --geo-r: clamp(26vmin, 36vmin, 48vmin);
-  --geo-x: 90%;
-  --geo-y: -5%;
+  --geo-x: 90vw;
+  --geo-y: -5vh;
   --geo-band: 0;                  /* set >0 (e.g., 7%) to add a left slate band */
   --geo-spine: 0px;               /* set >0 (e.g., 2px) for a thin center spine */
   position: relative;
