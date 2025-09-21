@@ -4,8 +4,9 @@
  * - title: string (page title)
  * - description: string (meta description; keep under ~160 chars)
  * - ogImage?: string (optional social image path/URL)
+ * - wider?: boolean (whether to use a wider layout)
  */
-const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage } = Astro.props;
+const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage, wider = false } = Astro.props;
 import "../styles/global.scss";
 import "../styles/import.css";
 ---
@@ -58,7 +59,7 @@ import "../styles/import.css";
       </div>
     </header>
 
-    <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+    <main class:list={["mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow", { 'max-w-2xl': !wider, 'max-w-5xl': wider }]}>
       <slot />
     </main>
 
