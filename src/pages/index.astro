@@ -1,5 +1,5 @@
 ---
-import Base from "../layouts/Base.astro";
+import PageLayout from "../layouts/PageLayout.astro";
 import EntryCard from "../components/EntryCard.astro";
 import Avatar from "../components/Avatar.astro";
 import { getCollection } from "astro:content";
@@ -14,7 +14,7 @@ const all = (await getCollection("entries", e => !e.data.draft))
 // Select top N to feature on the homepage
 const featured = all.slice(0, 4);
 ---
-<Base title="Site Title Placeholder" description="Short site description for the homepage.">
+<PageLayout title="Site Title Placeholder" description="Short site description for the homepage.">
   <section class="flex items-center flex-col sm:flex-row">
     <Avatar class="avatar w-3/5 mb-2 sm:mb-0 sm:mr-4" />
     <span>
@@ -33,4 +33,4 @@ const featured = all.slice(0, 4);
       <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Browse Projects</a> • <a href="/blog/" class="text-accent dark:text-accentDark hover:-underline">Read the Blog</a>
     </p>
   </section>
-</Base>
+</PageLayout>

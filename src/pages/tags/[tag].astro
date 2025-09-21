@@ -1,5 +1,5 @@
 ---
-import Base from "../../layouts/Base.astro";
+import PageLayout from "../../layouts/PageLayout.astro";
 import EntryCard from "../../components/EntryCard.astro";
 import { getCollection } from "astro:content";
 
@@ -14,7 +14,7 @@ const { tag } = Astro.params;
 const all = await getCollection("entries", e => !e.data.draft && (e.data.tags ?? []).includes(String(tag)));
 const matches = all.sort((a, b) => +b.data.pubDate - +a.data.pubDate);
 ---
-<Base title={`Tag: ${tag} — Placeholder`} description={`Entries tagged with "${tag}".`}>
+<PageLayout title={`Tag: ${tag} — Placeholder`} description={`Entries tagged with "${tag}".`}>
   <h1 class="text-4xl font-bold mb-4">Tag: {tag}</h1>
   {matches.length === 0
     ? <p>No entries found for this tag.</p>
@@ -22,4 +22,4 @@ const matches = all.sort((a, b) => +b.data.pubDate - +a.data.pubDate);
         <EntryCard entry={entry} />
       ))
   }
-</Base>
+</PageLayout>
