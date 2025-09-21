@@ -53,6 +53,7 @@ Recommended `.gitignore` additions:
 
 Checklist executed **every time** before replying:
 
+0. **Get current time:** Run the `date` command to get the current time for the note.
 1. **Time check:** compute `elapsed = now - state.last_note_at` (fallback: `0m`).
 2. **Select note file:** use `state.note_file` if set and `elapsed < SESSION_ROLL_MIN` (default 20m). Otherwise, create a new file named `note-YYYY-MM-DD_HHMM-TZ.md` in `.memory/private/` and set `state.note_file`.
 3. **Append quicknote** line to that file using the schema in §4.
@@ -61,9 +62,29 @@ Checklist executed **every time** before replying:
 
 ---
 
+## Quicknote Control
+
+Quicknote functionality can be enabled or disabled by the user. By default, quicknotes are conceptually "off".
+
+- **Enable Quicknotes:** To enable quicknotes, the user must explicitly state "Turn on quicknotes".
+- **Disable Quicknotes:** To disable quicknotes, the user must explicitly state "Turn off quicknotes".
+
+When quicknotes are disabled, the LLM will *not* append a quicknote before returning a response to the user.
+
+---
+
+## 3.1) User-Defined Commands (Natural Language)
+
+The LLM can interpret specific phrases as commands to trigger predefined behaviors. These are treated as natural language instructions.
+
+*   **`::detailed_notes`**: Instructs the LLM to provide comprehensive and detailed notes for the current session, including context, actions taken, reasoning, and outcomes.
+*   **`::set_quicknotes [on|off]`**: Informs the LLM of the user's preference regarding quicknote functionality. While quicknotes are a hard rule and will always be appended before every reply, this command allows the user to explicitly set their desire for quicknotes to be conceptually "on" or "off" for their own tracking.
+
+---
+
 ## 4) Quicknotes — Running, Emoji‑Dense Log
 
-**Location:** `.memory/private/note-YYYY-MM-DD_HHMM-TZ.md` (append‑only per session)
+**Location:** `.memory/private/note-YYYY-MM-DD_HHMM-TZ.md` (append‑only per session; existing notes cannot be edited or deleted)
 
 **Style:** One line per entry, ultra‑concise, emoji labels carry meaning. Prefer < 200 chars.
 
@@ -96,6 +117,27 @@ Checklist executed **every time** before replying:
 - 2025-08-16 19:12 PDT ⏱️+7m | 🧠 “astro check” catches tsconfig drift | 🔜 add to CI
 - 2025-08-16 19:15 PDT ⏱️+3m | 🫀 heartbeat (reviewed issues; no change)
 ```
+
+### Detail and Backtracking
+
+While quicknotes are designed to be concise, they must contain enough detail to allow for backtracking and understanding the context of past actions. Don't just state *what* was done, but also *how* and *why*.
+
+**Good Example (Detailed):**
+```
+- 2025-09-21 15:30 PDT ⏱️+5m | 🔧 **Fix: Layout Consistency** | Applied `w-full` to the `<li>` element in `EntryCard.astro` to make entry summaries expand to the full width of their container. This is an attempt to address the perceived width difference between the project and blog pages. | 🔜 Next, I will inspect the rendered CSS to see if there are any other styles affecting the width.
+```
+
+**Bad Example (Surface-level):**
+```
+- 2025-09-21 15:30 PDT ⏱️+5m | 🔧 Fixed layout.
+```
+
+**Include the following details when applicable:**
+
+*   **Commands:** The exact commands that were run.
+*   **Code Snippets:** The specific code that was changed.
+*   **Reasoning:** The thought process behind a decision or a fix.
+*   **Observations:** Any unexpected results or observations.
 
 ---
 
@@ -270,7 +312,6 @@ A specification for adding human and machine readable meaning to commit messages
 ## 11) First‑Run Bootstrap (one‑time)
 
 ```bash
-# create folders
 mkdir -p .memory/private guides scripts .githooks
 ```
 
@@ -278,10 +319,11 @@ mkdir -p .memory/private guides scripts .githooks
 
 ## 11) Behavioral Rules for the LLM Agent
 
-* **Always note before reply.** A quicknote precedes every message back to the user.
-* **Bias to emojis.** Emojis compress meaning (🧠🐛🔧✅🔜📎); keep text lean.
-* **Make fixes reproducible.** Include the essence of “how” in `🔧` and verification in `🧪`.
-* **Leave breadcrumbs.** Keep `next_entry_point` and `note_file` up to date and pin key files.
+*   **Always note before reply.** A quicknote precedes every message back to the user.
+*   **Bias to emojis.** Emojis compress meaning (🧠🐛🔧✅🔜📎); keep text lean.
+*   **Make fixes reproducible.** Include the essence of “how” in `🔧` and verification in `🧪`.
+*   **Leave breadcrumbs.** Keep `next_entry_point` and `note_file` up to date and pin key files.
+*   **Notes are append-only.** NEVER modify or delete existing quicknotes. Only new entries can be added. This is a CRITICAL rule for maintaining an immutable log.
 
 ---
 
@@ -302,6 +344,25 @@ printf -- "- %s ⏱️+%sm | 🧠 lesson:… | 🐛 … | 🔧 … | ✅ … | �
 ```sh
 node scripts/validate_guides.mjs
 ```
+
+**Append comprehensive notes (Python/Tool)**
+
+To append comprehensive, multi-line notes to the current session's note file, use the following steps:
+
+1.  **Get the current session note file path:** This is typically `.memory/private/note-YYYY-MM-DD_HHMM-TZ.md`. You can find the most recent one by listing the directory.
+2.  **Read the existing content:**
+    ```python
+    print(default_api.read_file(absolute_path='/path/to/your/note-file.md'))
+    ```
+3.  **Construct the new content:** Concatenate the existing content with your new comprehensive notes. Ensure proper Markdown formatting and line breaks.
+4.  **Write the updated content back:**
+    ```python
+    print(default_api.write_file(file_path='/path/to/your/note-file.md', content='''
+    # Existing content...
+    # Your new comprehensive notes...
+    '''))
+    ```
+    Replace `/path/to/your/note-file.md` with the actual path, and the content with your combined notes.
 
 ---
 
