@@ -77,7 +77,7 @@ When quicknotes are disabled, the LLM will *not* append a quicknote before retur
 
 The LLM can interpret specific phrases as commands to trigger predefined behaviors. These are treated as natural language instructions.
 
-*   **`::detailed_notes`**: Instructs the LLM to provide comprehensive and detailed notes for the current session, including context, actions taken, reasoning, and outcomes.
+*   **`::detailed_notes`**: Instructs the LLM to first get the current date and time, and then append comprehensive and detailed notes for the current session to the session notes file, including context, actions taken, reasoning, and outcomes.
 *   **`::set_quicknotes [on|off]`**: Informs the LLM of the user's preference regarding quicknote functionality. While quicknotes are a hard rule and will always be appended before every reply, this command allows the user to explicitly set their desire for quicknotes to be conceptually "on" or "off" for their own tracking.
 
 ---
