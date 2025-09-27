@@ -1,8 +1,13 @@
 ---
 import Base from './Base.astro';
-const { title, description, ogImage } = Astro.props;
+const { title, description, image } = Astro.props;
 ---
-<Base {title} {description} {ogImage}>
+<Base
+  title={title}
+  description={description}
+  image={image}
+  type="website"
+>
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full max-w-2xl">
     <slot />
   </main>

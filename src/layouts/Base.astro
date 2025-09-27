@@ -1,14 +1,12 @@
 ---
-/**
- * Props:
- * - title: string (page title)
- * - description: string (meta description; keep under ~160 chars)
- * - ogImage?: string (optional social image path/URL)
- * - wider?: boolean (whether to use a wider layout)
- */
-const { title = "Site Title Placeholder", description = "Describe this site in one sentence.", ogImage } = Astro.props;
+import type { Props as SEOProps } from '../components/SEO.astro';
+import SEO from '../components/SEO.astro';
 import "../styles/global.scss";
 import "../styles/import.css";
+
+export interface Props extends SEOProps {}
+
+const props = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -16,14 +14,7 @@ import "../styles/import.css";
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>{title}</title>
-    <meta name="description" content={description} />
-
-    <!-- Basic social/SEO placeholders; replace values later -->
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    <meta name="twitter:card" content="summary_large_image" />
+    <SEO {...props} />
 
     <!-- Styles are imported via import.css and global.scss -->
   </head>

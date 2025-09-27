@@ -1,8 +1,14 @@
 ---
 import Base from './Base.astro';
-const { frontmatter } = Astro.props;
+const { frontmatter, collection } = Astro.props;
+const image = frontmatter.heroImage && collection ? `/${collection}/${frontmatter.heroImage}` : undefined;
 ---
-<Base title={frontmatter.title} description={frontmatter.description} ogImage={frontmatter.ogImage}>
+<Base
+  title={'Jon Green :: ' + frontmatter.title}
+  description={frontmatter.description}
+  image={image}
+  type="article"
+>
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
     <article class="prose dark:prose-invert md:prose-lg prose-pre:overflow-x-auto prose-pre:max-w-[85vw] md:prose-pre:max-w-none">
       <h1 class="text-4xl font-bold mb-4">{frontmatter.title}</h1>
