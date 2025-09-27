@@ -14,6 +14,6 @@ const { entry } = Astro.props;
 const { Content } = await entry.render();
 ---
 
-<ArticleLayout frontmatter={entry.data}>
+<ArticleLayout frontmatter={entry.data} collection={entry.collection}>
   <Content />
 </ArticleLayout>
