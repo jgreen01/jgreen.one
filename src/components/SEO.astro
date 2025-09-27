@@ -1,0 +1,33 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  url?: string;           // e.g., Astro.url.pathname
+  image?: string;         // e.g., '/og/post.png'
+  type?: 'website' | 'article';
+  site?: string;          // default 'https://jgreen.one'
+}
+const site = Astro.props.site ?? 'https://jgreen.one';
+const title = Astro.props.title ?? 'Jon Green — Software Developer, AI & Data Science';
+const description = Astro.props.description ?? 'Personal site of Jon Green: senior software developer & MCS-DS student. I write about AI/ML, infrastructure-as-code, and full-stack development.';
+const url = new URL(Astro.props.url ?? '/', site).toString();
+const image = Astro.props.image ?? `${site}/og/home_1024×1024.png.png`;
+const type = Astro.props.type ?? 'website';
+---
+<title>{title}</title>
+<link rel="canonical" href={url} />
+<meta name="description" content={description} />
+
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content="jgreen.one" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={url} />
+<meta property="og:image" content={image} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={image} />
+
+<meta name="theme-color" content="#f6780a" />
