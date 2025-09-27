@@ -6,7 +6,7 @@ import { getCollection } from "astro:content";
 const all = (await getCollection("entries", e => !e.data.draft))
   .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
 ---
-<PageLayout title="All Entries — Placeholder" description="Single stream of everything: projects, posts, and notes in one place.">
+<PageLayout title="All Entries">
   <h1 class="text-4xl font-bold mb-4">All Entries</h1>
   <ul class="list-none mt-8">
     {all.map((entry) => (

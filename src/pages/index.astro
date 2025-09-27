@@ -14,7 +14,7 @@ const all = (await getCollection("entries", e => !e.data.draft))
 // Select top N to feature on the homepage
 const featured = all.slice(0, 4);
 ---
-<PageLayout title="Site Title Placeholder" description="Short site description for the homepage.">
+<PageLayout>
   <section class="flex items-center flex-col sm:flex-row">
     <Avatar class="avatar w-3/5 mb-2 sm:mb-0 sm:mr-4" />
     <span>
