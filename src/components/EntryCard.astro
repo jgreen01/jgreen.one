@@ -13,23 +13,20 @@ if (heroImagePath && !heroImagePath.startsWith('/')) {
 ---
 
 <li class="mb-6">
-  <div class="flex gap-4">
+  <div class="flex flex-col gap-2">
     <!-- Hero Image -->
-    <div class="flex-shrink-0 w-24 h-24">
-      {data.heroImage ? (
-        <img 
-          src={heroImagePath} 
+    {heroImagePath && (
+      <div class="w-full h-48 mb-2">
+        <img
+          src={heroImagePath}
           alt={data.title}
           class="w-full h-full object-cover rounded-lg"
           loading="lazy"
+          onerror="this.style.display='none'"
         />
-      ) : (
-        <div class="w-full h-full bg-muted dark:bg-muted-foreground/20 rounded-lg flex items-center justify-center">
-          <span class="text-muted-foreground text-xs">No Image</span>
-        </div>
-      )}
-    </div>
-    
+      </div>
+    )}
+
     <!-- Content -->
     <div class="flex-1 min-w-0">
       <a href={`/${collection}/${entry.slug}`} class="text-xl font-semibold text-accent dark:text-accentDark hover:underline">
