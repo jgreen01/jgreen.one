@@ -16,16 +16,15 @@ if (heroImagePath && !heroImagePath.startsWith('/')) {
   <div class="flex flex-col gap-2">
     <!-- Hero Image -->
     {heroImagePath && (
-      <div class="w-full h-48 mb-2">
-        <img
-          src={heroImagePath}
-          alt={data.title}
-          class="w-full h-full object-cover rounded-lg"
-          loading="lazy"
-          onerror="this.style.display='none'"
-        />
-      </div>
-    )}
+          <div class="w-full h-48 mb-2 hero-image-container">
+            <img
+              src={heroImagePath}
+              alt={data.title}
+              class="w-full h-full object-cover rounded-lg"
+              loading="lazy"
+              onerror="this.closest('.hero-image-container').style.display='none'"
+            />
+          </div>    )}
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
