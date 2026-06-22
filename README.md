@@ -56,20 +56,26 @@ This is a modern, static website built with [Astro](https://astro.build) and dep
 ```
 /
 ├── src/
-│   ├── components/          # Reusable Astro components
-│   ├── content/             # Content collections (blog posts, projects)
-│   ├── layouts/             # Page layouts
-│   ├── pages/               # Route-based pages
+│   ├── assets/              # Imported assets (e.g. avatar.svg)
+│   ├── components/          # Reusable Astro components (EntryCard, SEO, Avatar)
+│   ├── content/             # Content collections
+│   │   ├── config.ts        # Collection schema (single "entries" collection)
+│   │   └── entries/         # Blog posts & projects (.md, distinguished by `kind`)
+│   ├── layouts/             # Page layouts (Base, PageLayout, ArticleLayout)
+│   ├── pages/               # Route-based pages (incl. /entries, /blog, /projects, /tags)
 │   └── styles/              # Global styles and design tokens
 ├── infra/                   # Terraform infrastructure code
-│   ├── bootstrap/           # Initial infrastructure setup
-│   └── live/                # Production infrastructure
-├── guides/                  # Documentation and how-tos
-├── scripts/                 # Build and validation scripts
+│   ├── bootstrap/           # Initial infrastructure setup (state backend)
+│   └── live/                # Production infrastructure (S3, CloudFront, ACM, Route 53)
+├── guides/                  # Documentation and how-tos (+ TEMPLATE.md)
+├── scripts/                 # deploy.sh + validate_guides.mjs
+├── samples/                 # Design mockups & color references (PNG/XCF)
 ├── .memory/                 # AI agent memory system
 │   ├── TODO/                # Feature-level task tracking
+│   ├── adr/                 # Architecture decision records
 │   └── private/             # Session quicknotes (gitignored)
-└── public/                  # Static assets
+├── GEMINI.md                # CLI LLM agent operating manual (memory/tasks/quicknotes)
+└── public/                  # Static assets (entries/, og/, favicon, robots.txt)
 ```
 
 ## 🛠️ Development
