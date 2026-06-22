@@ -27,7 +27,7 @@ This is a modern, static website built with [Astro](https://astro.build) and dep
 - **Personal Website**: Showcases projects and blog posts in a unified content system
 - **Modern Tech Stack**: Astro + Tailwind CSS + TypeScript
 - **Serverless Architecture**: AWS S3 + CloudFront + Route 53
-- **AI-Assisted Development**: Built using CLI LLM agent with structured memory system
+- **AI-Assisted Development**: Built with AI coding agents guided by `AGENTS.md`
 - **Content Management**: Type-safe content collections for blog posts and projects
 
 ## 🏗️ Architecture
@@ -46,8 +46,9 @@ This is a modern, static website built with [Astro](https://astro.build) and dep
 - **Terraform**: Infrastructure as Code for reproducible deployments
 
 ### Development Workflow
-- **CLI LLM Agent**: AI-assisted development with structured memory system
-- **Quick Notes**: Emoji-dense running logs for decision tracking
+- **Agent Guide**: `AGENTS.md` documents conventions (`CLAUDE.md` / `GEMINI.md` symlink to it)
+- **Session Notes**: Detailed, append-only logs in `~/.session-notes/`
+- **Task Tracking**: `todo/` directory (`TODO-INDEX.md` + one file per task)
 - **Conventional Commits**: Structured commit messages
 - **Automated Validation**: Guide validation and security checks
 
@@ -70,11 +71,8 @@ This is a modern, static website built with [Astro](https://astro.build) and dep
 ├── guides/                  # Documentation and how-tos (+ TEMPLATE.md)
 ├── scripts/                 # deploy.sh + validate_guides.mjs
 ├── samples/                 # Design mockups & color references (PNG/XCF)
-├── .memory/                 # AI agent memory system
-│   ├── TODO/                # Feature-level task tracking
-│   ├── adr/                 # Architecture decision records
-│   └── private/             # Session quicknotes (gitignored)
-├── GEMINI.md                # CLI LLM agent operating manual (memory/tasks/quicknotes)
+├── todo/                    # Task tracking (TODO-INDEX.md + one file per task)
+├── AGENTS.md                # Agent guide (CLAUDE.md / GEMINI.md symlink to it)
 └── public/                  # Static assets (entries/, og/, favicon, robots.txt)
 ```
 
@@ -163,12 +161,12 @@ The `deploy.sh` script automatically:
 
 ## 🧠 AI-Assisted Development
 
-This project was built using a CLI LLM agent with a structured memory system documented in `GEMINI.md`. Key features:
+This project is developed with AI coding agents, guided by `AGENTS.md` (with `CLAUDE.md` and `GEMINI.md` symlinked to it). Key conventions:
 
-- **Quick Notes**: Emoji-dense running logs for decision tracking
-- **Memory Persistence**: Cross-session memory for maintaining context
-- **Task Management**: Feature-level task tracking in `.memory/TODO/`
-- **Security**: Automated validation to prevent secret leaks
+- **Session Notes**: Detailed, append-only logs written to `~/.session-notes/`
+- **Task Management**: Larger tasks tracked in `todo/` (`TODO-INDEX.md` + one file per task)
+- **Conventional Commits**: Structured, type-prefixed commit messages
+- **Security**: Automated validation (`validate_guides.mjs`) to prevent secret leaks
 
 ## 📚 Available Scripts
 
