@@ -24,10 +24,6 @@ pnpm-debug.log*
 .idea/
 
 
-
-# memory
-.memory/private/
-
 # temporary files
 tmp/
 
