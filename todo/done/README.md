@@ -20,3 +20,5 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
 4. Commit: `chore(todo): file <task-name> as done`.
 
 ## Contents
+
+- [1 aws-billing-alarms](1-aws-billing-alarms.md) — Filed 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget.

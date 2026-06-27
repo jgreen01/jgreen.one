@@ -19,7 +19,7 @@
 
 ## Recently Resolved
 
-- [1 aws-billing-alarms](1-aws-billing-alarms.md) — Done 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget applied via Terraform.
+(none)
 
 ---
 
