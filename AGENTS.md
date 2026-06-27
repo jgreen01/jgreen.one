@@ -69,9 +69,11 @@ Larger tasks are tracked as files in `todo/` (see `todo/README.md`):
 - `todo/done/` — completed tasks filed away for reference (see below).
 - `todo/boneyard/` — abandoned tasks with reasons.
 
+Task IDs use bare base36 (no padding, no prefix): `1`, `2`… `9`, `A`, `B`… `Z`, `10`… Filename: `<id>-<slug>.md`. Reference tasks as "task 1", "task A", etc. Assign the next sequential ID when creating a task; never reuse a retired ID.
+
 Update each task's **Status** and **Log** as work progresses. When done, mark it `DONE` and move it to "Recently Resolved" in the index — the file stays in `todo/`. If abandoned, move the file to `boneyard/` with a reason.
 
-**Done folder rule:** Never move a task to `todo/done/` unless Jon explicitly asks (e.g. "move the billing task to done", "file the done tasks"). Completing a task is not permission to file it. Tasks remain in `todo/` marked DONE until Jon says to file them. See `todo/done/README.md` for the exact steps.
+**Done folder rule:** Never move a task to `todo/done/` unless Jon explicitly asks (e.g. "move task 1 to done"). Completing a task is not permission to file it. Tasks remain in `todo/` marked DONE until Jon says to file them. See `todo/done/README.md` for the exact steps.
 
 ## Commands
 
