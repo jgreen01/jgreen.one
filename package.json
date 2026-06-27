@@ -1,22 +1,21 @@
 {
-  "name": "squealing-wasp",
+  "name": "jgreen-one",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "astro check",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
-    "@astrojs/markdown-component": "^1.0.5",
     "@astrojs/mdx": "^4.3.3",
     "@astrojs/sitemap": "^3.4.2",
     "@tailwindcss/vite": "^4.1.12",
     "astro": "^5.12.9",
     "astro-favicons": "^3.1.5",
-    "markdown-it": "^14.1.0",
     "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
