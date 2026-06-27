@@ -1,9 +1,9 @@
 # AWS Billing Alerts & Cost Monitoring
 
 **Priority**: HIGH
-**Status**: TODO
+**Status**: DONE
 **Created**: 2025-09-28
-**Updated**: 2026-06-21
+**Updated**: 2026-06-27
 
 ## Description
 
@@ -112,3 +112,4 @@ resource "aws_budgets_budget" "monthly" {
 
 - 2025-09-28 Finalized plan (shifted focus from CloudFlare DDoS to AWS-native cost protection).
 - 2026-06-21 Migrated into the `todo/` system with the full plan inlined.
+- 2026-06-27 Implemented and applied. Created `infra/live/billing-alarms.tf` (SNS topic, email subscription, 4 CloudWatch alarms) and `infra/live/budgets.tf` ($20/mo budget, 4 notification thresholds). `terraform apply` succeeded — 7 resources created. SNS subscription pending confirmation email to alarmcloud@jgreen01.4wrd.cc.

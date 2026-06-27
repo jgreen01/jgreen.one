@@ -1,11 +1,11 @@
-# TODO Index: 3 open (1 HIGH, 1 MEDIUM, 1 LOW)
-*Last updated: 2026-06-21*
+# TODO Index: 2 open (0 HIGH, 1 MEDIUM, 1 LOW)
+*Last updated: 2026-06-27*
 
 ---
 
 ## HIGH Priority
 
-- [aws-billing-alarms](aws-billing-alarms.md) — CloudWatch billing alarms + AWS Budgets via Terraform (denial-of-funds / cost early warning)
+(none)
 
 ## MEDIUM Priority
 
@@ -19,7 +19,7 @@
 
 ## Recently Resolved
 
-(none yet)
+- [aws-billing-alarms](aws-billing-alarms.md) — Done 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget applied via Terraform.
 
 ---
 
