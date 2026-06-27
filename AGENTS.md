@@ -110,7 +110,7 @@ cd infra/live && terraform apply    # apply infra changes
 
 How-tos, runbooks, and reference docs live in `guides/` (template: `guides/TEMPLATE.md`).
 
-- **Naming:** `YYYY-MM-DD_descriptive-name.md`. Optional front-matter: `owner`, `status` (draft|published), `last_reviewed`, `summary`.
+- **Naming:** `descriptive-name.md`. Put the date in the front-matter. Optional front-matter: `owner`, `status` (draft|published), `created`, `last_reviewed`, `summary`.
 - **Keep doc types separate:** tutorials (learning paths), how-to guides (task recipes), reference (complete API/CLI/config description), explanation (rationale/trade-offs).
 - **Each doc:** scope/non-scope up top, prerequisites, copy-paste steps, verification checks, troubleshooting, links. Second person, present tense, active voice; code-first examples; one purpose per doc.
 - **Validate before committing:** `node scripts/validate_guides.mjs` (fails on secret-like tokens; extensible for link/front-matter linting). Optionally wire it into `.githooks/pre-commit`.
