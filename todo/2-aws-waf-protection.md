@@ -1,9 +1,9 @@
 # AWS WAF Rate-Limiting Protection
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: DONE
 **Created**: 2025-09-28
-**Updated**: 2026-06-21
+**Updated**: 2026-06-27
 
 ## Description
 
@@ -96,3 +96,4 @@ Add to the `aws_cloudfront_distribution` resource:
 
 - 2025-09-28 Reframed from CloudFlare DDoS protection to AWS WAF denial-of-funds protection.
 - 2026-06-21 Migrated into the `todo/` system with the full plan inlined.
+- 2026-06-27 Implemented and applied. Rate limit raised from 100 to 1000 req/5min (100 too low for shared corporate NATs). Created `infra/live/waf.tf`: WAF Web ACL `jgreen-one-waf`, CloudWatch log group `aws-waf-logs-jgreen-one` (30-day retention), resource policy for WAF log delivery, logging config with authorization/cookie redacted. Added `web_acl_id` to CloudFront distribution in `cloudfront.tf`. WAF ARN: `arn:aws:wafv2:us-east-1:575352938041:global/webacl/jgreen-one-waf/93cf416d-a3fa-491a-8b4b-1237097a2ae6`.

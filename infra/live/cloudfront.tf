@@ -50,6 +50,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
   }
 
+  web_acl_id  = aws_wafv2_web_acl.main.arn
   price_class = var.price_class
 
   restrictions {
