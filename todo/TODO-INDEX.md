@@ -1,4 +1,4 @@
-# TODO Index: 2 open (0 HIGH, 1 MEDIUM, 1 LOW)
+# TODO Index: 1 open (0 HIGH, 0 MEDIUM, 1 LOW)
 *Last updated: 2026-06-27*
 
 ---
@@ -9,7 +9,7 @@
 
 ## MEDIUM Priority
 
-- [2 aws-waf-protection](2-aws-waf-protection.md) — AWS WAF v2 rate limiting on CloudFront (~$6.60/mo), no architecture changes
+(none)
 
 ## LOW Priority
 
@@ -19,7 +19,7 @@
 
 ## Recently Resolved
 
-(none)
+- [2 aws-waf-protection](2-aws-waf-protection.md) — Done 2026-06-27. WAF v2 rate limit (1000 req/5min) on CloudFront with CW logging.
 
 ---
 
