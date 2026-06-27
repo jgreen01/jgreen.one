@@ -4,13 +4,30 @@ Shared guidance for coding agents working on **jgreen.one** (Jon Green's persona
 
 Two working systems: session notes go to `~/.session-notes/`; larger tasks live in `todo/`.
 
-## Critical Git Policy
+## 🛑🛑🛑 CRITICAL GIT POLICY — READ THIS FIRST 🛑🛑🛑
 
-Never run `git commit` or `git push` unless the user explicitly asks for it.
+> # ⛔ NEVER `git commit` OR `git push` UNTIL JON EXPLICITLY SAYS SO. ⛔
+>
+> **This is an absolute, non-negotiable, no-exceptions rule.** There is no situation
+> in which you may commit or push on your own initiative. Not to "finish up," not to
+> "save progress," not because the work is obviously done, not because it seems safe,
+> not because a previous task ended with a commit. **If in doubt, DO NOT COMMIT.**
 
-- After completing work, summarize the changes and stop. Wait for approval.
-- Do not commit to "finish up" or "save progress." Do not push unless told to, even after committing.
-- When preparing a commit, read the full `git diff --cached`, scan for blockers (secrets, debug output, conflict markers, files that shouldn't be committed), and draft the message from the actual diff — never from `--stat` alone.
+**The ONLY trigger** is Jon stating, in the current request, an explicit instruction
+to commit or push (e.g. "commit this", "commit and push", "push it"). Anything less —
+silence, approval of the work itself, "looks good", "thanks" — is **NOT** permission.
+
+- After completing work: summarize the changes, then **STOP**. Stage nothing. Wait.
+- Do **not** run `git commit`, `git push`, `git commit --amend`, or any committing
+  command speculatively or "to be helpful."
+- Permission is **single-use**: it applies to that one commit/push only. The next
+  change requires a fresh, explicit go-ahead.
+- When Jon *does* ask: read the full `git diff --cached`, scan for blockers (secrets,
+  debug output, conflict markers, files that shouldn't be committed), and draft the
+  message from the actual diff — never from `--stat` alone.
+
+🛑 If you are about to type `git commit` or `git push` and Jon did not explicitly ask
+in this turn — **STOP. You are violating the policy.** 🛑
 
 ### Conventional Commits
 
@@ -29,9 +46,9 @@ Write detailed, permanent session logs to `~/.session-notes/`. Notes must be com
 **No secrets.** Never include tokens, passwords, connection strings, or private keys.
 
 ### Process
-1. **Always run `date "+%Y-%m-%d %H:%M"` first** — use it for the filename and timestamp. Never assume the date from conversation context.
+1. **Always run `date "+%Y-%m-%d"` first** — use it for the filename. Never assume the date from conversation context.
 2. Determine filename: `~/.session-notes/YYYY-MM-DD-jgreen-one-[topic].md`
-3. If the file is new, create it with a header: `# Session: YYYY-MM-DD — [Topic]` + `Started: [timestamp]`
+3. If the file is new, create it with a header: `# Session: YYYY-MM-DD — [Topic]` (date only).
 4. Append entries in the format below.
 
 ### What to Capture
