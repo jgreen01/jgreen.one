@@ -32,6 +32,37 @@ This is a modern, static website built with [Astro](https://astro.build) and dep
 
 ## 🏗️ Architecture
 
+```mermaid
+flowchart LR
+    subgraph Authoring["Authoring"]
+        MD["Markdown entries\nsrc/content/entries/\n(kind: blog | project)"]
+        PAGES["Astro pages,\nlayouts & components"]
+    end
+
+    subgraph Build["Build (Astro)"]
+        ASTRO["astro build\n(Tailwind + MDX + sitemap)"]
+        DIST[("dist/\nstatic HTML/CSS/JS")]
+    end
+
+    subgraph AWS["AWS (Terraform-managed)"]
+        S3[("S3 bucket\nprivate, OAC")]
+        CF["CloudFront CDN\n+ clean-URL function"]
+        ACM["ACM cert"]
+        R53["Route 53 DNS"]
+    end
+
+    USER(["Visitor"])
+
+    MD --> ASTRO
+    PAGES --> ASTRO
+    ASTRO --> DIST
+    DIST -->|"deploy.sh: s3 sync"| S3
+    S3 --> CF
+    ACM -.-> CF
+    R53 -.-> CF
+    CF --> USER
+```
+
 ### Frontend Stack
 - **[Astro](https://astro.build)**: Static site generator with zero-JS by default
 - **[Tailwind CSS](https://tailwindcss.com)**: Utility-first CSS framework
