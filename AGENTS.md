@@ -66,7 +66,12 @@ Write detailed, permanent session logs to `~/.session-notes/`. Notes must be com
 Larger tasks are tracked as files in `todo/` (see `todo/README.md`):
 - `todo/TODO-INDEX.md` — master index, grouped by HIGH/MEDIUM/LOW.
 - `todo/TEMPLATE-task.md` — copy this for new tasks.
-- Update each task's **Status** and **Log** as work progresses; move finished tasks to "Recently Resolved" in the index, abandoned ones to `todo/boneyard/` with a reason.
+- `todo/done/` — completed tasks filed away for reference (see below).
+- `todo/boneyard/` — abandoned tasks with reasons.
+
+Update each task's **Status** and **Log** as work progresses. When done, mark it `DONE` and move it to "Recently Resolved" in the index — the file stays in `todo/`. If abandoned, move the file to `boneyard/` with a reason.
+
+**Done folder rule:** Never move a task to `todo/done/` unless Jon explicitly asks (e.g. "move the billing task to done", "file the done tasks"). Completing a task is not permission to file it. Tasks remain in `todo/` marked DONE until Jon says to file them. See `todo/done/README.md` for the exact steps.
 
 ## Commands
 
