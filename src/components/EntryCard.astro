@@ -4,6 +4,9 @@
  * - entry: a single content collection entry
  */
 import { type CollectionEntry } from "astro:content";
+interface Props {
+  entry: CollectionEntry<"entries">;
+}
 const { entry } = Astro.props;
 const { data, collection } = entry;
 let heroImagePath = data.heroImage;

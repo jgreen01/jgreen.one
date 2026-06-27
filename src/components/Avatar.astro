@@ -4,6 +4,7 @@ import rawSvg from '../assets/avatar.svg?raw';
 
 const root = parse(rawSvg);
 const svg = root.querySelector('svg');
+if (!svg) throw new Error('Avatar: no <svg> element found in avatar.svg');
 const { attributes, innerHTML } = svg;
 
 const { ...astroProps } = Astro.props;
