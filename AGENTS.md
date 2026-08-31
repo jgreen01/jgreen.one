@@ -152,19 +152,42 @@ Never write implementation first. If you find yourself writing code before a tes
 
 **Manual smoke test after changes.** Tests pass in isolation; real bugs surface when the full stack runs. After any meaningful change, run `npm run build` + `astro check`, then load `npm run dev` (or `npm run preview`) and eyeball the affected page — correct render, no console errors, links work.
 
-**Setup (not yet installed).** No test runner is wired up yet. The standard fit for this Astro/Vite stack is **Vitest**:
+**The stack is installed** (task 4). Four suites, only the first runs by default:
+
 ```bash
-npm i -D vitest
-# package.json scripts:
-#   "test": "vitest run",          # fast unit tests, default loop
-#   "test:watch": "vitest",
-#   "test:build": "astro build"    # integration smoke (slow, opt-in)
+npm test           # Vitest unit tests — the inner loop, ~2s
+npm run test:watch # same, in watch mode
+npm run test:cover # with a coverage report
+npm run test:build # build integration: astro build + assertions on dist/ (~13s)
+npm run test:e2e   # Playwright across chromium, firefox, mobile (~70s)
+pytest tests/infra # live AWS resource validation — read-only, needs credentials
 ```
-Put unit tests next to the code (`*.test.ts`) or under `tests/` with fixtures in `tests/fixtures/`. Use `astro check` for type-level coverage.
+
+Layout: `tests/unit/*.test.ts`, `tests/integration/`, `tests/e2e/`, `tests/infra/`,
+fixtures in `tests/fixtures/`. Use `astro check` for type-level coverage.
+
+**`.astro` files cannot be unit-tested.** Vitest has no Astro component renderer, and
+`astro:content` is a virtual module that only exists during a build. So non-trivial
+component logic is extracted to plain modules under `src/utils/` (plus
+`src/content/schema.ts` for the Zod schema, importing `astro/zod` rather than
+`astro:content`). Components stay thin wrappers. **Extend the helper and its tests
+rather than reintroducing logic into a `.astro` frontmatter block** — anything that
+lives there is untestable by everything except Playwright.
+
+**Reading the coverage report:** Vitest's `text` reporter omits rows for files at 100%
+on every metric, so a short table is good news. A missing row means either "perfect" or
+"never loaded" — check the `html` or `json` report to tell them apart.
+
+**WebKit is opt-in.** `npm run test:e2e` runs chromium, firefox and a Chromium-driven
+iPhone 13 project. WebKit needs system libraries that `npx playwright install` alone
+does not provide; without them its network process dies on every HTTP navigation. Run
+`npx playwright install-deps webkit` (needs sudo), then `E2E_WEBKIT=1 npm run test:e2e`.
+CI installs the deps and sets the flag.
 
 ## Validation
 
 - After editing site code, run `npm run build` (and `astro check`) to confirm it compiles and type-checks.
 - After editing Terraform, run `terraform plan` in `infra/live` and show the plan before applying.
-- Run the test suite (`npm run test`, once set up) and follow the **Verify, don't trust** rule above.
+- Run `npm test` and follow the **Verify, don't trust** rule above. Run `npm run test:build` and `npm run test:e2e` too when the change touches routing, content, layouts or components.
+- After editing Terraform **and applying**, run `pytest tests/infra` to confirm the deployed resources match intent.
 - If something can't be validated locally, say so clearly before asking to continue.

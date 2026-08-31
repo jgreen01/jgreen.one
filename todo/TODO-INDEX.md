@@ -1,11 +1,11 @@
-# TODO Index: 6 open (1 HIGH, 3 MEDIUM, 2 LOW)
-*Last updated: 2026-08-27*
+# TODO Index: 5 open (0 HIGH, 3 MEDIUM, 2 LOW)
+*Last updated: 2026-08-30*
 
 ---
 
 ## HIGH Priority
 
-- [4 testing](4-testing.md) — Full test stack: Vitest unit, Playwright E2E, build integration, pytest+boto3 infra validation
+(none)
 
 ## MEDIUM Priority
 
