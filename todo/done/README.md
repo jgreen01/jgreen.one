@@ -23,5 +23,6 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
 
 - [1 aws-billing-alarms](1-aws-billing-alarms.md) — Filed 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget.
 - [4 testing](4-testing.md) — Filed 2026-08-30. Vitest + Playwright + build integration + pytest/boto3 infra; 266 tests.
+- [6 image-asset-management](6-image-asset-management.md) — Filed 2026-08-31. Steps 0–12: `public/media/` git-ignored, S3 durable copy, `media-manifest.json`, `media-check`/`media-push`. **Step 13 (git history purge) was never done** — see the task file.
 - [7 copyright-year-auto](7-copyright-year-auto.md) — Filed 2026-08-30. Footer `© 2025–<year>` via `src/utils/copyright.ts` + inline client bump.
 - [8 package-updates](8-package-updates.md) — Filed 2026-08-30. Astro 5→7 + all deps current; `remark-gfm` removed; `npm audit` 25→5.

@@ -1,9 +1,74 @@
 # Image / Binary Asset Management (keep images out of git)
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: STEPS 0–12 DONE (not committed) — **step 13 deliberately not started**
 **Created**: 2026-08-27
-**Updated**: 2026-08-30
+**Updated**: 2026-08-31
+
+## Outcome — the workflow is built and working; the history purge is not done
+
+| Gate | Result |
+|---|---|
+| `npm run check` | 0 errors (1 pre-existing hint) |
+| `npm test` | **214** (was 138 — 76 added) |
+| `npm run test:build` | **20** (was 18) |
+| `npm run test:e2e` | **101** |
+| `pytest tests/infra` | 36 |
+| `node scripts/media-check.mjs` | clean against live S3 |
+
+**Both assets are in S3** at `s3://jgreen-one-site/media/` with sha256 object metadata,
+and `media-manifest.json` records them. The old `entries/images/` object is still in the
+bucket; the next `aws s3 sync ./dist --delete` removes it on its own — no manual delete
+needed.
+
+### Verified end-to-end, not just unit-tested
+
+- **Fresh-clone rehydration.** Deleted `public/media/` entirely, ran `npm run media:pull`,
+  and both assets came back **byte-identical** (`diff -r` against a backup) with hashes
+  matching the manifest.
+- **The CI path.** Deleted `public/media/`, built, and ran the suites the way CI will:
+  `media-check --offline --strict` passes, the Playwright pixel tests skip, and the
+  markup tests still run. Then re-introduced a typo'd `heroImage` and confirmed
+  `media-check` **still fails** — the interim check has not been hollowed out.
+
+### Two bugs found by testing the CI scenario rather than assuming it
+
+1. **`--offline --strict` failed on a healthy repo.** "Not present locally" was a
+   *warning*, and `--strict` promotes warnings to failures — so the exact state CI is
+   always in would have failed the build. In offline mode the checker cannot know whether
+   the file exists in S3, and a not-yet-pulled checkout is normal, so that finding is now
+   informational.
+2. **`gotoClean` failed on a media-less build.** Missing images 404, the browser logs a
+   failed-resource error per image, and the "no browser errors" assertion caught them.
+   Now filtered — but only when the assets are genuinely absent, so a real `/media/` 404
+   still fails a normal run. Note the URL is in `message.location()`, not
+   `message.text()`; Chromium's text is just "Failed to load resource…".
+
+### Scope taken slightly wider than planned
+
+`public/og/home_1024×1024.png` was also moved into `public/media/`, as `og-default.png`.
+It is a raster asset, so the same rule applies — and its non-ASCII `×` had already caused
+one real problem (it broke the `git ls-files` scan that undercounted the tracked blobs).
+`SEO_DEFAULTS.image` now points at `/media/og-default.png`.
+
+`heroImagePath()` lost its collection-relative branch entirely: with the schema enforcing
+`/media/…` or `https://`, anything else is dropped rather than emitted, because a
+page-relative `src` 404s while still looking like a rendered image.
+
+### Step 0 resolved as an interim, not as designed
+
+CI has no AWS credentials, so it verifies that every referenced asset is **in the
+manifest** rather than that the bytes exist. That still catches the bug class task 4
+found — a reference to something nobody manages. It does **not** catch a corrupt or
+missing file. Task 9 (GitHub OIDC) upgrades this to the full check; the interim is
+flagged in `guides/managing-images.md`, in the build test, and in `ci.yml`.
+
+### What is deliberately not done
+
+- **Step 13, the git history purge.** It rewrites history and force-pushes. Not something
+  to run autonomously. The blobs are still in history, which for now means the images
+  remain recoverable from git as well as S3.
+- **Nothing is committed, and nothing is deployed.**
 
 **Decision**: Option A, variant **A1**. One git-ignored folder `public/media/` holds all
 managed raster/video/PDF assets; it doubles as the local working copy and is staged into
@@ -245,42 +310,42 @@ Terraforms the OIDC provider and a read-only role. Its permission list already i
 
 ## Implementation steps (in order)
 
-0. [ ] **Resolve the CI blocker above.** Nothing else is safe to start until this is
+0. [x] **Resolve the CI blocker above.** Nothing else is safe to start until this is
        settled — it decides whether `media-check --pull` runs in CI.
-1. [ ] Confirm folder name (`public/media/` default). Add `/public/media/` to `.gitignore`
+1. [x] Confirm folder name (`public/media/` default). Add `/public/media/` to `.gitignore`
        plus defensive raster-extension ignores under `public/`.
-2. [ ] Create `public/media/`; move `how-this-website-was-built.png` into it.
+2. [x] Create `public/media/`; move `how-this-website-was-built.png` into it.
        `git rm --cached public/entries/images/how-this-website-was-built.png` (working
        tree keeps the file at its new path).
-3. [ ] `src/content/schema.ts` (**not** `config.ts`): tighten the `heroImage` describe +
+3. [x] `src/content/schema.ts` (**not** `config.ts`): tighten the `heroImage` describe +
        optional `.refine`. Update `tests/unit/schema.test.ts` to cover the new rule —
        a `/media/…` value passes, a bare `images/…` value is rejected.
-4. [ ] Content edit: `how-this-site-was-made.md` heroImage → `/media/...`.
+4. [x] Content edit: `how-this-site-was-made.md` heroImage → `/media/...`.
        (`sample-project.md` already has no heroImage.)
-5. [ ] `src/utils/heroImagePath.ts`: decide whether to keep or drop the
+5. [x] `src/utils/heroImagePath.ts`: decide whether to keep or drop the
        collection-relative branch (see table above). **Rewrite
        `tests/unit/heroImagePath.test.ts` to match** — it currently asserts the old
        `/entries/` prefixing behaviour in six tests, which is the convention being
        replaced. Keep the external-URL and empty-value cases; they still hold.
-6. [ ] Write `scripts/media-check.mjs` (reconciler, both modes, table above) +
+6. [x] Write `scripts/media-check.mjs` (reconciler, both modes, table above) +
        `scripts/media-push.sh`. Add `media:check` / `media:pull` / `media:push` npm
        scripts. `image-size` as a dev dep for dimensions.
-7. [ ] Define + generate `media-manifest.json` at repo root; commit it. Verify
+7. [x] Define + generate `media-manifest.json` at repo root; commit it. Verify
        `referencedBy` picks up `how-this-site-was-made`.
-8. [ ] `media-push` the image to `s3://$BUCKET/media/how-this-website-was-built.png`
+8. [x] `media-push` the image to `s3://$BUCKET/media/how-this-website-was-built.png`
        with `sha256` metadata; confirm it's in S3 and versioning is on. Remove the old
        `entries/images/` object.
-9. [ ] `scripts/deploy.sh`: add `node scripts/media-check.mjs --pull` before
+9. [x] `scripts/deploy.sh`: add `node scripts/media-check.mjs --pull` before
        `npm run build`. Verify with `aws s3 sync --dryrun` (after a build) that no
        `media/` object is marked for deletion.
-10. [ ] Update `tests/unit/deployScript.test.ts` — it asserts the **exact** argument
+10. [x] Update `tests/unit/deployScript.test.ts` — it asserts the **exact** argument
         list and call order for `terraform`/`aws`/`npm`. Adding a `media-check` call
         before the build changes that order, so the test will fail until updated.
         Add an assertion that `media-check` runs **before** `npm run build`.
-11. [ ] Guide under `guides/`: "How to add / manage images" — folder, `media-push`,
+11. [x] Guide under `guides/`: "How to add / manage images" — folder, `media-push`,
         `/media/` reference convention, alt-text requirement, the SVG rule, the
         fresh-clone flow (`git clone` → `npm run media:pull` → `npm run dev`).
-12. [ ] **Testing** — see the section below. All five suites green before the purge.
+12. [x] **Testing** — see the section below. All five suites green before the purge.
 13. [ ] **FINAL STEP — purge image blobs from git history.** See below. Only after
         0–12 are done, verified, and committed.
 
@@ -436,3 +501,20 @@ git rev-list --all --objects | \
   fails three of task 4's tests. That has to be resolved first — recommended fix is
   giving CI read-only S3 access via the same GitHub OIDC role the inert `infra` CI job
   already needs. Still not started.
+- 2026-08-31 **Steps 0–12 implemented; step 13 left alone.** Built the whole workflow:
+  git-ignored `public/media/` (plus defensive raster/video/PDF ignores under `public/`),
+  `scripts/lib/media.mjs` holding the pure reconciliation rules, `scripts/media-check.mjs`
+  (`--offline` / `--pull` / `--regen` / `--strict`), `scripts/media-push.sh`, the
+  `media:check`/`media:pull`/`media:push` npm scripts, a committed `media-manifest.json`,
+  a `media-check --pull` step at the top of `deploy.sh`, and `guides/managing-images.md`.
+  `heroImage` is now pinned by a schema `refine()` to `/media/…` or `https://`.
+  76 new unit tests, including a recorded `tests/fixtures/media_s3_listing.json`.
+  Both assets pushed to S3 with sha256 metadata; the full check passes against the live
+  bucket. Also moved the default OG image into `public/media/` as `og-default.png`,
+  which retires the non-ASCII filename that had already broken one `git ls-files` scan.
+  Proved the fresh-clone path by deleting `public/media/` and pulling it back
+  byte-identical, and proved the CI path by running the suites with no media present —
+  which surfaced two real bugs (`--offline --strict` failing on a healthy repo, and
+  `gotoClean` counting expected image 404s as browser errors), both fixed. Step 0 is
+  resolved only as an interim: CI checks references against the manifest, not the bytes,
+  until task 9 lands. **Nothing committed, nothing deployed, history not rewritten.**
