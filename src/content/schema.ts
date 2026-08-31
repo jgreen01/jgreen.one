@@ -14,7 +14,15 @@ export const entrySchema = z.object({
   updatedDate: z.coerce.date().optional().describe("Last updated date, optional"),
   kind: z.enum(["project", "blog"]).default("blog"),
   tags: z.array(z.string()).default([]).describe("Keywords like 'ai', 'ml', 'astro'"),
-  heroImage: z.string().optional().describe("Path in /public or external image URL"),
+  heroImage: z
+    .string()
+    .refine((value) => value.startsWith("/media/") || /^https?:\/\//.test(value), {
+      message:
+        "heroImage must be a managed asset path (/media/...) or an external https URL. " +
+        "Add the file to public/media/ and run `npm run media:push`.",
+    })
+    .optional()
+    .describe("Managed asset path (/media/...) or an external https URL"),
   draft: z.boolean().default(false),
 });
 

@@ -14,7 +14,7 @@ describe("entrySchema", () => {
       expect(result.title).toBe(validFullFrontmatter.title);
       expect(result.kind).toBe("blog");
       expect(result.tags).toEqual(["astro", "terraform", "aws"]);
-      expect(result.heroImage).toBe("images/how-this-website-was-built.png");
+      expect(result.heroImage).toBe("/media/how-this-website-was-built.png");
     });
 
     it("coerces pubDate and updatedDate strings into Date objects", () => {
@@ -75,6 +75,38 @@ describe("entrySchema", () => {
 
     it("keeps an explicit draft: true", () => {
       expect(entrySchema.parse({ ...minimalFrontmatter, draft: true }).draft).toBe(true);
+    });
+  });
+
+  describe("heroImage format", () => {
+    // Pinned to one shape so a page-relative value can never reach a template,
+    // where it would resolve against the current URL and 404 while still
+    // looking like a rendered image.
+    it.each([
+      "/media/hero.png",
+      "/media/nested/hero.jpg",
+      "https://cdn.example.com/hero.png",
+      "http://cdn.example.com/hero.png",
+    ])("accepts %s", (heroImage) => {
+      expect(entrySchema.parse({ ...minimalFrontmatter, heroImage }).heroImage).toBe(
+        heroImage,
+      );
+    });
+
+    it.each([
+      ["a page-relative path", "images/hero.png"],
+      ["a bare filename", "hero.png"],
+      ["an unmanaged absolute path", "/images/hero.png"],
+      ["a protocol-relative URL", "//cdn.example.com/hero.png"],
+      ["an empty string", ""],
+    ])("rejects %s", (_label, heroImage) => {
+      expect(() => entrySchema.parse({ ...minimalFrontmatter, heroImage })).toThrow();
+    });
+
+    it("explains how to fix a bad value", () => {
+      expect(() =>
+        entrySchema.parse({ ...minimalFrontmatter, heroImage: "images/hero.png" }),
+      ).toThrow(/media:push|\/media\//);
     });
   });
 

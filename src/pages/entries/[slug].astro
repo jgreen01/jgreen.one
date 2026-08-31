@@ -18,6 +18,6 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 ---
 
-<ArticleLayout frontmatter={entry.data} collection={entry.collection}>
+<ArticleLayout frontmatter={entry.data}>
   <Content />
 </ArticleLayout>

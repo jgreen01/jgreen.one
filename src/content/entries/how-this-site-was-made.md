@@ -3,7 +3,7 @@ title: "How This Site Was Built: A Look Under the Hood"
 description: "A technical deep-dive into the infrastructure, tools, and AI-assisted workflow used to create this website."
 pubDate: 2025-09-21
 kind: "blog"
-heroImage: "images/how-this-website-was-built.png"
+heroImage: "/media/how-this-website-was-built.png"
 tags: ["astro", "terraform", "aws", "tailwind", "gemini", "cloudfront", "s3", "iac"]
 draft: false
 ---
