@@ -1,7 +1,7 @@
-# TODO Index: 5 open (0 HIGH, 3 MEDIUM, 2 LOW)
+# TODO Index: 4 open (0 HIGH, 3 MEDIUM, 1 LOW)
 *Last updated: 2026-08-30*
 
-**Suggested order:** 5 (blocker expired) → 9 → 6 → 7 → 3
+**Suggested order:** 5 (blocker expired) → 9 → 6 → 3
 
 ---
 
@@ -18,7 +18,6 @@
 ## LOW Priority
 
 - [3 llm-content-pack](3-llm-content-pack.md) — Machine-readable `/_llm/*` endpoints (JSON/NDJSON/Markdown) + CloudFront bot routing
-- [7 copyright-year-auto](7-copyright-year-auto.md) — Footer copyright as `© 2025–<year>`: build-time end year via `src/utils/copyright.ts` + `is:inline` client script recomputing from real clock
 
 ---
 
