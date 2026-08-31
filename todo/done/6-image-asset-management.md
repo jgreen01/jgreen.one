@@ -1,7 +1,7 @@
 # Image / Binary Asset Management (keep images out of git)
 
 **Priority**: MEDIUM
-**Status**: STEPS 0–12 DONE (not committed) — **step 13 deliberately not started**
+**Status**: DONE — all steps including the step 13 history purge
 **Created**: 2026-08-27
 **Updated**: 2026-08-31
 
@@ -63,12 +63,20 @@ found — a reference to something nobody manages. It does **not** catch a corru
 missing file. Task 9 (GitHub OIDC) upgrades this to the full check; the interim is
 flagged in `guides/managing-images.md`, in the build test, and in `ci.yml`.
 
-### What is deliberately not done
+### Step 13 — done 2026-08-31
 
-- **Step 13, the git history purge.** It rewrites history and force-pushes. Not something
-  to run autonomously. The blobs are still in history, which for now means the images
-  remain recoverable from git as well as S3.
-- **Nothing is committed, and nothing is deployed.**
+Purged with `git filter-repo` and force-pushed. **`.git` 6.6 MB → 708 KB**; a fresh
+clone of the rewritten remote is 680 KB and carries none of the target blobs. 121 commits
+(one dropped: it only added `samples/`). Pre-purge mirror kept at
+`~/jgreen.one-prepurge-backup-20260831-0811.git`.
+
+Scope was wider than this plan listed. `samples/` held two **`.xcf` files that were the
+largest blobs in the repository** (357 KB + 333 KB) — bigger than any `package-lock.json`
+version — which an extension-based scan for image types had missed. Purging only the two
+PNGs named here would have reclaimed almost nothing. The whole folder went; the files
+stay on disk, gitignored.
+
+Still not deployed.
 
 **Decision**: Option A, variant **A1**. One git-ignored folder `public/media/` holds all
 managed raster/video/PDF assets; it doubles as the local working copy and is staged into
@@ -518,3 +526,13 @@ git rev-list --all --objects | \
   `gotoClean` counting expected image 404s as browser errors), both fixed. Step 0 is
   resolved only as an interim: CI checks references against the manifest, not the bytes,
   until task 9 lands. **Nothing committed, nothing deployed, history not rewritten.**
+- 2026-08-31 **Step 13 done.** Mirror backup taken first
+  (`~/jgreen.one-prepurge-backup-20260831-0811.git`), then `git filter-repo` removed
+  `public/entries/images/how-this-website-was-built.png`, `public/og/home_1024×1024.png`
+  and all of `samples/`, followed by a force-push. `.git` 6.6 MB → 708 KB; a fresh clone
+  of the rewritten remote is 680 KB with none of the target blobs. Two things the plan
+  had not accounted for: `samples/` also contained two **`.xcf` files that were the
+  largest blobs in the whole repository**, which an image-extension scan had missed and
+  which made up most of the reclaimed space; and `filter-repo` deletes purged paths from
+  the working tree too, so `samples/` was restored from a copy and gitignored. Also note
+  `filter-repo` removes the `origin` remote by design — it was re-added before pushing.
