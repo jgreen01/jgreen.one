@@ -56,3 +56,5 @@ __pycache__/
 *.tfstate
 *.tfstate.backup
 .terraform/
+# design reference assets — kept on disk, deliberately out of git
+/samples/
