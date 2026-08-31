@@ -167,6 +167,41 @@ describe("astro build output", () => {
     }
   });
 
+  test("every page links its favicons and manifest", () => {
+    // astro-favicons generates these assets but stopped injecting the <head>
+    // tags in Astro 7 — silently, with no build warning. src/components/
+    // Favicons.astro supplies them instead; this is the guard that the tags are
+    // actually present, not just the files.
+    for (const file of htmlFiles()) {
+      const html = readFileSync(file, "utf-8");
+      const where = relative(DIST, file);
+      for (const pattern of [
+        /<link rel="icon" href="\/favicon\.ico"/,
+        /<link rel="icon" href="\/favicon\.svg"/,
+        /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png"/,
+        /<link rel="manifest" href="\/manifest\.webmanifest"/,
+      ]) {
+        assert.match(html, pattern, `missing favicon link in ${where}`);
+      }
+    }
+  });
+
+  test("every asset the favicon links point at was actually generated", () => {
+    const html = read("index.html");
+    for (const [, href] of html.matchAll(
+      /<link rel="(?:icon|apple-touch-icon|mask-icon|manifest)"[^>]*href="([^"]+)"/g,
+    )) {
+      assert.ok(exists(href.replace(/^\//, "")), `dist${href} is referenced but missing`);
+    }
+  });
+
+  test("markdown renders GFM without a remark plugin", () => {
+    // Astro 7 replaced remark/rehype with its native processor, so remark-gfm
+    // was removed. Code fences are the GFM feature the real content uses.
+    const article = read("entries/how-this-site-was-made/index.html");
+    assert.match(article, /<pre[^>]*class="astro-code/, "code fences lost their highlighting");
+  });
+
   test("sitemap-index.xml exists and references at least one sitemap", () => {
     assert.ok(exists("sitemap-index.xml"), "missing dist/sitemap-index.xml");
     const xml = read("sitemap-index.xml");
