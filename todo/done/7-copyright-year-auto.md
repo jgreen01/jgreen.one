@@ -1,9 +1,38 @@
 # Auto-updating copyright year (range form)
 
 **Priority**: LOW
-**Status**: TODO
+**Status**: DONE (not committed — awaiting Jon's go-ahead)
 **Created**: 2026-08-27
 **Updated**: 2026-08-30
+
+## Outcome
+
+Footer now renders `© 2025–2026`, from `src/utils/copyright.ts` at build time, with an
+`is:inline` script that bumps the end year from the visitor's clock.
+
+| Gate | Result |
+|---|---|
+| `npm run check` | 0 errors |
+| `npm test` | **138** (was 122 — 16 added) |
+| `npm run test:build` | 18 |
+| `npm run test:e2e` | **99** (was 93 — 6 added) |
+
+Files: `src/utils/copyright.ts` (new), `tests/unit/copyright.test.ts` (new),
+`src/layouts/Base.astro` (span + inline script), `tests/e2e/site.spec.ts` (footer tests),
+`LICENSE.txt` (→ `© 2025–2026`, option **b**).
+
+**`START_YEAR = 2025` confirmed three ways:** first commit `2025-08-11`, earliest entry
+`pubDate: 2025-08-14`, and `LICENSE.txt`.
+
+Two things worth knowing:
+
+- **The old E2E test proved nothing.** It asserted the footer merely *contains* the
+  current year, which a range satisfies without the client script running at all. It is
+  replaced by four tests, the load-bearing one stubbing the browser clock to 2099 via
+  `page.addInitScript` and asserting the footer reads `2025–2099`. A build-time-only
+  implementation fails that test — which is the whole point.
+- **The backwards case is covered too.** A visitor whose clock reads 2000 must not see
+  `2025–2000`; `clientCopyrightLabel` returns `null` and the build output stands.
 
 ## Description
 
@@ -185,18 +214,18 @@ broken import or a misnamed export in the footer across all 22 pages at once.
 
 ## Acceptance Criteria
 
-- [ ] `START_YEAR` confirmed = 2025 (check `git log` for first commit / earliest content).
-- [ ] `src/utils/copyright.ts` exports `START_YEAR`, `BUILD_YEAR`, `copyrightLabel` and
+- [x] `START_YEAR` confirmed = 2025 (check `git log` for first commit / earliest content).
+- [x] `src/utils/copyright.ts` exports `START_YEAR`, `BUILD_YEAR`, `copyrightLabel` and
       `clientCopyrightLabel`; `Base.astro` imports them and holds no logic of its own.
-- [ ] Footer renders `© 2025` today, and `copyrightLabel(2025, 2027)` returns
+- [x] Footer renders `© 2025` today, and `copyrightLabel(2025, 2027)` returns
       `"2025–2027"` — proven by a plain unit test, no clock stubbing needed.
-- [ ] Inline client script promotes/updates the range from the real clock; no-ops when
+- [x] Inline client script promotes/updates the range from the real clock; no-ops when
       the clock is at/behind `START_YEAR`; no console errors.
-- [ ] No-JS / crawler view still shows a valid year (the build-time output).
-- [ ] `LICENSE.txt` decision made and applied.
-- [ ] Unit tests cover the full year matrix and the en-dash character; the E2E test is
+- [x] No-JS / crawler view still shows a valid year (the build-time output).
+- [x] `LICENSE.txt` decision made and applied.
+- [x] Unit tests cover the full year matrix and the en-dash character; the E2E test is
       extended with a forward-clock case proving the client-side bump fires.
-- [ ] Full gate green: `npm run check`, `npm test`, `npm run test:build`,
+- [x] Full gate green: `npm run check`, `npm test`, `npm run test:build`,
       `npm run test:e2e`; footer eyeballed in `npm run preview`.
 
 ## Notes
@@ -227,3 +256,13 @@ broken import or a misnamed export in the footer across all 22 pages at once.
   the current year and would pass unchanged against a range, proving nothing. The new
   E2E case stubs the browser clock to 2099 to prove the client-side bump actually fires;
   without it the whole point of the task goes untested. Still not started.
+- 2026-08-30 **Implemented.** TDD: wrote `tests/unit/copyright.test.ts` first (RED —
+  module missing), then `src/utils/copyright.ts` exporting `START_YEAR`, `BUILD_YEAR`,
+  `copyrightLabel` and `clientCopyrightLabel`, then wired `Base.astro`. 16 unit tests
+  cover the year matrix, the en-dash character, and the client rule's `null` cases
+  (missing/NaN start year, clock at or behind the start). Replaced the existing E2E
+  footer assertion — which a range would have satisfied without the script running — with
+  four tests including a `page.addInitScript` clock stub at 2099 proving the bump fires,
+  and one at 2000 proving it never runs backwards. `LICENSE.txt` bumped to `© 2025–2026`
+  by hand (option b). Full gate green: 138 unit, 18 build integration, 99 E2E, check
+  clean. Nothing committed.
