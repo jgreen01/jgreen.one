@@ -2,9 +2,9 @@
 import PageLayout from "../../layouts/PageLayout.astro";
 import EntryCard from "../../components/EntryCard.astro";
 import { getCollection } from "astro:content";
+import { filterByKind, filterDrafts, sortByDate } from "../../utils/entries";
 
-const posts = (await getCollection("entries", e => !e.data.draft && e.data.kind === "blog"))
-  .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
+const posts = sortByDate(filterByKind(filterDrafts(await getCollection("entries")), "blog"));
 ---
 <PageLayout title="Blog">
   <h1 class="text-4xl font-bold mb-4">Blog</h1>

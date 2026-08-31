@@ -1,11 +1,9 @@
 ---
 import PageLayout from "../../layouts/PageLayout.astro";
 import { getCollection } from "astro:content";
+import { aggregateTags, filterDrafts } from "../../utils/entries";
 
-const entries = await getCollection("entries", e => !e.data.draft);
-const tagCounts = new Map<string, number>();
-for (const e of entries) for (const t of e.data.tags ?? []) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
-const tags = Array.from(tagCounts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+const tags = aggregateTags(filterDrafts(await getCollection("entries")));
 ---
 <PageLayout title="Tags">
   <h1 class="text-4xl font-bold mb-4">Tags</h1>

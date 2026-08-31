@@ -2,9 +2,9 @@
 import PageLayout from "../../layouts/PageLayout.astro";
 import EntryCard from "../../components/EntryCard.astro";
 import { getCollection } from "astro:content";
+import { filterDrafts, sortByDate } from "../../utils/entries";
 
-const all = (await getCollection("entries", e => !e.data.draft))
-  .sort((a, b) => +b.data.pubDate - +a.data.pubDate);
+const all = sortByDate(filterDrafts(await getCollection("entries")));
 ---
 <PageLayout title="All Entries">
   <h1 class="text-4xl font-bold mb-4">All Entries</h1>
