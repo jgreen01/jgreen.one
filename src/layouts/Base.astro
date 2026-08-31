@@ -1,6 +1,7 @@
 ---
 import type { Props as SEOProps } from '../components/SEO.astro';
 import SEO from '../components/SEO.astro';
+import Favicons from '../components/Favicons.astro';
 import "../styles/global.scss";
 import "../styles/import.css";
 
@@ -15,6 +16,7 @@ const props = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <SEO {...props} />
+    <Favicons />
 
     <!-- Styles are imported via import.css and global.scss -->
   </head>
