@@ -238,8 +238,10 @@ before writing any code — this decision shapes the whole task:
   CI honest about the *mechanism* without holding real assets, but reintroduces a binary
   into git, which is the thing this task exists to stop.
 
-**Recommendation: (a)**, and pull the OIDC/IAM Terraform out into its own task so both
-this and the `infra` job unblock together.
+**Recommendation: (a)** — now filed as **[task 9](9-github-oidc-ci-role.md)**, which
+Terraforms the OIDC provider and a read-only role. Its permission list already includes
+`s3:ListBucket` / `s3:GetObject` on `jgreen-one-site` and `/media/*` for exactly this.
+**Do task 9 first**, then decide here whether to reuse that role or give media its own.
 
 ## Implementation steps (in order)
 
