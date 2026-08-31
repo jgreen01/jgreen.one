@@ -18,14 +18,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
 
-  // `astro preview` serves ./dist, so the build has to run first — otherwise the
-  // suite silently tests whatever stale output happened to be lying around.
-  webServer: {
-    command: "npm run build && npm run preview",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  // Not `webServer`: Astro 7's `astro preview` daemonizes and returns straight
+  // away, which Playwright treats as the server having "exited early". Global
+  // setup builds the site, starts the daemon and waits for it to answer;
+  // teardown stops it. See tests/e2e/global-setup.ts.
+  globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
 
   projects: [
     {
