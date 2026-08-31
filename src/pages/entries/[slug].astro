@@ -1,17 +1,21 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 import ArticleLayout from "../../layouts/ArticleLayout.astro";
+import { filterDrafts } from "../../utils/entries";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("entries", (e) => !e.data.draft);
-  return entries.map((entry) => ({
-    params: { slug: entry.slug },
+  // Astro 6: entries expose `id`, not `slug`. The route param keeps the name
+  // `slug` so the public URLs are unchanged — the value is the same string.
+  const published = filterDrafts(await getCollection("entries"));
+  return published.map((entry) => ({
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
 
 const { entry } = Astro.props;
-const { Content } = await entry.render();
+// Astro 6: `entry.render()` was replaced by the standalone `render(entry)`.
+const { Content } = await render(entry);
 ---
 
 <ArticleLayout frontmatter={entry.data} collection={entry.collection}>

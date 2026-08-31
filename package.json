@@ -15,22 +15,21 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@astrojs/mdx": "^4.3.3",
-    "@astrojs/sitemap": "^3.4.2",
-    "@tailwindcss/vite": "^4.1.12",
-    "astro": "^5.12.9",
-    "astro-favicons": "^3.1.5",
-    "remark-gfm": "^4.0.1",
-    "tailwindcss": "^4.1.12",
-    "typescript": "^5.9.2"
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/mdx": "^7.0.8",
+    "@astrojs/sitemap": "^3.7.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.2.9",
+    "astro-favicons": "^3.1.6",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/typography": "^0.5.20",
     "@vitest/coverage-v8": "^4.1.11",
-    "node-html-parser": "^7.0.1",
-    "sass": "^1.90.0",
+    "node-html-parser": "^9.0.2",
+    "sass": "^1.103.1",
     "vitest": "^4.1.11"
   }
 }
