@@ -7,7 +7,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cover": "vitest run --coverage",
+    "test:build": "node tests/integration/build.test.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
@@ -21,8 +26,11 @@
     "typescript": "^5.9.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.16",
+    "@vitest/coverage-v8": "^4.1.11",
     "node-html-parser": "^7.0.1",
-    "sass": "^1.90.0"
+    "sass": "^1.90.0",
+    "vitest": "^4.1.11"
   }
 }

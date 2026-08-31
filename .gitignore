@@ -27,6 +27,15 @@ pnpm-debug.log*
 # temporary files
 tmp/
 
+# test artefacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+.pytest_cache/
+__pycache__/
+
 # don't commit tfstate
 *.tfstate
 *.tfstate.backup
