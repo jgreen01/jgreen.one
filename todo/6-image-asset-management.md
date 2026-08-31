@@ -3,7 +3,7 @@
 **Priority**: MEDIUM
 **Status**: TODO
 **Created**: 2026-08-27
-**Updated**: 2026-08-27
+**Updated**: 2026-08-30
 
 **Decision**: Option A, variant **A1**. One git-ignored folder `public/media/` holds all
 managed raster/video/PDF assets; it doubles as the local working copy and is staged into
@@ -63,11 +63,12 @@ photo-heavy post makes a history rewrite painful.
    *without* first running `media-check`/pull, the build emits no images and the sync
    deletes them from S3. Mitigate by making `media-check` the first thing `deploy.sh`
    does and having it hard-fail if it can't reach S3.
-3. **`heroImage` frontmatter** (`src/content/config.ts`) is currently loosely specified
-   ("Path in /public or external image URL") and used inconsistently — one post uses a
-   bare `images/...` path, another a `/images/...` path that doesn't exist. This task
-   pins it to **exactly one format**: a site-absolute `/media/...` path or an external
-   `https://` URL. See "Content & component changes" below.
+3. **`heroImage` frontmatter** (`src/content/schema.ts` since task 4 — no longer
+   `config.ts`) is still loosely specified ("Path in /public or external image URL").
+   Task 4 removed the *inconsistency* (the dangling `/images/placeholder-project.png`
+   is gone and both call sites share `heroImagePath()`), but the schema still accepts
+   three shapes. This task pins it to **exactly one**: a site-absolute `/media/...`
+   path or an external `https://` URL. See "Content & component changes" below.
 4. **Astro image optimization** (responsive `srcset`, webp/avif) only runs on images
    imported through `src/assets/` at build time. `/media/` images are served
    unoptimized. Accept that for now; a future `media-push` step could generate webp +
@@ -174,22 +175,37 @@ Compares three views: **manifest** (git), **local** (`public/media/`), **S3**
 
 ### Content & component changes (the one-time "move")
 
+> **Superseded by task 4 (done 2026-08-30).** Three items originally planned here have
+> already shipped, and the component layer no longer looks the way this task assumed.
+> What changed:
+>
+> - **The `ArticleLayout` 404 bug is fixed.** It no longer "fixes itself as a side
+>   effect" of this task — it was fixed directly, along with two related path bugs
+>   (an external `https://` hero became `/entries/https://…`; an absolute path produced
+>   a doubled slash in `og:image`).
+> - **`EntryCard`'s inline prefix block is gone.** Both `EntryCard.astro` and
+>   `ArticleLayout.astro` now call the shared **`heroImagePath()`** helper in
+>   `src/utils/heroImagePath.ts`. There is no per-component logic left to strip.
+> - **`sample-project.md`'s dead `heroImage` line is already removed** (it pointed at a
+>   file that never existed; the build-integration test caught it).
+> - **The Zod schema moved** out of `src/content/config.ts` into
+>   `src/content/schema.ts`, which imports `astro/zod` and is unit-tested in
+>   `tests/unit/schema.test.ts`. `config.ts` is now a four-line wrapper.
+>
+> So this task's job shrinks: change the **convention** in one helper and one schema,
+> then update the tests that encode the old convention.
+
 Pin `heroImage` to a single format: **site-absolute `/media/...` or external `https://`**.
 
 | File | Change |
 |---|---|
-| `src/content/config.ts` | `heroImage` `.describe()` → "Site-absolute `/media/...` path or external https URL". Optionally `.refine(v => v.startsWith('/media/') || v.startsWith('https://'))` so a bad value fails the build. |
+| `src/content/schema.ts` | `heroImage` `.describe()` → "Site-absolute `/media/...` path or external https URL". Optionally `.refine(v => v.startsWith('/media/') || /^https?:\/\//.test(v))` so a bad value fails the build. **Not** `config.ts` — the schema lives here now. |
+| `src/utils/heroImagePath.ts` | Decide what the collection-relative fallback should do once every value is absolute. Either keep it as a safety net, or drop the `` `/${collection}/${value}` `` branch and let the schema `.refine()` reject anything non-absolute. Dropping it simplifies the helper to "trim, return, or undefined". |
 | `src/content/entries/how-this-site-was-made.md` | `heroImage: "images/how-this-website-was-built.png"` → `heroImage: "/media/how-this-website-was-built.png"` |
-| `src/content/entries/sample-project.md` | delete the `heroImage` line (its image `/images/placeholder-project.png` never existed; comment already says "create later or remove") |
-| `src/components/EntryCard.astro` | delete the `if (!heroImagePath.startsWith('/')) heroImagePath = ` `/entries/${…}` `` block (lines ~12–15); `heroImagePath` is just `data.heroImage` |
-| `src/layouts/ArticleLayout.astro` | line 4 → `const image = frontmatter.heroImage` (already absolute; drop the `/${collection}/` prefix). Line 19 `<img src={frontmatter.heroImage}>` now resolves correctly — **the pre-existing 404 bug fixes itself.** |
+| ~~`src/content/entries/sample-project.md`~~ | ✅ already done (task 4) |
+| ~~`src/components/EntryCard.astro`~~ | ✅ already done (task 4) — calls `heroImagePath()` |
+| ~~`src/layouts/ArticleLayout.astro`~~ | ✅ already done (task 4) — calls `heroImagePath()`, bug fixed |
 | in-body Markdown images (none today) | convention: `![alt](/media/<name>)` |
-
-Pre-existing bug being fixed as a side effect: `ArticleLayout.astro:19` currently emits
-a **relative** `src`, so the in-article hero on `/entries/how-this-site-was-made/`
-requests `/entries/how-this-site-was-made/images/…` → 404. Once `heroImage` is an
-absolute `/media/...` path this resolves correctly. Still add a test asserting the
-rendered `<img src>` and `og:image` are both absolute.
 
 ### Hero-image optimization
 
@@ -197,19 +213,53 @@ Out of scope. Accept unoptimized `/media/` delivery for now. A later iteration c
 `media-push` generate webp + a couple of widths alongside originals and record them in
 the manifest.
 
+## ⚠️ Blocker to solve first: gitignored media breaks CI
+
+`public/media/` being git-ignored means **a fresh CI checkout has no images at all.**
+Three tests added by task 4 will then fail:
+
+| Test | Why it breaks |
+|---|---|
+| `tests/integration/build.test.mjs` — "every referenced local image exists in dist" | `heroImage: "/media/…"` is referenced but the file was never checked out |
+| `tests/e2e/site.spec.ts` — "shows the hero image at a non-zero size" | `naturalWidth` is 0 for a missing image |
+| `tests/e2e/site.spec.ts` — "requests the hero image from an absolute path that actually resolves" | asserts no image response ≥ 400 |
+
+CI has **no AWS credentials today**, so `media-check --pull` cannot run there. Pick one
+before writing any code — this decision shapes the whole task:
+
+- **(a) Give CI read-only S3 credentials.** Same GitHub OIDC provider + IAM role the
+  `infra` CI job already needs (see `.github/workflows/ci.yml`, currently inert). Most
+  faithful — CI builds exactly what deploys — and does double duty. Costs the Terraform
+  for an OIDC provider and role.
+- **(b) Make the image assertions conditional.** Skip them when `public/media/` is empty,
+  and keep them mandatory in `deploy.sh`. Cheap, but CI stops catching broken image
+  references — which is precisely the bug class task 4 just found.
+- **(c) Commit one small placeholder** at `public/media/` and gitignore the rest. Keeps
+  CI honest about the *mechanism* without holding real assets, but reintroduces a binary
+  into git, which is the thing this task exists to stop.
+
+**Recommendation: (a)**, and pull the OIDC/IAM Terraform out into its own task so both
+this and the `infra` job unblock together.
+
 ## Implementation steps (in order)
 
+0. [ ] **Resolve the CI blocker above.** Nothing else is safe to start until this is
+       settled — it decides whether `media-check --pull` runs in CI.
 1. [ ] Confirm folder name (`public/media/` default). Add `/public/media/` to `.gitignore`
        plus defensive raster-extension ignores under `public/`.
 2. [ ] Create `public/media/`; move `how-this-website-was-built.png` into it.
        `git rm --cached public/entries/images/how-this-website-was-built.png` (working
        tree keeps the file at its new path).
-3. [ ] `src/content/config.ts`: tighten the `heroImage` describe + optional `.refine`.
-4. [ ] Content edits: `how-this-site-was-made.md` heroImage → `/media/...`;
-       `sample-project.md` drop the heroImage line.
-5. [ ] Component edits: strip the prefixing logic in `EntryCard.astro`; simplify
-       `ArticleLayout.astro` lines 4 & 19. Add a test: rendered hero `<img src>` and
-       `og:image` are both site-absolute.
+3. [ ] `src/content/schema.ts` (**not** `config.ts`): tighten the `heroImage` describe +
+       optional `.refine`. Update `tests/unit/schema.test.ts` to cover the new rule —
+       a `/media/…` value passes, a bare `images/…` value is rejected.
+4. [ ] Content edit: `how-this-site-was-made.md` heroImage → `/media/...`.
+       (`sample-project.md` already has no heroImage.)
+5. [ ] `src/utils/heroImagePath.ts`: decide whether to keep or drop the
+       collection-relative branch (see table above). **Rewrite
+       `tests/unit/heroImagePath.test.ts` to match** — it currently asserts the old
+       `/entries/` prefixing behaviour in six tests, which is the convention being
+       replaced. Keep the external-URL and empty-value cases; they still hold.
 6. [ ] Write `scripts/media-check.mjs` (reconciler, both modes, table above) +
        `scripts/media-push.sh`. Add `media:check` / `media:pull` / `media:push` npm
        scripts. `image-size` as a dev dep for dimensions.
@@ -221,18 +271,70 @@ the manifest.
 9. [ ] `scripts/deploy.sh`: add `node scripts/media-check.mjs --pull` before
        `npm run build`. Verify with `aws s3 sync --dryrun` (after a build) that no
        `media/` object is marked for deletion.
-10. [ ] `npm run build` + `npm run preview`: hero renders on the card, the article page,
-        and the OG tag. Then a real deploy and check the live URLs.
+10. [ ] Update `tests/unit/deployScript.test.ts` — it asserts the **exact** argument
+        list and call order for `terraform`/`aws`/`npm`. Adding a `media-check` call
+        before the build changes that order, so the test will fail until updated.
+        Add an assertion that `media-check` runs **before** `npm run build`.
 11. [ ] Guide under `guides/`: "How to add / manage images" — folder, `media-push`,
         `/media/` reference convention, alt-text requirement, the SVG rule, the
         fresh-clone flow (`git clone` → `npm run media:pull` → `npm run dev`).
-12. [ ] Tests per AGENTS.md TDD rules: unit-test the manifest generator and
-        `media-check`'s comparison logic against fixtures (mock the S3 listing via a
-        shim, recorded fixtures under `tests/fixtures/`); test `media-push` arg
-        construction (mock `aws`, assert exact args, assert no secret in any command);
-        assert `deploy.sh` runs `media-check` before `npm run build`.
+12. [ ] **Testing** — see the section below. All five suites green before the purge.
 13. [ ] **FINAL STEP — purge image blobs from git history.** See below. Only after
-        1–12 are done, verified, and committed.
+        0–12 are done, verified, and committed.
+
+## Testing
+
+The stack from task 4 is installed; use it rather than inventing a new one. See
+`AGENTS.md` for the full contract — the short version: **`.astro` files cannot be unit
+tested**, so all new logic goes in a plain module under `src/utils/` or `scripts/`, and
+the component stays a thin wrapper.
+
+### New tests to write (TDD — failing test first)
+
+- **`media-manifest.json` generator** — given a fixture directory of files, produces the
+  expected entries (path, bytes, sha256, dimensions, contentType). Use recorded fixtures
+  under `tests/fixtures/`, never live `public/media/`.
+- **`media-check` reconciliation logic** — the full severity table above, one test per
+  row. Feed it three plain arrays (manifest / local / S3 listing) through a thin shim so
+  no AWS call happens. Capture one real `aws s3api list-objects-v2` response into
+  `tests/fixtures/media_s3_listing.json` and drive the S3 side from that.
+- **`media-check` exit codes** — non-zero on any error-severity finding, zero with only
+  warnings, and `--strict` promoting warnings to failures.
+- **`media-push` argument construction** — mock `aws` on `PATH` exactly as
+  `tests/unit/deployScript.test.ts` does; assert the exact argv, assert `--delete` is
+  never passed, assert the `sha256` metadata flag is set, and assert no credential value
+  appears in any command string.
+- **Offline mode makes no AWS calls** — run `media-check --offline` with a stub `aws`
+  that fails loudly if invoked.
+
+### Existing tests this task will break (update them deliberately)
+
+| File | Why |
+|---|---|
+| `tests/unit/heroImagePath.test.ts` | six tests assert `/entries/` prefixing — the convention being replaced |
+| `tests/unit/schema.test.ts` | asserts `heroImage` is `"images/how-this-website-was-built.png"` |
+| `tests/fixtures/frontmatter.ts` | same value in the fixture |
+| `tests/unit/deployScript.test.ts` | exact argv + call order, changed by the new `media-check` step |
+| `tests/integration/build.test.mjs` | image-existence assertion, per the CI blocker above |
+| `tests/e2e/site.spec.ts` | `ENTRY_WITH_HERO` hero assertions |
+
+A red test here means "the convention changed", not "something broke" — but change them
+one at a time and read each failure, rather than bulk-editing until green.
+
+### Verification before the history purge
+
+```bash
+npm run check        # 0 errors
+npm test             # unit — all green
+npm run test:build   # dist/ shape, image references resolve
+npm run test:e2e     # hero renders on card, article and og:image
+pytest tests/infra   # S3 versioning still on — it is the durable copy
+./scripts/deploy.sh  # then load the live URLs
+```
+
+`pytest tests/infra` matters more than usual here: its
+`test_versioning_is_enabled` is what guarantees the S3 bucket can actually recover a
+deleted asset, which is this task's entire "don't lose it" claim.
 
 ## FINAL STEP (do LAST) — purge committed image blobs from git history
 
@@ -321,3 +423,14 @@ git rev-list --all --objects | \
   `/media/...`-or-`https://` format — one-time edits to 2 content files + 2 components +
   the schema; the `ArticleLayout` bug fixes itself via that convention change. SVGs
   stay committed. Not started.
+- 2026-08-30 **Revised after task 4 landed.** Three planned edits already shipped there
+  and are struck through above: the `ArticleLayout` 404 was fixed directly (not "as a
+  side effect"), `EntryCard`'s inline prefix block is gone — both call the shared
+  `src/utils/heroImagePath.ts` — and `sample-project.md`'s dead `heroImage` is removed.
+  The Zod schema moved to `src/content/schema.ts`, so the `.describe()`/`.refine()`
+  edit goes there. Added a **Testing** section (new tests to write, the six existing
+  test files this task will break, and the pre-purge verification commands) and a new
+  **step 0**: gitignoring `public/media/` leaves a CI checkout with no images, which
+  fails three of task 4's tests. That has to be resolved first — recommended fix is
+  giving CI read-only S3 access via the same GitHub OIDC role the inert `infra` CI job
+  already needs. Still not started.
