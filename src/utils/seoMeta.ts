@@ -27,16 +27,17 @@ export const SEO_DEFAULTS = {
   title: "Jon Green — Software Developer, AI & Data Science",
   description:
     "Personal site of Jon Green: senior software developer & MCS-DS student. I write about AI/ML, infrastructure-as-code, and full-stack development.",
-  image: "/og/home_1024×1024.png",
+  image: "/media/og-default.png",
   type: "website",
 } as const satisfies Omit<SeoMeta, "url">;
 
 /**
  * Joins a site base with a site-relative path.
  *
- * Deliberately string-based rather than `new URL()`: the default OG asset is
- * literally `public/og/home_1024×1024.png`, and percent-encoding the `×` would
- * point the tag at a file that does not exist.
+ * Deliberately string-based rather than `new URL()`, which percent-encodes any
+ * non-ASCII character in a path. Asset filenames are ASCII today, but a single
+ * accented character in a future filename would silently point the tag at a
+ * file that does not exist.
  */
 function joinUrl(base: string, path: string): string {
   if (EXTERNAL_URL.test(path)) return path;

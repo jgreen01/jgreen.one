@@ -1,10 +1,9 @@
 ---
 import Base from './Base.astro';
 import { heroImagePath } from '../utils/heroImagePath';
-const { frontmatter, collection } = Astro.props;
-// One resolved path for both the OG tag and the visible <img>: a bare relative
-// value would otherwise resolve against /entries/<slug>/ and 404.
-const heroImage = heroImagePath(frontmatter.heroImage, collection);
+const { frontmatter } = Astro.props;
+// One resolved path for both the OG tag and the visible <img>.
+const heroImage = heroImagePath(frontmatter.heroImage);
 ---
 <Base
   title={'Jon Green :: ' + frontmatter.title}

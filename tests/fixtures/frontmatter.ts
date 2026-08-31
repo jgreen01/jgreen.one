@@ -15,7 +15,7 @@ export const validFullFrontmatter = {
   updatedDate: "2026-01-15",
   kind: "blog",
   tags: ["astro", "terraform", "aws"],
-  heroImage: "images/how-this-website-was-built.png",
+  heroImage: "/media/how-this-website-was-built.png",
   draft: false,
 };
 

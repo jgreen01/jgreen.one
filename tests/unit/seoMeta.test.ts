@@ -52,10 +52,16 @@ describe("seoMeta", () => {
       expect(seoMeta({ image: "/og/post.png" }).image).toBe("https://jgreen.one/og/post.png");
     });
 
-    it("preserves non-ASCII characters in the image filename verbatim", () => {
-      // The real default asset is literally `public/og/home_1024×1024.png`.
-      // Percent-encoding it here would point at a file that does not exist.
-      expect(seoMeta({}).image).toBe("https://jgreen.one/og/home_1024×1024.png");
+    it("points at the managed default OG asset", () => {
+      expect(seoMeta({}).image).toBe("https://jgreen.one/media/og-default.png");
+    });
+
+    it("preserves non-ASCII characters in a filename verbatim", () => {
+      // joinUrl is string-based rather than `new URL()` precisely so it cannot
+      // percent-encode a filename into one that does not exist on disk.
+      expect(seoMeta({ image: "/media/café–hero.png" }).image).toBe(
+        "https://jgreen.one/media/café–hero.png",
+      );
     });
 
     it("leaves an already-absolute image URL untouched", () => {

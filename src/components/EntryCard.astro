@@ -10,7 +10,7 @@ interface Props {
 }
 const { entry } = Astro.props;
 const { data, collection } = entry;
-const heroImage = heroImagePath(data.heroImage, collection);
+const heroImage = heroImagePath(data.heroImage);
 ---
 
 <li class="mb-6">
