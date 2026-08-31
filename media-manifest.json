@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-31",
+  "assets": [
+    {
+      "path": "how-this-website-was-built.png",
+      "bytes": 82261,
+      "sha256": "9350e3b7a405ae05c72dd21d705d83fc041dcb15bd480c5ea2d4b6bb623af98f",
+      "width": 1536,
+      "height": 1024,
+      "contentType": "image/png",
+      "addedAt": "2026-08-31",
+      "referencedBy": [
+        "entries/how-this-site-was-made"
+      ]
+    },
+    {
+      "path": "og-default.png",
+      "bytes": 33594,
+      "sha256": "976960ca0468a271af90bd9d925b6c3fc665e6a2642d6ffaaef8cc683cfe7003",
+      "width": 1024,
+      "height": 1024,
+      "contentType": "image/png",
+      "addedAt": "2026-08-31",
+      "referencedBy": [
+        "src/utils/seoMeta.ts"
+      ]
+    }
+  ]
+}
