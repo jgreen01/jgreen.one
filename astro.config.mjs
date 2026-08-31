@@ -4,7 +4,6 @@ import tailwindcss from "@tailwindcss/vite";
 
 import sitemap from "@astrojs/sitemap";
 import mdx from "@astrojs/mdx";
-import remarkGfm from 'remark-gfm'; // Added remark-gfm
 
 import favicons from "astro-favicons";
 
@@ -17,7 +16,4 @@ export default defineConfig({
   },
 
   integrations: [sitemap(), mdx(), favicons()],
-  markdown: {
-    remarkPlugins: [remarkGfm],
-  },
 });
