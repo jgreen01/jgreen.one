@@ -1,0 +1,24 @@
+---
+/**
+ * Favicon and web-app manifest links.
+ *
+ * `astro-favicons` still *generates* every asset referenced here (it runs at
+ * build time and writes them into `dist/`), but as of Astro 7 it no longer
+ * injects the `<head>` tags: it does that through a Vite plugin, and Astro 7's
+ * move to Vite 8 stops that hook from firing. The build prints no warning — the
+ * files appear and the tags silently do not.
+ *
+ * So the generation stays with the integration and the markup lives here. If
+ * astro-favicons ships Astro 7 support, delete this component and check the
+ * rendered head again.
+ *
+ * This is the modern essential set; the legacy IE/Windows-tile metas the
+ * integration used to emit (mstile-*, browserconfig.xml) are deliberately not
+ * reproduced. Those files are still generated and still auto-discoverable.
+ */
+---
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#f6780a" />
+<link rel="manifest" href="/manifest.webmanifest" />
