@@ -4,6 +4,7 @@ import {
   ENTRY_WITH_HERO,
   ENTRY_WITHOUT_HERO,
   collectPageErrors,
+  mediaAvailable,
   expectVisibleWithSize,
   gotoClean,
 } from "./helpers";
@@ -121,32 +122,48 @@ test.describe("entry detail", () => {
     expect(bodyText.trim().length).toBeGreaterThan(200);
   });
 
-  test("shows the hero image at a non-zero size", async ({ page }) => {
+  test("emits the hero image from a managed absolute path", async ({ page }) => {
+    // Markup-only, so it runs even without the image bytes. This is the
+    // regression guard that matters: a page-relative src resolves against
+    // /entries/<slug>/ and 404s while still "rendering" as a broken image.
     await page.goto(ENTRY_WITH_HERO);
-    const box = await expectVisibleWithSize(page, "article img");
-    expect(box.width).toBeGreaterThan(100);
+
+    const src = await page.locator("article img").first().getAttribute("src");
+    expect(src).toMatch(/^\/media\//);
   });
 
-  test("requests the hero image from an absolute path that actually resolves", async ({
-    page,
-  }) => {
-    // Regression guard: a page-relative src resolves against /entries/<slug>/
-    // and 404s while still "rendering" as a broken image.
-    const responses: number[] = [];
-    page.on("response", (response) => {
-      if (/\.(png|jpe?g|webp|avif|gif)$/i.test(response.url())) responses.push(response.status());
+  test.describe("with the media assets present", () => {
+    // These need the actual bytes, which a checkout that has not run
+    // `npm run media:pull` does not have. See tests/e2e/helpers.ts.
+    test.skip(
+      !mediaAvailable,
+      "public/media/ is empty — run `npm run media:pull` to include the pixel checks",
+    );
+
+    test("shows the hero image at a non-zero size", async ({ page }) => {
+      await page.goto(ENTRY_WITH_HERO);
+      const box = await expectVisibleWithSize(page, "article img");
+      expect(box.width).toBeGreaterThan(100);
     });
 
-    await page.goto(ENTRY_WITH_HERO);
-    const src = await page.locator("article img").first().getAttribute("src");
-    expect(src).toMatch(/^\//);
+    test("the hero image actually loads, with no failed image request", async ({
+      page,
+    }) => {
+      const responses: number[] = [];
+      page.on("response", (response) => {
+        if (/\.(png|jpe?g|webp|avif|gif)$/i.test(response.url()))
+          responses.push(response.status());
+      });
 
-    const naturalWidth = await page
-      .locator("article img")
-      .first()
-      .evaluate((img: HTMLImageElement) => img.naturalWidth);
-    expect(naturalWidth, "hero image failed to load").toBeGreaterThan(0);
-    expect(responses.every((status) => status < 400)).toBe(true);
+      await page.goto(ENTRY_WITH_HERO);
+
+      const naturalWidth = await page
+        .locator("article img")
+        .first()
+        .evaluate((img: HTMLImageElement) => img.naturalWidth);
+      expect(naturalWidth, "hero image failed to load").toBeGreaterThan(0);
+      expect(responses.every((status) => status < 400)).toBe(true);
+    });
   });
 
   test("an entry without a hero image renders no broken <img>", async ({ page }) => {

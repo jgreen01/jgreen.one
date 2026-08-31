@@ -51,7 +51,25 @@ function writeMock(name: string, body: string) {
  * `dist/`, `scripts/deploy.sh`) plus stub `terraform`, `aws` and `npm` binaries
  * that record how they were called. Nothing real is installed, built or synced.
  */
-function setupWorkdir(tfOutput: string = DEFAULT_TF_OUTPUT) {
+/**
+ * Stubs `scripts/media-check.mjs`, which deploy.sh invokes by path rather than
+ * through PATH. Logs its arguments the same way the PATH mocks do so call
+ * ordering can be asserted, and exits with `exitCode` so the "media check fails,
+ * deploy aborts" path is testable.
+ */
+function writeMediaCheckStub(log: string, exitCode = 0) {
+  writeFileSync(
+    join(workdir, "scripts", "media-check.mjs"),
+    [
+      "import { appendFileSync } from 'node:fs';",
+      `appendFileSync(${JSON.stringify(log)}, 'media-check\\t' + process.cwd() + '\\t' + process.argv.slice(2).join(' ') + '\\n');`,
+      `process.exit(${exitCode});`,
+    ].join("\n"),
+    "utf-8",
+  );
+}
+
+function setupWorkdir(tfOutput: string = DEFAULT_TF_OUTPUT, mediaCheckExit = 0) {
   mkdirSync(join(workdir, "infra", "live"), { recursive: true });
   mkdirSync(join(workdir, "scripts"), { recursive: true });
   mkdirSync(join(workdir, "bin"), { recursive: true });
@@ -66,6 +84,7 @@ function setupWorkdir(tfOutput: string = DEFAULT_TF_OUTPUT) {
   writeMock("terraform", `${record}\nif [ "$1" = "output" ]; then cat <<'EOF'\n${tfOutput}\nEOF\nfi`);
   writeMock("aws", record);
   writeMock("npm", record);
+  writeMediaCheckStub(log, mediaCheckExit);
 }
 
 function runDeploy() {
@@ -122,6 +141,33 @@ describe("scripts/deploy.sh", () => {
       runDeploy();
       const order = invocations().map((i) => i.command);
       expect(order.indexOf("npm")).toBeLessThan(order.indexOf("aws"));
+    });
+
+    it("hydrates managed media before building", () => {
+      // public/media/ is git-ignored, so a clean checkout has no images. Build
+      // first and dist/ has none — then `aws s3 sync --delete` wipes them from
+      // the bucket. Ordering here is the guard against that.
+      runDeploy();
+      const order = invocations().map((i) => i.command);
+      const build = invocations().findIndex(
+        (i) => i.command === "npm" && i.args.join(" ") === "run build",
+      );
+      expect(order.indexOf("media-check")).toBeGreaterThanOrEqual(0);
+      expect(order.indexOf("media-check")).toBeLessThan(build);
+    });
+
+    it("asks media-check to pull, not merely to report", () => {
+      runDeploy();
+      const call = invocations().find((i) => i.command === "media-check");
+      expect(call!.args).toContain("--pull");
+    });
+
+    it("runs media-check in full mode, never --offline", () => {
+      // Offline would skip the S3 comparison, so a deploy could proceed without
+      // verifying the durable copy exists.
+      runDeploy();
+      const call = invocations().find((i) => i.command === "media-check");
+      expect(call!.args).not.toContain("--offline");
     });
 
     it("runs a clean install and a build", () => {
@@ -196,6 +242,31 @@ describe("scripts/deploy.sh", () => {
       setupWorkdir(JSON.stringify({ site_bucket: { value: "b" } }));
       const result = runDeploy();
       expect(result.stderr).toMatch(/CloudFront/i);
+    });
+  });
+
+  describe("media check failure", () => {
+    it("aborts the deploy when media-check exits non-zero", () => {
+      setupWorkdir(DEFAULT_TF_OUTPUT, 1);
+
+      const result = runDeploy();
+      expect(result.status).not.toBe(0);
+    });
+
+    it("never syncs to S3 after a failed media check", () => {
+      // The dangerous case: proceeding would build without images and then
+      // delete them from the bucket.
+      setupWorkdir(DEFAULT_TF_OUTPUT, 1);
+
+      runDeploy();
+      expect(callsTo("aws")).toHaveLength(0);
+    });
+
+    it("does not build after a failed media check", () => {
+      setupWorkdir(DEFAULT_TF_OUTPUT, 1);
+
+      runDeploy();
+      expect(callsTo("npm").map((i) => i.args.join(" "))).not.toContain("run build");
     });
   });
 

@@ -39,6 +39,13 @@ jobs:
       - name: Type-check (astro check)
         run: npm run check
 
+      # Offline: public/media/ is git-ignored and CI has no AWS credentials yet
+      # (task 9). This still catches an entry referencing an asset that is not
+      # in the manifest, and a manifest that has drifted from the content.
+      # Switch to the full check once CI can assume a role.
+      - name: Check managed media references
+        run: node scripts/media-check.mjs --offline --strict
+
       - name: Unit tests (Vitest)
         run: npm test
 
