@@ -157,14 +157,59 @@ describe("astro build output", () => {
     }
   });
 
-  test("every referenced local image exists in dist", () => {
+  test("every referenced local image is either built or a managed asset", () => {
+    // public/media/ is git-ignored, so a checkout without AWS credentials (CI
+    // today) has no image bytes and cannot satisfy a plain existence check.
+    // The manifest is committed, though, so a reference can still be proven to
+    // name a *known* asset — which is the bug this catches: a typo or a path
+    // pointing at something nobody manages. Once CI can run `media-check
+    // --pull` (task 9), tighten this back to requiring the file in dist/.
+    const managed = new Set(
+      JSON.parse(readFileSync(join(ROOT, "media-manifest.json"), "utf-8")).assets.map(
+        (asset) => `media/${asset.path}`,
+      ),
+    );
+
     for (const file of htmlFiles()) {
       for (const [, src] of readFileSync(file, "utf-8").matchAll(/<img[^>]+src="([^"]*)"/g)) {
         if (!src.startsWith("/")) continue;
         const asset = decodeURIComponent(src.split("?")[0]).replace(/^\//, "");
-        assert.ok(exists(asset), `dist/${asset} referenced by ${relative(DIST, file)} is missing`);
+        assert.ok(
+          exists(asset) || managed.has(asset),
+          `${asset} referenced by ${relative(DIST, file)} is neither built nor in media-manifest.json`,
+        );
       }
     }
+  });
+
+  test("every og:image points at a built file or a managed asset", () => {
+    const managed = new Set(
+      JSON.parse(readFileSync(join(ROOT, "media-manifest.json"), "utf-8")).assets.map(
+        (asset) => `media/${asset.path}`,
+      ),
+    );
+
+    for (const file of htmlFiles()) {
+      const [, url] = readFileSync(file, "utf-8").match(
+        /<meta property="og:image" content="([^"]*)"/,
+      );
+      const asset = decodeURIComponent(new URL(url).pathname).replace(/^\//, "");
+      assert.ok(
+        exists(asset) || managed.has(asset),
+        `og:image ${asset} on ${relative(DIST, file)} is neither built nor managed`,
+      );
+    }
+  });
+
+  test("the media manifest is consistent with the content", () => {
+    // Offline mode needs no AWS access, so this runs everywhere. It is what
+    // catches an entry referencing an asset nobody manages.
+    const result = spawnSync(
+      process.execPath,
+      ["scripts/media-check.mjs", "--offline", "--strict"],
+      { cwd: ROOT, encoding: "utf-8" },
+    );
+    assert.equal(result.status, 0, `${result.stdout}${result.stderr}`);
   });
 
   test("every page links its favicons and manifest", () => {

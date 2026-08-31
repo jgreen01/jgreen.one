@@ -1,4 +1,20 @@
 import { expect, type Page } from "@playwright/test";
+import { existsSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+/**
+ * Whether the managed media assets are present on disk.
+ *
+ * `public/media/` is git-ignored — its durable copy lives in S3 — so a checkout
+ * that has not run `npm run media:pull` has no image bytes. That is CI's
+ * situation today, until it can assume an AWS role (task 9). Tests that assert
+ * on *pixels* skip when the bytes are absent; tests that assert on *markup*
+ * always run, since the HTML is generated either way.
+ */
+const MEDIA_DIR = fileURLToPath(new URL("../../public/media", import.meta.url));
+
+export const mediaAvailable =
+  existsSync(MEDIA_DIR) && readdirSync(MEDIA_DIR).some((f) => /\.(png|jpe?g|webp)$/i.test(f));
 
 /** Every route the site builds a top-level page for. */
 export const CORE_PAGES = [
@@ -26,7 +42,17 @@ export const ENTRY_WITHOUT_HERO = "/entries/sample-blog/";
 export function collectPageErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(`console.error: ${message.text()}`);
+    if (message.type() !== "error") return;
+    // Without the media bytes every hero image 404s, and the browser logs a
+    // failed-resource error for each. That is the expected state of a checkout
+    // that has not pulled — it says nothing about the page's own scripts, which
+    // is what this collector is for. Only ignored when the assets are genuinely
+    // absent, so a real /media/ 404 still fails a normal run.
+    // The URL is in location(), not text() — Chromium's message is just
+    // "Failed to load resource: ... 404 (Not Found)".
+    const url = message.location()?.url ?? "";
+    if (!mediaAvailable && url.includes("/media/")) return;
+    errors.push(`console.error: ${message.text()}`);
   });
   page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   return errors;
