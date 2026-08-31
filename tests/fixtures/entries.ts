@@ -7,7 +7,7 @@
  */
 
 export interface FixtureEntry {
-  slug: string;
+  id: string;
   collection: "entries";
   data: {
     title: string;
@@ -20,18 +20,18 @@ export interface FixtureEntry {
 }
 
 function entry(
-  slug: string,
+  id: string,
   pubDate: string,
   kind: "blog" | "project",
   tags: string[],
   draft = false,
 ): FixtureEntry {
   return {
-    slug,
+    id,
     collection: "entries",
     data: {
-      title: `Title for ${slug}`,
-      description: `Description for ${slug}.`,
+      title: `Title for ${id}`,
+      description: `Description for ${id}.`,
       pubDate: new Date(pubDate),
       kind,
       tags,
@@ -73,7 +73,7 @@ export const noEntries: FixtureEntry[] = [];
  */
 export const entryWithoutTags = [
   {
-    slug: "no-tags",
+    id: "no-tags",
     collection: "entries" as const,
     data: {
       title: "Untagged",

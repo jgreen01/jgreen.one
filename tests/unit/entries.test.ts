@@ -18,7 +18,7 @@ import {
 describe("filterDrafts", () => {
   it("excludes entries marked draft: true", () => {
     const result = filterDrafts(mixedEntries);
-    expect(result.map((e) => e.slug)).not.toContain("draft-blog");
+    expect(result.map((e) => e.id)).not.toContain("draft-blog");
   });
 
   it("keeps every published entry", () => {
@@ -42,7 +42,7 @@ describe("filterDrafts", () => {
 
 describe("sortByDate", () => {
   it("orders entries newest first", () => {
-    expect(sortByDate(mixedEntries).map((e) => e.slug)).toEqual([
+    expect(sortByDate(mixedEntries).map((e) => e.id)).toEqual([
       "draft-blog",
       "newest-project",
       "second-newest-blog",
@@ -53,13 +53,13 @@ describe("sortByDate", () => {
 
   it("returns a new array rather than sorting in place", () => {
     const input = [...mixedEntries];
-    const before = input.map((e) => e.slug);
+    const before = input.map((e) => e.id);
     sortByDate(input);
-    expect(input.map((e) => e.slug)).toEqual(before);
+    expect(input.map((e) => e.id)).toEqual(before);
   });
 
   it("preserves input order for entries sharing a date", () => {
-    expect(sortByDate(sameDateEntries).map((e) => e.slug)).toEqual(["same-a", "same-b"]);
+    expect(sortByDate(sameDateEntries).map((e) => e.id)).toEqual(["same-a", "same-b"]);
   });
 
   it("handles an empty collection", () => {
@@ -75,14 +75,14 @@ describe("filterByKind", () => {
   });
 
   it("returns only project entries", () => {
-    expect(filterByKind(mixedEntries, "project").map((e) => e.slug)).toEqual([
+    expect(filterByKind(mixedEntries, "project").map((e) => e.id)).toEqual([
       "newest-project",
     ]);
   });
 
   it("composes with filterDrafts to drop unpublished posts", () => {
     const result = filterByKind(filterDrafts(mixedEntries), "blog");
-    expect(result.map((e) => e.slug)).toEqual([
+    expect(result.map((e) => e.id)).toEqual([
       "middle-blog",
       "oldest-blog",
       "second-newest-blog",
@@ -92,7 +92,7 @@ describe("filterByKind", () => {
 
 describe("filterByTag", () => {
   it("returns entries carrying the tag", () => {
-    expect(filterByTag(mixedEntries, "aws").map((e) => e.slug)).toEqual([
+    expect(filterByTag(mixedEntries, "aws").map((e) => e.id)).toEqual([
       "middle-blog",
       "newest-project",
     ]);
