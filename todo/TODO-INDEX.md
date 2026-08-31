@@ -16,7 +16,7 @@
 
 ## LOW Priority
 
-- [3 llm-content-pack](3-llm-content-pack.md) — Machine-readable `/_llm/*` endpoints (JSON/NDJSON/Markdown) + CloudFront bot routing
+- [3 llm-content-pack](3-llm-content-pack.md) — Serve `.md` per entry via `Accept: text/markdown` content negotiation (~80% fewer tokens). **Original UA-routing design withdrawn 2026-08-31 — it was cloaking and would have served Googlebot JSON.**
 
 ---
 
