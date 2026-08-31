@@ -3,7 +3,7 @@
 **Priority**: LOW
 **Status**: TODO
 **Created**: 2026-08-27
-**Updated**: 2026-08-27
+**Updated**: 2026-08-30
 
 ## Description
 
@@ -37,18 +37,19 @@ This is polish. Keep it small.
 
 ## Design
 
-### `src/consts.ts` (new, or add to an existing consts module)
+### `src/utils/copyright.ts` (new)
+
+Task 4 established the pattern: **logic never lives in `.astro` frontmatter**, because
+Vitest cannot render Astro components. Put both the constants and the helper in one
+module under `src/utils/`, alongside `entries.ts`, `seoMeta.ts`, `heroImagePath.ts` and
+`parseAvatarSvg.ts`. `Base.astro` stays a thin consumer.
 
 ```ts
 export const START_YEAR = 2025;
-export const BUILD_YEAR = new Date().getFullYear(); // evaluated at build time
-```
+/** Evaluated at build time — equals the year of the last deploy. */
+export const BUILD_YEAR = new Date().getFullYear();
 
-Centralizes both and makes them unit-testable.
-
-### Year-label helper (pure, testable)
-
-```ts
+/** `2025` when the years match, `2025–2026` once the end year is later. */
 export function copyrightLabel(startYear: number, currentYear: number): string {
   return currentYear > startYear ? `${startYear}–${currentYear}` : String(startYear);
 }
@@ -56,12 +57,16 @@ export function copyrightLabel(startYear: number, currentYear: number): string {
 
 `–` = en dash — the correct character for a year range.
 
+**Keep `BUILD_YEAR` out of `copyrightLabel`.** The helper takes both years as arguments
+so tests can pass any year without stubbing the clock; only the module constant reads
+`Date`. That is what makes the "would render 2025–2027 if built in 2027" criterion a
+plain unit test rather than a fake-timer exercise.
+
 ### Markup (`Base.astro`)
 
 ```astro
 ---
-import { START_YEAR, BUILD_YEAR } from '../consts';
-import { copyrightLabel } from '../consts'; // or wherever the helper lives
+import { START_YEAR, BUILD_YEAR, copyrightLabel } from '../utils/copyright';
 ---
 …© <span id="copyright-years" data-start-year={START_YEAR}>{copyrightLabel(START_YEAR, BUILD_YEAR)}</span> — Jon Green — …
 ```
@@ -97,20 +102,102 @@ Decide (not automating a legal file):
 
 Recommend **(b)** for consistency with the footer, done manually.
 
+## Testing
+
+TDD per `AGENTS.md` — failing test first, then the helper, then wire `Base.astro`.
+
+### New: `tests/unit/copyright.test.ts`
+
+Cover `copyrightLabel(startYear, currentYear)` across the whole matrix:
+
+| `currentYear` vs `startYear` | Expected |
+|---|---|
+| before (`2024`, `2025`) | `"2025"` — never render a range running backwards |
+| equal (`2025`, `2025`) | `"2025"` — single year, no dash |
+| after (`2025`, `2026`) | `"2025–2026"` |
+| far after (`2025`, `2099`) | `"2025–2099"` |
+
+Also assert the separator is an **en dash (U+2013), not a hyphen** — easy to get wrong
+in an editor and invisible in review. `expect(label).toContain("–")` plus
+`expect(label).not.toContain("-")`.
+
+`BUILD_YEAR` needs one test that it equals `new Date().getFullYear()`; don't build
+elaborate clock stubbing around a one-line constant.
+
+### The client script must be testable too
+
+Extract its computation, don't inline the logic twice:
+
+```ts
+/** Returns the label to display, or null when the build output should stand. */
+export function clientCopyrightLabel(startYear: number, now: number): string | null {
+  if (!startYear || now <= startYear) return null;
+  return copyrightLabel(startYear, now);
+}
+```
+
+Unit-test `null` for a missing/zero start year, `null` for a clock at or behind the
+start year (a visitor with a wrong clock must never roll the year *backwards*), and the
+correct range for a clock ahead. The `<script is:inline>` block then reads
+`data-start-year`, calls the same rule, and assigns only on a non-null result.
+
+### Update the existing E2E test
+
+`tests/e2e/site.spec.ts` already has, under `navigation`:
+
+```ts
+test("the footer shows the current copyright year", …)
+  → expect(page.locator("footer")).toContainText(String(new Date().getFullYear()))
+```
+
+That will still pass against a range and so proves nothing new. Extend it to assert:
+
+- the footer matches `/©\s*\d{4}(–\d{4})?/`
+- the span `#copyright-years` exists and carries `data-start-year="2025"`
+- the rendered text starts with `2025`
+- no console errors (the inline script runs on every page)
+
+Add one test with the clock moved forward to prove the client-side bump actually fires:
+
+```ts
+await page.addInitScript(() => {
+  const RealDate = Date;
+  // @ts-expect-error - test double
+  window.Date = class extends RealDate {
+    getFullYear() { return 2099; }
+  };
+});
+await page.goto("/");
+await expect(page.locator("#copyright-years")).toHaveText("2025–2099");
+```
+
+This is the whole point of the task — a build-time-only year would still read `2025`
+here. Without it, the client-side half is untested.
+
+### Gate
+
+```bash
+npm run check && npm test && npm run test:build && npm run test:e2e
+```
+
+`test:build` also matters: its "no page leaks a literal `undefined`" assertion catches a
+broken import or a misnamed export in the footer across all 22 pages at once.
+
 ## Acceptance Criteria
 
 - [ ] `START_YEAR` confirmed = 2025 (check `git log` for first commit / earliest content).
-- [ ] `src/consts.ts` exports `START_YEAR` and `BUILD_YEAR`; `Base.astro` imports them.
-- [ ] Footer renders `© 2025` today, and would render `© 2025–2027` if built in 2027
-      (verify via a test that stubs the current year).
+- [ ] `src/utils/copyright.ts` exports `START_YEAR`, `BUILD_YEAR`, `copyrightLabel` and
+      `clientCopyrightLabel`; `Base.astro` imports them and holds no logic of its own.
+- [ ] Footer renders `© 2025` today, and `copyrightLabel(2025, 2027)` returns
+      `"2025–2027"` — proven by a plain unit test, no clock stubbing needed.
 - [ ] Inline client script promotes/updates the range from the real clock; no-ops when
       the clock is at/behind `START_YEAR`; no console errors.
 - [ ] No-JS / crawler view still shows a valid year (the build-time output).
 - [ ] `LICENSE.txt` decision made and applied.
-- [ ] Tests (per AGENTS.md TDD): unit-test `copyrightLabel(startYear, currentYear)` across
-      `now < start`, `now == start`, `now > start`; and the client-script compute logic
-      (extract it to a pure function and test the same matrix).
-- [ ] `npm run build` + `npm run check` clean; footer eyeballed in `npm run preview`.
+- [ ] Unit tests cover the full year matrix and the en-dash character; the E2E test is
+      extended with a forward-clock case proving the client-side bump fires.
+- [ ] Full gate green: `npm run check`, `npm test`, `npm run test:build`,
+      `npm run test:e2e`; footer eyeballed in `npm run preview`.
 
 ## Notes
 
@@ -129,3 +216,14 @@ Recommend **(b)** for consistency with the footer, done manually.
   (formalized into `src/consts.ts`) + `is:inline` client script that recomputes from
   `data-start-year` + real clock. Start year 2025 (LICENSE + earliest `pubDate`).
   Not started.
+- 2026-08-30 **Revised after task 4 landed.** Moved the planned module from
+  `src/consts.ts` to **`src/utils/copyright.ts`** to match the pattern task 4
+  established — `.astro` files cannot be unit-tested, so logic lives in `src/utils/` and
+  components stay thin wrappers. Added a **Testing** section: a new
+  `tests/unit/copyright.test.ts` covering the year matrix and the en-dash character, a
+  `clientCopyrightLabel()` extraction so the client script's rule is testable rather
+  than duplicated inside the inline block, and an extension to the existing
+  `tests/e2e/site.spec.ts` footer test — which currently only checks the footer contains
+  the current year and would pass unchanged against a range, proving nothing. The new
+  E2E case stubs the browser clock to 2099 to prove the client-side bump actually fires;
+  without it the whole point of the task goes untested. Still not started.
