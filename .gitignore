@@ -27,6 +27,22 @@ pnpm-debug.log*
 # temporary files
 tmp/
 
+# managed media assets — the durable copy lives in S3 and is listed in
+# media-manifest.json; run `npm run media:pull` to hydrate this folder.
+/public/media/
+
+# defensive: raster/video/PDF must go through public/media/, never straight into
+# git. Small text SVG that is genuine site source stays tracked.
+public/**/*.png
+public/**/*.jpg
+public/**/*.jpeg
+public/**/*.gif
+public/**/*.webp
+public/**/*.avif
+public/**/*.mp4
+public/**/*.webm
+public/**/*.pdf
+
 # test artefacts
 coverage/
 test-results/

@@ -12,7 +12,10 @@
     "test:watch": "vitest",
     "test:cover": "vitest run --coverage",
     "test:build": "node tests/integration/build.test.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "media:check": "node scripts/media-check.mjs",
+    "media:pull": "node scripts/media-check.mjs --pull",
+    "media:push": "./scripts/media-push.sh"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -28,6 +31,7 @@
     "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.20",
     "@vitest/coverage-v8": "^4.1.11",
+    "image-size": "^2.0.2",
     "node-html-parser": "^9.0.2",
     "sass": "^1.103.1",
     "vitest": "^4.1.11"

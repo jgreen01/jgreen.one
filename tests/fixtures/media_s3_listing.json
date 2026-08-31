@@ -1,0 +1,25 @@
+{
+  "_comment": "Recorded from `aws s3api list-objects-v2 --bucket jgreen-one-site --prefix media/` on 2026-08-30. Shape is real; sha256 values come from `head-object` Metadata, which list-objects-v2 does not return, so media-check fetches them separately. Two objects: one matching the manifest, one orphan.",
+  "Contents": [
+    {
+      "Key": "media/how-this-website-was-built.png",
+      "LastModified": "2025-10-14T02:17:22.000Z",
+      "ETag": "\"0450c6e64e552b7fed54734a0276c23b\"",
+      "ChecksumAlgorithm": ["CRC32"],
+      "ChecksumType": "FULL_OBJECT",
+      "Size": 82261,
+      "StorageClass": "STANDARD"
+    },
+    {
+      "Key": "media/orphan-left-in-bucket.png",
+      "LastModified": "2025-06-01T09:00:00.000Z",
+      "ETag": "\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"",
+      "ChecksumAlgorithm": ["CRC32"],
+      "ChecksumType": "FULL_OBJECT",
+      "Size": 1234,
+      "StorageClass": "STANDARD"
+    }
+  ],
+  "RequestCharged": null,
+  "Prefix": "media/"
+}
