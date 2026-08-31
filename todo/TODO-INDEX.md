@@ -22,7 +22,7 @@
 
 ## Recently Resolved
 
-- [2 aws-waf-protection](2-aws-waf-protection.md) — Done 2026-06-27. WAF v2 rate limit (1000 req/5min) on CloudFront with CW logging.
+(nothing pending — see `todo/done/`)
 
 ---
 
