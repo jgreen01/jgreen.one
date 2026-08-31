@@ -258,9 +258,65 @@ test.describe("navigation", () => {
     }
   });
 
-  test("the footer shows the current copyright year", async ({ page }) => {
+  test("the footer shows a well-formed copyright year", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("footer")).toContainText(String(new Date().getFullYear()));
+
+    const footer = page.locator("footer");
+    await expect(footer).toContainText(String(new Date().getFullYear()));
+    // Single year or an en-dash range — never a hyphen, never a bare "©".
+    await expect(footer).toHaveText(/©\s*\d{4}(–\d{4})?\s/);
+  });
+
+  test("the copyright span carries the start year for the client script", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    const span = page.locator("#copyright-years");
+    await expect(span).toHaveAttribute("data-start-year", "2025");
+    await expect(span).toHaveText(/^2025(–\d{4})?$/);
+  });
+
+  test("the client script bumps the year when the visitor's clock is ahead", async ({
+    page,
+  }) => {
+    // The build-time year alone would still read 2025–<current>. Moving the
+    // browser clock forward is the only way to prove the inline script runs —
+    // which is the entire point of doing this client-side.
+    await page.addInitScript(() => {
+      const RealDate = Date;
+      class FakeDate extends RealDate {
+        getFullYear() {
+          return 2099;
+        }
+      }
+      // @ts-expect-error - deliberate test double
+      window.Date = FakeDate;
+    });
+
+    await page.goto("/");
+    await expect(page.locator("#copyright-years")).toHaveText("2025–2099");
+  });
+
+  test("the client script leaves the year alone when the clock is behind", async ({
+    page,
+  }) => {
+    // A visitor with a badly-set clock must never roll the year backwards.
+    await page.addInitScript(() => {
+      const RealDate = Date;
+      class FakeDate extends RealDate {
+        getFullYear() {
+          return 2000;
+        }
+      }
+      // @ts-expect-error - deliberate test double
+      window.Date = FakeDate;
+    });
+
+    await page.goto("/");
+    await expect(page.locator("#copyright-years")).toHaveText(
+      String(new Date().getFullYear() > 2025 ? `2025–${new Date().getFullYear()}` : "2025"),
+    );
   });
 });
 
