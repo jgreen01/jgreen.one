@@ -22,3 +22,4 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
 ## Contents
 
 - [1 aws-billing-alarms](1-aws-billing-alarms.md) — Filed 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget.
+- [4 testing](4-testing.md) — Filed 2026-08-30. Vitest + Playwright + build integration + pytest/boto3 infra; 266 tests.
