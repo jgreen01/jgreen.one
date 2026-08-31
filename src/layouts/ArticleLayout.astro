@@ -1,12 +1,15 @@
 ---
 import Base from './Base.astro';
+import { heroImagePath } from '../utils/heroImagePath';
 const { frontmatter, collection } = Astro.props;
-const image = frontmatter.heroImage && collection ? `/${collection}/${frontmatter.heroImage}` : undefined;
+// One resolved path for both the OG tag and the visible <img>: a bare relative
+// value would otherwise resolve against /entries/<slug>/ and 404.
+const heroImage = heroImagePath(frontmatter.heroImage, collection);
 ---
 <Base
   title={'Jon Green :: ' + frontmatter.title}
   description={frontmatter.description}
-  image={image}
+  image={heroImage}
   type="article"
 >
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
@@ -16,7 +19,7 @@ const image = frontmatter.heroImage && collection ? `/${collection}/${frontmatte
         Published on {new Date(frontmatter.pubDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}
         {frontmatter.updatedDate && ` • Updated on ${new Date(frontmatter.updatedDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}`}
       </p>
-      {frontmatter.heroImage && <img src={frontmatter.heroImage} alt="" class="w-full h-auto rounded-lg" />}
+      {heroImage && <img src={heroImage} alt="" class="w-full h-auto rounded-lg" />}
       <slot />
     </article>
   </main>
