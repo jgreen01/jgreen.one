@@ -1,13 +1,8 @@
 ---
-import { parse } from 'node-html-parser';
 import rawSvg from '../assets/avatar.svg?raw';
+import { parseAvatarSvg, avatarSvgAttributes } from '../utils/parseAvatarSvg';
 
-const root = parse(rawSvg);
-const svg = root.querySelector('svg');
-if (!svg) throw new Error('Avatar: no <svg> element found in avatar.svg');
-const { attributes, innerHTML } = svg;
-
-const { ...astroProps } = Astro.props;
-const svgAttributes = { ...attributes, ...astroProps, viewBox: '0 0 1000 1000' };
+const { attributes, innerHTML } = parseAvatarSvg(rawSvg);
+const svgAttributes = avatarSvgAttributes(attributes, Astro.props);
 ---
 <svg {...svgAttributes} set:html={innerHTML}></svg>
