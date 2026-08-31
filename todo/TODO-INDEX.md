@@ -1,7 +1,7 @@
-# TODO Index: 4 open (0 HIGH, 3 MEDIUM, 1 LOW)
-*Last updated: 2026-08-30*
+# TODO Index: 3 open (0 HIGH, 2 MEDIUM, 1 LOW)
+*Last updated: 2026-08-31*
 
-**Suggested order:** 5 (blocker expired) → 9 → 6 → 3
+**Suggested order:** 5 (blocker expired) → 9 (unblocks the inert infra CI job, and upgrades task 6's interim CI check) → 3
 
 ---
 
@@ -12,7 +12,6 @@
 ## MEDIUM Priority
 
 - [5 mail-lockdown](5-mail-lockdown.md) — Harden DMARC (rua reporting, p=reject) after validating ProtonMail cutover
-- [6 image-asset-management](6-image-asset-management.md) — Keep images out of git (Option A1): one gitignored `public/media/` folder + S3 backup + root `media-manifest.json` + `media-check` reconciler; SVGs stay committed; final step = purge blobs from history. **Blocked on step 0** — gitignored media leaves CI with no images, failing 3 of task 4's tests
 - [9 github-oidc-ci-role](9-github-oidc-ci-role.md) — Terraform an IAM OIDC provider + read-only role so CI can reach AWS without long-lived keys. Unblocks the inert `infra` CI job **and** task 6 step 0.
 
 ## LOW Priority
