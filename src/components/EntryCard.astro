@@ -4,24 +4,22 @@
  * - entry: a single content collection entry
  */
 import { type CollectionEntry } from "astro:content";
+import { heroImagePath } from "../utils/heroImagePath";
 interface Props {
   entry: CollectionEntry<"entries">;
 }
 const { entry } = Astro.props;
 const { data, collection } = entry;
-let heroImagePath = data.heroImage;
-if (heroImagePath && !heroImagePath.startsWith('/')) {
-  heroImagePath = `/entries/${heroImagePath}`;
-}
+const heroImage = heroImagePath(data.heroImage, collection);
 ---
 
 <li class="mb-6">
   <div class="flex flex-col gap-2">
     <!-- Hero Image -->
-    {heroImagePath && (
+    {heroImage && (
           <div class="w-full max-h-80 mb-2 hero-image-container overflow-hidden">
             <img
-              src={heroImagePath}
+              src={heroImage}
               alt={data.title}
               class="w-full h-full object-cover object-top rounded-lg"
               loading="lazy"
