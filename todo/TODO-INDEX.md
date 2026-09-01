@@ -15,7 +15,7 @@
 
 ## LOW Priority
 
-- [3 llm-content-pack](3-llm-content-pack.md) — Serve `.md` per entry via `Accept: text/markdown` content negotiation (~80% fewer tokens). **Original UA-routing design withdrawn 2026-08-31 — it was cloaking and would have served Googlebot JSON.**
+- [3 llm-content-pack](3-llm-content-pack.md) — Emit a `.md` per entry (measured **83% fewer tokens**) + `llms.txt`. Phases 1–2 are zero-risk; edge content negotiation is phase 3 and optional. JSON/NDJSON packs dropped.
 
 ---
 
