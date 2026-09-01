@@ -38,6 +38,18 @@
       "referencedBy": [
         "entries/serving-markdown-to-ai-agents"
       ]
+    },
+    {
+      "path": "testing-makes-ai-iteration-fast.webp",
+      "bytes": 85384,
+      "sha256": "a77005701fe37d8cc2bd3030a613df1b84e22c9417da8dba259e6517f3c1164b",
+      "width": 1536,
+      "height": 1024,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-01",
+      "referencedBy": [
+        "entries/testing-makes-ai-iteration-fast"
+      ]
     }
   ]
 }
