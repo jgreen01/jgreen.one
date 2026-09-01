@@ -69,7 +69,26 @@ function writeMediaCheckStub(log: string, exitCode = 0) {
   );
 }
 
-function setupWorkdir(tfOutput: string = DEFAULT_TF_OUTPUT, mediaCheckExit = 0) {
+/**
+ * Stubs `scripts/test-cloudfront-function.sh`, which deploy.sh invokes by path.
+ * Logs its invocation so ordering can be asserted, and exits with `exitCode` so
+ * the "function test fails, deploy aborts" path is testable.
+ */
+function writeFunctionTestStub(log: string, exitCode = 0) {
+  const file = join(workdir, "scripts", "test-cloudfront-function.sh");
+  writeFileSync(
+    file,
+    `#!/usr/bin/env bash\nprintf '%s\\t%s\\t%s\\n' "cf-function-test" "$PWD" "$*" >> "${log}"\nexit ${exitCode}\n`,
+    "utf-8",
+  );
+  chmodSync(file, 0o755);
+}
+
+function setupWorkdir(
+  tfOutput: string = DEFAULT_TF_OUTPUT,
+  mediaCheckExit = 0,
+  functionTestExit = 0,
+) {
   mkdirSync(join(workdir, "infra", "live"), { recursive: true });
   mkdirSync(join(workdir, "scripts"), { recursive: true });
   mkdirSync(join(workdir, "bin"), { recursive: true });
@@ -85,6 +104,7 @@ function setupWorkdir(tfOutput: string = DEFAULT_TF_OUTPUT, mediaCheckExit = 0) 
   writeMock("aws", record);
   writeMock("npm", record);
   writeMediaCheckStub(log, mediaCheckExit);
+  writeFunctionTestStub(log, functionTestExit);
 }
 
 function runDeploy() {
@@ -242,6 +262,36 @@ describe("scripts/deploy.sh", () => {
       setupWorkdir(JSON.stringify({ site_bucket: { value: "b" } }));
       const result = runDeploy();
       expect(result.stderr).toMatch(/CloudFront/i);
+    });
+  });
+
+  describe("the CloudFront function gate", () => {
+    it("tests the function before building", () => {
+      // A syntax error in the viewer-request function 503s every request to the
+      // site, and publishing does not validate the runtime. This gate is the
+      // only thing that catches it, so it has to run before anything ships.
+      setupWorkdir();
+      runDeploy();
+
+      const order = invocations().map((i) => i.command);
+      const build = invocations().findIndex(
+        (i) => i.command === "npm" && i.args.join(" ") === "run build",
+      );
+      expect(order.indexOf("cf-function-test")).toBeGreaterThanOrEqual(0);
+      expect(order.indexOf("cf-function-test")).toBeLessThan(build);
+    });
+
+    it("aborts the deploy when the function test fails", () => {
+      setupWorkdir(DEFAULT_TF_OUTPUT, 0, 1);
+
+      expect(runDeploy().status).not.toBe(0);
+    });
+
+    it("never syncs to S3 after a failed function test", () => {
+      setupWorkdir(DEFAULT_TF_OUTPUT, 0, 1);
+
+      runDeploy();
+      expect(callsTo("aws")).toHaveLength(0);
     });
   });
 
