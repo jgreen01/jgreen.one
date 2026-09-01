@@ -75,6 +75,41 @@ const CONTENT_TYPES = {
   ".pdf": "application/pdf",
 };
 
+/**
+ * Works out which S3 bucket holds the managed assets.
+ *
+ * Order matters, and the manifest sits ahead of Terraform deliberately. Reading
+ * the name from `terraform output` requires `terraform init` and access to the
+ * state backend, neither of which a fresh clone has — which made
+ * `npm run media:pull`, the first step in the guide, fail on exactly the machine
+ * that needed it most. The manifest is committed, so every clone has it.
+ *
+ * @param {object} options
+ * @param {Record<string, string | undefined>} [options.env] process environment
+ * @param {{ bucket?: string }} [options.manifest] parsed media-manifest.json
+ * @param {() => string} [options.fromTerraform] last-resort lookup; may throw
+ * @returns {string} the bucket name
+ */
+export function resolveBucket({ env = {}, manifest = {}, fromTerraform } = {}) {
+  if (env.SITE_BUCKET) return env.SITE_BUCKET;
+  if (manifest.bucket) return manifest.bucket;
+
+  if (fromTerraform) {
+    try {
+      const name = fromTerraform();
+      if (name) return name;
+    } catch {
+      // Fall through to the error below, which is more actionable than
+      // Terraform's.
+    }
+  }
+
+  throw new Error(
+    "Could not determine the media bucket. Set SITE_BUCKET, or add a top-level " +
+      '"bucket" field to media-manifest.json (run `npm run media:push` to regenerate it).',
+  );
+}
+
 /** sha256 of a buffer, lowercase hex. */
 export function sha256(buffer) {
   return createHash("sha256").update(buffer).digest("hex");
