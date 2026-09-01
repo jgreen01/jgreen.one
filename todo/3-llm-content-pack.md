@@ -1,9 +1,81 @@
 # Serve Markdown to AI agents
 
 **Priority**: LOW
-**Status**: TODO
+**Status**: DONE — all three phases built, tested and deployed (not committed)
 **Created**: 2025-09-28
 **Updated**: 2026-08-31
+
+## Outcome — 2026-08-31, all three phases live
+
+| Gate | Result |
+|---|---|
+| `npm run check` | 0 errors |
+| `npm test` | **289** (was 220 — 69 added) |
+| `npm run test:build` | **26** (was 20) |
+| `npm run test:e2e` | 101 |
+| `pytest tests/infra` | 54 |
+| `./scripts/test-cloudfront-function.sh` | **14, in CloudFront's real engine** |
+
+**Measured on the live site:**
+
+```
+HTML       30,010 bytes  ~7,502 tokens
+Markdown    7,975 bytes  ~1,993 tokens     73.4% reduction
+```
+
+And the check that matters more than the size: 200 content words taken from the rendered
+HTML article, **0 missing from the Markdown**. Same content, different format —
+verified rather than asserted.
+
+**Live behaviour, confirmed with `curl`:**
+
+| Requester | Gets |
+|---|---|
+| Googlebot, Bingbot, Chrome, GPTBot | `text/html` |
+| `Accept: text/markdown` | `text/markdown` |
+| `/entries/<slug>/index.md` directly | `text/markdown` |
+| `/llms.txt` | `text/plain`, listing every entry |
+
+The cache-separation check passed in order — HTML, Markdown, HTML, Markdown — each
+returning its own type, so the two formats do occupy separate cache entries.
+
+### Two things that were wrong in this plan, corrected by testing
+
+**1. The ES5.1 constraint was overstated.** This file said to avoid `String.includes` and
+`Array.some`. Probing the real runtime with `test-function` showed `String.includes`,
+`String.startsWith`, `Array.includes`, `Array.some` and `Object.assign` all work — the
+existing clean-URL rewrite had been using `uri.includes('.')` in production the whole
+time. **The limit is ES5.1 *syntax*** (no `const`/`let`, arrow functions or template
+literals), which fails at *parse* time and therefore 503s every request, not just the one
+exercising the new path.
+
+**2. The first version of the deploy gate silently broke deploys.** It published the
+source to the managed function's `DEVELOPMENT` stage. Terraform compares against that
+stage, so priming it made `terraform plan` report **"No changes"** while the `LIVE` stage
+the distribution actually serves stayed stale — the gate would have blocked the very
+change it was validating. Caught because the plan said no-changes when a change was
+obviously pending. It now creates and deletes a throwaway function per run, and has no
+side effect on anything Terraform manages.
+
+### How it is protected going forward
+
+`scripts/test-cloudfront-function.sh` runs the function in the real engine and is wired
+into `deploy.sh` **before the build**, so a syntax error cannot reach the distribution.
+This matters because neither `create-function` nor `update-function` validates the
+runtime — an invalid function publishes successfully and only fails when a request hits
+it. Publishing is not a safety net.
+
+`tests/unit/cloudfrontFunction.test.ts` covers the routing logic and, deliberately, the
+**pre-existing** clean-URL rewrites — written and green *before* the function was
+touched, so a regression in behaviour that predates this task would surface.
+
+### Deliberately not done
+
+- **Continuous deployment.** Judged ceremony for this site: function updates propagate in
+  under a minute, so rollback is republishing, and the cost of being wrong is a couple of
+  minutes of 503 on a low-traffic blog.
+- **`robots.txt` still allows everything**, now with the reasoning written into the file
+  rather than left implicit.
 
 ## Description
 
@@ -79,23 +151,23 @@ entry. Nothing existing changes; new files appear in `dist/`.
 This alone is useful: anything that knows the URL can fetch it, and phase 2 advertises
 the URLs. **Phase 1 + 2 is a complete, zero-risk end state** — phase 3 is optional.
 
-- [ ] `src/pages/entries/[slug]/index.md.ts` with `export const prerender = true`,
+- [x] `src/pages/entries/[slug]/index.md.ts` with `export const prerender = true`,
       returning the raw entry body with `content-type: text/markdown; charset=utf-8`
-- [ ] Verify the raw body is still reachable on a collection entry under Astro 7's glob
+- [x] Verify the raw body is still reachable on a collection entry under Astro 7's glob
       loader (`entry.body`) — check before designing around it
-- [ ] Drafts excluded, same as the HTML routes — reuse `filterDrafts`
-- [ ] Frontmatter title/description included as a heading or preamble, so the file stands
+- [x] Drafts excluded, same as the HTML routes — reuse `filterDrafts`
+- [x] Frontmatter title/description included as a heading or preamble, so the file stands
       alone when read out of context
-- [ ] Build-integration test: one `.md` per published entry, none for drafts, and the
+- [x] Build-integration test: one `.md` per published entry, none for drafts, and the
       body matches the source
-- [ ] Record the measured token counts in the Log
+- [x] Record the measured token counts in the Log
 
 ## Phase 2 — make them discoverable (cheap, low expectations)
 
-- [ ] `/llms.txt` — title, one-line description, and the `.md` URL for each entry
-- [ ] Decide `robots.txt` deliberately against the taxonomy above and write the decision
+- [x] `/llms.txt` — title, one-line description, and the `.md` URL for each entry
+- [x] Decide `robots.txt` deliberately against the taxonomy above and write the decision
       down, even if the answer stays "allow everything"
-- [ ] Build-integration test: every URL in `llms.txt` resolves to a file in `dist/`
+- [x] Build-integration test: every URL in `llms.txt` resolves to a file in `dist/`
 
 ## Phase 3 — content negotiation at the edge (optional)
 
@@ -209,27 +281,27 @@ but has not been timed on this distribution.
 
 ### If phase 3 is done
 
-- [ ] Vitest covering the existing rewrites, **written and green before the function is
+- [x] Vitest covering the existing rewrites, **written and green before the function is
       touched**: `/` → `/index.html`, `/about` → `/about/index.html`, a path with an
       extension passing through untouched
-- [ ] A request with **no `accept` header** does not throw — the code reads
+- [x] A request with **no `accept` header** does not throw — the code reads
       `headers['accept'].value`, and a TypeError is a 503
-- [ ] `aws cloudfront test-function` wired into `deploy.sh` as a gate, covering both the
+- [x] `aws cloudfront test-function` wired into `deploy.sh` as a gate, covering both the
       HTML and Markdown paths plus the no-header case
-- [ ] ESLint at `ecmaVersion: 5` on `infra/live/function.js`
-- [ ] Deployed, then the three-request cache check above run against the live site
-- [ ] `curl -A` with a real Chrome UA and with Googlebot, confirming byte-identical HTML
+- [x] ESLint at `ecmaVersion: 5` on `infra/live/function.js`
+- [x] Deployed, then the three-request cache check above run against the live site
+- [x] `curl -A` with a real Chrome UA and with Googlebot, confirming byte-identical HTML
 
 
 ## Acceptance criteria
 
-- [ ] Phase 1: a `.md` per published entry, correct MIME type, drafts excluded, tested
-- [ ] Phase 2: `llms.txt` lists every entry and every URL in it resolves
-- [ ] A normal browser and Googlebot receive byte-identical HTML to today — the criterion
+- [x] Phase 1: a `.md` per published entry, correct MIME type, drafts excluded, tested
+- [x] Phase 2: `llms.txt` lists every entry and every URL in it resolves
+- [x] A normal browser and Googlebot receive byte-identical HTML to today — the criterion
       that keeps the site in search results
-- [ ] Full gate green: `npm run check`, `npm test`, `npm run test:build`,
+- [x] Full gate green: `npm run check`, `npm test`, `npm run test:build`,
       `npm run test:e2e`
-- [ ] If phase 3 is attempted: `test-function` gating `deploy.sh`, ES5.1 lint, and the
+- [x] If phase 3 is attempted: `test-function` gating `deploy.sh`, ES5.1 lint, and the
       three-request cache-separation check run against the live distribution
 
 ## Notes
@@ -306,3 +378,23 @@ but has not been timed on this distribution.
   couple of minutes of 503 on a low-traffic personal blog. A staging distribution and
   promotion workflow is the right control for a business and ceremony here. Flagged that
   the propagation time should be measured once rather than assumed.
+- 2026-08-31 **Built, tested and deployed, all three phases.** Phase 1: verified
+  `entry.body` is reachable under Astro 7's glob loader before designing around it, then
+  `src/utils/entryMarkdown.ts` (20 tests) and an `index.md.ts` endpoint per entry. Phase 2:
+  `src/utils/llmsTxt.ts` (13 tests), an `llms.txt` route, and `robots.txt` rewritten with
+  the allow-everything decision and its reasoning written into the file. Phase 3: the
+  `Accept` branch in `infra/live/function.js`, 37 unit tests, and
+  `scripts/test-cloudfront-function.sh` wired into `deploy.sh` as a gate.
+  **Two corrections came out of testing rather than reading.** The ES5.1 warning in this
+  file was overstated: probing the real runtime showed `String.includes`, `startsWith`,
+  `Array.includes`, `Array.some` and `Object.assign` all work — the constraint is ES5.1
+  *syntax*, and the existing rewrite had been using `.includes()` in production all along.
+  And the first version of the deploy gate published to the managed function's
+  `DEVELOPMENT` stage, which made `terraform plan` report "No changes" while `LIVE` stayed
+  stale — it would have silently blocked the change it was validating. Now uses a
+  throwaway function per run.
+  Deployed and verified live: Googlebot, Bingbot, Chrome and GPTBot all receive
+  `text/html`; `Accept: text/markdown` receives `text/markdown`; the cache-separation
+  sequence returns the right type each time. 73.4% smaller, and 0 of 200 sampled content
+  words missing from the Markdown. Full gate green: 289 unit, 26 build, 101 E2E, 54 infra,
+  14 in the real CloudFront runtime. **Nothing committed.**
