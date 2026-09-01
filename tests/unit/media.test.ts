@@ -11,6 +11,7 @@ import {
   findMediaReferences,
   buildManifest,
   reconcile,
+  resolveBucket,
   shouldFail,
 } from "../../scripts/lib/media.mjs";
 
@@ -30,6 +31,70 @@ const manifestEntry = (path: string, overrides: Record<string, unknown> = {}) =>
 });
 
 const codes = (findings: Array<{ code: string }>) => findings.map((f) => f.code);
+
+describe("resolveBucket", () => {
+  // Regression: media-check used to read the bucket name only from
+  // `terraform output`, which needs `terraform init` and backend access. A
+  // fresh clone has neither, so `npm run media:pull` — the first step in the
+  // guide — failed, and the build then silently produced no images.
+  const fromTerraform = () => "bucket-from-terraform";
+  const terraformUnavailable = () => {
+    throw new Error("Command failed: terraform output -raw site_bucket");
+  };
+
+  it("prefers the SITE_BUCKET environment variable", () => {
+    expect(
+      resolveBucket({
+        env: { SITE_BUCKET: "bucket-from-env" },
+        manifest: { bucket: "bucket-from-manifest" },
+        fromTerraform,
+      }),
+    ).toBe("bucket-from-env");
+  });
+
+  it("falls back to the manifest, which every clone has", () => {
+    expect(
+      resolveBucket({
+        env: {},
+        manifest: { bucket: "bucket-from-manifest" },
+        fromTerraform,
+      }),
+    ).toBe("bucket-from-manifest");
+  });
+
+  it("works from the manifest with no Terraform available at all", () => {
+    // The fresh-clone case that was broken.
+    expect(
+      resolveBucket({
+        env: {},
+        manifest: { bucket: "bucket-from-manifest" },
+        fromTerraform: terraformUnavailable,
+      }),
+    ).toBe("bucket-from-manifest");
+  });
+
+  it("falls back to Terraform for a manifest predating the bucket field", () => {
+    expect(resolveBucket({ env: {}, manifest: {}, fromTerraform })).toBe(
+      "bucket-from-terraform",
+    );
+  });
+
+  it("throws a message naming both remedies when nothing resolves", () => {
+    expect(() =>
+      resolveBucket({ env: {}, manifest: {}, fromTerraform: terraformUnavailable }),
+    ).toThrow(/SITE_BUCKET|manifest/i);
+  });
+
+  it("ignores an empty SITE_BUCKET rather than treating it as an answer", () => {
+    expect(
+      resolveBucket({
+        env: { SITE_BUCKET: "" },
+        manifest: { bucket: "bucket-from-manifest" },
+        fromTerraform,
+      }),
+    ).toBe("bucket-from-manifest");
+  });
+});
 
 describe("sha256", () => {
   it("hashes content, not the filename", () => {

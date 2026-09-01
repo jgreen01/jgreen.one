@@ -1,6 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-31",
+  "generatedAt": "2026-09-01",
+  "bucket": "jgreen-one-site",
   "assets": [
     {
       "path": "how-this-website-was-built.png",

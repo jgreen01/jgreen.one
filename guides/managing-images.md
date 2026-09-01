@@ -117,9 +117,13 @@ letting a deploy proceed unverified.
 
 ## Troubleshooting
 
-**`media-check: could not reach S3`** — you have no AWS credentials, or the
-bucket name could not be read from Terraform. Use `--offline` to work without
-S3, or set `SITE_BUCKET` to skip the Terraform lookup.
+**`media-check: could not reach S3`** — you have no AWS credentials. Use
+`--offline` to work without S3.
+
+**`Could not determine the media bucket`** — the bucket name normally comes from
+the `bucket` field in `media-manifest.json`, which every clone has. If that field
+is missing (a manifest predating it), set `SITE_BUCKET=jgreen-one-site` or run
+`npm run media:push` to regenerate the manifest.
 
 **The build fails with a `heroImage` error** — the value is not `/media/...` or
 an `https://` URL. That guard exists because a page-relative path silently 404s

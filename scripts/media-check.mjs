@@ -31,6 +31,7 @@ import {
   findMediaReferences,
   isManagedAsset,
   reconcile,
+  resolveBucket,
   sha256,
   shouldFail,
 } from "./lib/media.mjs";
@@ -52,9 +53,9 @@ const strict = flags.has("--strict");
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-function readManifest() {
-  if (!existsSync(MANIFEST_PATH)) return [];
-  return JSON.parse(readFileSync(MANIFEST_PATH, "utf-8")).assets ?? [];
+function readManifestDoc() {
+  if (!existsSync(MANIFEST_PATH)) return {};
+  return JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"));
 }
 
 function walk(dir) {
@@ -120,13 +121,16 @@ function scanContentReferences() {
   return byPath;
 }
 
-function bucketName() {
-  if (process.env.SITE_BUCKET) return process.env.SITE_BUCKET;
-  const output = execFileSync("terraform", ["output", "-raw", "site_bucket"], {
-    cwd: join(ROOT, "infra/live"),
-    encoding: "utf-8",
+function bucketName(manifestDoc) {
+  return resolveBucket({
+    env: process.env,
+    manifest: manifestDoc,
+    fromTerraform: () =>
+      execFileSync("terraform", ["output", "-raw", "site_bucket"], {
+        cwd: join(ROOT, "infra/live"),
+        encoding: "utf-8",
+      }).trim(),
   });
-  return output.trim();
 }
 
 /** Lists the bucket prefix and reads each object's sha256 metadata. */
@@ -163,22 +167,33 @@ function pullAsset(bucket, path) {
   });
 }
 
-function writeManifest(assets) {
-  const body = { version: 1, generatedAt: today(), assets };
+function writeManifest(assets, bucket) {
+  // Recorded so a fresh clone can pull without Terraform.
+  const body = { version: 1, generatedAt: today(), bucket, assets };
   writeFileSync(MANIFEST_PATH, `${JSON.stringify(body, null, 2)}\n`, "utf-8");
+}
+
+/** Bucket name for --regen, which must not fail when nothing can resolve it. */
+function safeBucketName(manifestDoc) {
+  try {
+    return bucketName(manifestDoc);
+  } catch {
+    return undefined;
+  }
 }
 
 const ICON = { [ERROR]: "✗", [WARN]: "!", [OK]: "·" };
 
 function main() {
-  let manifest = readManifest();
+  const manifestDoc = readManifestDoc();
+  let manifest = manifestDoc.assets ?? [];
   const local = readLocalAssets();
   const referencesByPath = scanContentReferences();
   const references = Object.keys(referencesByPath);
 
   if (regen) {
     manifest = buildManifest(local, { previous: manifest, referencesByPath });
-    writeManifest(manifest);
+    writeManifest(manifest, manifestDoc.bucket ?? safeBucketName(manifestDoc));
     console.log(`media-check: wrote ${relative(ROOT, MANIFEST_PATH)} (${manifest.length} assets)`);
   }
 
@@ -186,7 +201,7 @@ function main() {
   let s3 = null;
   if (!offline) {
     try {
-      bucket = bucketName();
+      bucket = bucketName(manifestDoc);
       s3 = readS3Assets(bucket);
     } catch (error) {
       // Hard failure by design: a deploy must never proceed having silently
