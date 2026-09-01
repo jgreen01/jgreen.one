@@ -28,6 +28,7 @@ SITE_BUCKET = os.environ.get("JGREEN_SITE_BUCKET", "jgreen-one-site")
 WAF_NAME = os.environ.get("JGREEN_WAF_NAME", "jgreen-one-waf")
 SNS_TOPIC_NAME = os.environ.get("JGREEN_SNS_TOPIC", "jgreen-one-billing-alerts")
 BUDGET_NAME = os.environ.get("JGREEN_BUDGET_NAME", "jgreen-one-monthly-budget")
+HOSTED_ZONE_ID = os.environ.get("JGREEN_HOSTED_ZONE_ID", "Z01752721Z1AXUQEVQZ2D")
 
 # CloudFront, WAF for CloudFront, billing metrics and Budgets are all global
 # services addressed through us-east-1.
@@ -76,6 +77,32 @@ def cloudwatch(sts_identity):
 @pytest.fixture(scope="session")
 def budgets(sts_identity):
     return boto3.client("budgets", region_name=GLOBAL_REGION)
+
+
+@pytest.fixture(scope="session")
+def route53(sts_identity):
+    return boto3.client("route53", region_name=GLOBAL_REGION)
+
+
+@pytest.fixture(scope="session")
+def zone_records(route53):
+    """Every record in the hosted zone, keyed by ``(name, type)``.
+
+    Names keep their trailing dot as Route 53 returns them; values are the raw
+    ``Value`` strings, so TXT records arrive still wrapped in quotes.
+
+    The mail records are managed by hand rather than by Terraform, so nothing
+    else would notice a console edit or an accidental deletion. That is the
+    reason these assertions exist.
+    """
+    records = {}
+    paginator = route53.get_paginator("list_resource_record_sets")
+    for page in paginator.paginate(HostedZoneId=HOSTED_ZONE_ID):
+        for record in page["ResourceRecordSets"]:
+            key = (record["Name"], record["Type"])
+            values = [r["Value"] for r in record.get("ResourceRecords", [])]
+            records.setdefault(key, []).extend(values)
+    return records
 
 
 @pytest.fixture(scope="session")
