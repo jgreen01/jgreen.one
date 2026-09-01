@@ -23,6 +23,7 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
 
 - [1 aws-billing-alarms](1-aws-billing-alarms.md) — Filed 2026-06-27. SNS + 4 CloudWatch alarms + $20/mo budget.
 - [2 aws-waf-protection](2-aws-waf-protection.md) — Filed 2026-08-31. WAF v2 rate limit (1000 req/5min) + CW logging. Reconciled against the live account; rate-limit firing still unverified.
+- [3 llm-content-pack](3-llm-content-pack.md) — Filed 2026-08-31. `.md` per entry + `llms.txt` + `Accept: text/markdown` edge negotiation. 73% fewer tokens; live and verified.
 - [4 testing](4-testing.md) — Filed 2026-08-30. Vitest + Playwright + build integration + pytest/boto3 infra; 266 tests.
 - [5 mail-lockdown](5-mail-lockdown.md) — Filed 2026-08-31. DMARC `p=reject`, stale Tutanota token removed, 18 DNS tests. Reports read and clean, but on a 2-message sample.
 - [6 image-asset-management](6-image-asset-management.md) — Filed 2026-08-31. `public/media/` git-ignored, S3 durable copy, `media-manifest.json`, `media-check`/`media-push`. Step 13 history purge done 2026-08-31: `.git` 6.6M → 708K.

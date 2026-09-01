@@ -21,7 +21,7 @@
 
 ## Recently Resolved
 
-- [3 llm-content-pack](3-llm-content-pack.md) — Done 2026-08-31. `.md` per entry + `llms.txt` + `Accept: text/markdown` negotiation. 73.4% fewer tokens; live and verified. Not committed.
+(nothing pending — see `todo/done/`)
 
 ---
 
