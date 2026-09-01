@@ -1,3 +1,25 @@
+# Everything is allowed, deliberately.
+#
+# AI crawlers fall into three kinds, and the trade-off differs for each:
+#
+#   Training        GPTBot, ClaudeBot, Google-Extended, Applebot-Extended
+#                   Blocking costs nothing in citations.
+#   Search          OAI-SearchBot, Claude-SearchBot, PerplexityBot
+#                   Blocking removes this site from AI answers.
+#   User-triggered  ChatGPT-User, Claude-User, Perplexity-User
+#                   Blocking means someone who asked about this site gets nothing.
+#
+# This is a personal site that exists to be read, and the writing is given away
+# rather than monetised, so there is nothing here that training crawlers take and
+# nothing to be compensated for. Blocking any of the three would only make the
+# site harder to find.
+#
+# Reviewed 2026-08-31. Revisit if the site ever hosts something worth licensing.
+#
+# A Markdown copy of each entry is listed in /llms.txt — same content as the
+# HTML, roughly 83% fewer tokens.
+
 User-agent: *
 Allow: /
+
 Sitemap: https://jgreen.one/sitemap-index.xml
