@@ -247,6 +247,58 @@ describe("astro build output", () => {
     assert.match(article, /<pre[^>]*class="astro-code/, "code fences lost their highlighting");
   });
 
+  test("every published entry has a Markdown copy", () => {
+    const entryPages = htmlFiles()
+      .map((file) => relative(DIST, file))
+      .filter((file) => file.startsWith("entries/") && file !== "entries/index.html");
+
+    assert.ok(entryPages.length > 0, "no entry pages to check");
+    for (const page of entryPages) {
+      assert.ok(exists(page.replace(/index\.html$/, "index.md")), `missing .md for ${page}`);
+    }
+  });
+
+  test("the Markdown carries the same body as the source entry", () => {
+    // Same content in a lighter format is content negotiation; different
+    // content would be cloaking. This is the assertion that keeps them honest.
+    const md = read("entries/how-this-site-was-made/index.md");
+    const source = readFileSync(
+      join(ROOT, "src/content/entries/how-this-site-was-made.md"),
+      "utf-8",
+    ).replace(/^---[\s\S]*?\n---\n/, "");
+
+    for (const line of source.split("\n").filter((l) => l.trim().length > 40).slice(0, 5)) {
+      assert.ok(md.includes(line.trim()), `body line missing from markdown: ${line.slice(0, 50)}`);
+    }
+  });
+
+  test("the Markdown stands alone", () => {
+    const md = read("entries/how-this-site-was-made/index.md");
+    assert.match(md, /^# /, "no title heading");
+    assert.match(md, /https:\/\/jgreen\.one\/entries\//, "no canonical URL to cite");
+    assert.match(md, /Published: \d{4}-\d{2}-\d{2}/, "no publish date");
+  });
+
+  test("the Markdown is substantially smaller than the HTML", () => {
+    const html = read("entries/how-this-site-was-made/index.html").length;
+    const md = read("entries/how-this-site-was-made/index.md").length;
+    assert.ok(md < html / 3, `markdown ${md} is not much smaller than html ${html}`);
+  });
+
+  test("llms.txt lists every entry, and every link resolves", () => {
+    const txt = read("llms.txt");
+    for (const [, url] of txt.matchAll(/\]\((https:\/\/[^)]+)\)/g)) {
+      const path = new URL(url).pathname.replace(/^\//, "");
+      assert.ok(exists(path), `llms.txt links to ${path}, which was not built`);
+    }
+  });
+
+  test("no draft leaks into the Markdown copies or llms.txt", () => {
+    const txt = read("llms.txt");
+    assert.ok(!txt.includes(DRAFT_SLUG), "draft listed in llms.txt");
+    assert.equal(exists(`entries/${DRAFT_SLUG}/index.md`), false, "draft has a .md copy");
+  });
+
   test("sitemap-index.xml exists and references at least one sitemap", () => {
     assert.ok(exists("sitemap-index.xml"), "missing dist/sitemap-index.xml");
     const xml = read("sitemap-index.xml");
