@@ -10,8 +10,22 @@ todo/
   TEMPLATE-task.md        # Template for new task files
   <id>-<task-name>.md     # Individual task files
   done/                   # Completed tasks (moved here only when Jon explicitly asks)
-  boneyard/               # Abandoned tasks (with reasons)
+    README.md             # how to file a completed task
+  boneyard/               # Abandoned tasks — kept for the reasoning, not the plan
+    README.md             # how to file and how to revive
 ```
+
+A task lives in exactly one of three places, and which one says what it means:
+
+| Location | Meaning |
+|---|---|
+| `todo/` | still worth doing — whether started, blocked, or untouched |
+| `todo/done/` | finished |
+| `todo/boneyard/` | **deliberately not worth doing**, with the reason recorded |
+
+The distinction between "blocked" and "abandoned" is the one that matters. A blocked task
+stays in `todo/` with its blocker named; it is still wanted. A boneyard task is one
+somebody decided against.
 
 ## Task IDs
 
@@ -30,7 +44,7 @@ Tasks use bare base36 IDs (no padding, no prefix): `1`, `2`, `3`… `9`, `A`, `B
 
 ## Status values
 
-`TODO` | `IN_PROGRESS` | `BLOCKED` | `DONE`
+`TODO` | `IN_PROGRESS` | `BLOCKED` | `DONE` | `ABANDONED`
 
 ## Workflow
 
@@ -38,7 +52,7 @@ Tasks use bare base36 IDs (no padding, no prefix): `1`, `2`, `3`… `9`, `A`, `B
 2. Add a line for it in `TODO-INDEX.md` under the right priority.
 3. Update **Status** and the **Log** as work progresses.
 4. When done, mark the task `DONE` and move it to "Recently Resolved" in the index. The file stays in `todo/` — do **not** move it to `done/`.
-5. If abandoned, move the file to `boneyard/` with a reason.
+5. If it turns out not to be worth doing, mark it `ABANDONED` and file it to `boneyard/` — again, only when Jon asks. See `todo/boneyard/README.md`.
 
 ## Done folder
 
@@ -50,3 +64,26 @@ When asked to file a task:
 1. `git mv todo/<id>-<slug>.md todo/done/<id>-<slug>.md`
 2. Remove its "Recently Resolved" entry from `TODO-INDEX.md`.
 3. Commit: `chore(todo): file task <id> as done`.
+
+## Boneyard folder
+
+`todo/boneyard/` holds tasks that were **deliberately abandoned** — decided against, not
+merely unfinished. Full procedure in `todo/boneyard/README.md`.
+
+**Agents: never move a task to `boneyard/` unless Jon explicitly asks.** Judging that
+something is not worth doing is a decision, not housekeeping — the same rule as `done/`.
+
+The point of the folder is the **reasoning**, not the plan. A deleted task gets
+re-proposed, re-researched and re-abandoned six months later; a filed one answers the
+question "why didn't we do this?" on its own. Each file therefore records why it was
+dropped **and what would change the decision**, so a task shelved over a constraint that
+later disappears can be found and revived rather than forgotten.
+
+When asked to file a task here:
+1. Add an **Abandoned** section at the top of the file — date, the real reason, what would
+   change the decision, and anything already built that is worth keeping.
+2. Set `**Status**` to `ABANDONED`.
+3. `git mv todo/<id>-<slug>.md todo/boneyard/<id>-<slug>.md`
+4. Remove its line from `TODO-INDEX.md`; update the header count.
+5. Add a one-line entry to the Contents list in `todo/boneyard/README.md`, **with the
+   reason in the line** so the folder can be skimmed without opening files.
