@@ -1,7 +1,7 @@
-# TODO Index: 1 open (0 HIGH, 0 MEDIUM, 1 LOW)
+# TODO Index: 0 open — all tasks resolved
 *Last updated: 2026-08-31*
 
-**Suggested order:** 3 phase 1 — the only open task
+**Nothing open.** Recently resolved below; completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ---
 
@@ -15,13 +15,13 @@
 
 ## LOW Priority
 
-- [3 llm-content-pack](3-llm-content-pack.md) — Emit a `.md` per entry (measured **83% fewer tokens**) + `llms.txt`. Phases 1–2 are zero-risk; edge content negotiation is phase 3 and optional. JSON/NDJSON packs dropped.
+(none)
 
 ---
 
 ## Recently Resolved
 
-(nothing pending — see `todo/done/`)
+- [3 llm-content-pack](3-llm-content-pack.md) — Done 2026-08-31. `.md` per entry + `llms.txt` + `Accept: text/markdown` negotiation. 73.4% fewer tokens; live and verified. Not committed.
 
 ---
 
