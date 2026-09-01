@@ -26,6 +26,18 @@
       "referencedBy": [
         "src/utils/seoMeta.ts"
       ]
+    },
+    {
+      "path": "serving-markdown-to-ai-agents.webp",
+      "bytes": 71750,
+      "sha256": "6010ac445b66e642d6a252fe81a214ebcd751bb4442ed9ec5803cfb66d32cd47",
+      "width": 1536,
+      "height": 1024,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-01",
+      "referencedBy": [
+        "entries/serving-markdown-to-ai-agents"
+      ]
     }
   ]
 }
