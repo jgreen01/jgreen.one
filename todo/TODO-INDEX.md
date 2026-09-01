@@ -1,7 +1,7 @@
-# TODO Index: 3 open (0 HIGH, 2 MEDIUM, 1 LOW)
+# TODO Index: 1 open (0 HIGH, 0 MEDIUM, 1 LOW)
 *Last updated: 2026-08-31*
 
-**Suggested order:** 5 (blocker expired) → 9 (unblocks the inert infra CI job, and upgrades task 6's interim CI check) → 3
+**Suggested order:** 3 phase 1 — the only open task
 
 ---
 
@@ -11,8 +11,7 @@
 
 ## MEDIUM Priority
 
-- [5 mail-lockdown](5-mail-lockdown.md) — Harden DMARC (rua reporting, p=reject) after validating ProtonMail cutover
-- [9 github-oidc-ci-role](9-github-oidc-ci-role.md) — Terraform an IAM OIDC provider + read-only role so CI can reach AWS without long-lived keys. Unblocks the inert `infra` CI job **and** task 6 step 0.
+(none)
 
 ## LOW Priority
 
@@ -28,4 +27,4 @@
 
 ## Boneyard (Abandoned Tasks)
 
-(No abandoned tasks — see `todo/boneyard/` for details)
+- [9 github-oidc-ci-role](boneyard/9-github-oidc-ci-role.md) — Abandoned 2026-08-31. A standing GitHub→AWS trust relationship is more surface area than it buys on a solo site where `pytest tests/infra` takes five seconds. See `todo/boneyard/README.md`.
