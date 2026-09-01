@@ -1,9 +1,48 @@
 # GitHub Actions OIDC provider + read-only CI role
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: ABANDONED — see below
 **Created**: 2026-08-30
-**Updated**: 2026-08-30
+**Updated**: 2026-08-31
+
+
+## Abandoned — 2026-08-31
+
+**Why.** The cost outweighs the benefit at this site's scale. This task exists to let CI
+reach AWS without long-lived keys, so the `infra` job can run `pytest tests/infra`
+unattended and task 6's CI check can verify image bytes rather than just manifest
+entries. Both are real, and both are small: the infra suite runs locally in about five
+seconds, and the manifest check already catches the bug class that matters (a reference
+to an asset nobody manages).
+
+Against that, it means standing up a permanent trust relationship allowing a GitHub
+repository to assume a role in the AWS account — a security boundary whose entire
+strength rests on one `sub` condition being written correctly and staying correct. For a
+team, that trade is obviously worth making. For a solo personal site where the
+alternative is typing one command, it is more surface area than it buys.
+
+**What would change the decision:**
+
+- CI genuinely needs AWS — deploying from a workflow, or a scheduled job that must run
+  without anyone present.
+- More than one person works on the repo, so "just run it locally" stops being a reliable
+  answer.
+- Task 6's interim CI check proves insufficient — a corrupt or missing asset actually
+  reaches production because CI could only verify the manifest.
+- Another task needs AWS access from a workflow, making the provider a shared cost rather
+  than a single-purpose one.
+
+**Worth keeping regardless of the decision.** The permission list in this file was derived
+by walking the actual boto3 calls in `tests/infra/`, not guessed, and it is deliberately
+narrower than the `ReadOnlyAccess` managed policy. If this is ever revived, start there.
+So is the warning about the `sub` condition: it is the whole security boundary, and
+`repo:*` would let any repository on the internet assume the role.
+
+**Left undone by abandoning this:** the `infra` job in `.github/workflows/ci.yml` stays
+inert, and its comment still wrongly claims the suite "skips itself" without the secret —
+it would in fact fail, because `configure-aws-credentials` errors on an empty
+`role-to-assume` before pytest runs. That comment should be corrected whether or not this
+task is ever revived.
 
 ## Description
 
