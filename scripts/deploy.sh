@@ -32,6 +32,14 @@ echo "Checking managed media..."
 npm ci
 node scripts/media-check.mjs --pull
 
+# The viewer-request function runs on every request, and a syntax error in it
+# returns 503 for all of them. Neither `create-function` nor `update-function`
+# validates the runtime, so publishing is not a safety net — this is. It runs the
+# function in CloudFront's real engine on the DEVELOPMENT stage, which no
+# distribution serves.
+echo "Testing the CloudFront function in the real runtime..."
+"$(dirname "${BASH_SOURCE[0]}")/test-cloudfront-function.sh"
+
 # 2) Build Astro
 echo "Building Astro site..."
 npm run build   # outputs to ./dist
