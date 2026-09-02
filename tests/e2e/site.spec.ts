@@ -175,7 +175,11 @@ test.describe("entry detail", () => {
     page,
   }) => {
     // Force the card image to fail so the inline onerror on EntryCard runs.
-    await page.route("**/*.png", (route) => route.abort());
+    // Matched on the managed-media path rather than a file extension: heroes
+    // were .png when this was written and the newest are .webp, which silently
+    // turned the abort into a no-op and the assertion into a check that a
+    // working image is hidden.
+    await page.route("**/media/**", (route) => route.abort());
     await page.goto("/entries/");
 
     const container = page.locator(".hero-image-container").first();
