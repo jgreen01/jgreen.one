@@ -1,10 +1,12 @@
-# Managing images and other media
+# Managing media
 
 **Date:** 2026-08-30
 
 **Author:** Jon Green
 
 **Status:** published
+
+**Last reviewed:** 2026-09-01
 
 **Summary:** How images, video and PDFs are stored, referenced and deployed —
 they live in S3, not in git, and `media-manifest.json` is the record of what
@@ -58,6 +60,84 @@ so no code is involved.
 **Always write real alt text.** It is not in the manifest, because the right
 words depend on where the image is used. Describe what the image conveys, not
 that it is an image.
+
+## Adding a video
+
+Video goes through `public/media/` exactly like an image, but three things will
+bite you that never come up with a `.png`.
+
+**1. Get the file, and insist on H.264.** If you are mirroring a recording:
+
+```bash
+yt-dlp -f "bv*[height<=1080][vcodec^=avc1]+ba[acodec^=mp4a]/137+140" \
+  --merge-output-format mp4 \
+  -o "public/media/<slug>.%(ext)s" "https://www.youtube.com/watch?v=VIDEO_ID"
+```
+
+`vcodec^=avc1` is not optional. Ask only for `[ext=mp4]` and you can get an HLS
+**VP9** stream, which YouTube also labels `mp4` — it plays in Chrome and Firefox
+and fails silently in Safari. Requires `ffmpeg` on PATH for the merge.
+
+**2. Verify what you actually got.**
+
+```bash
+ffprobe -v error -show_entries stream=codec_type,codec_name,width,height \
+  -show_entries format=duration -of default=noprint_wrappers=1 public/media/<slug>.mp4
+```
+
+Want `h264` + `aac`. If you see `vp9`, the selector fell through — redo step 1.
+
+**3. Check the `moov` atom is at the front.** Otherwise the browser downloads the
+entire file before playing a single frame, which on a 140 MB file means nothing
+happens for a long time.
+
+```bash
+ffprobe -v trace -i public/media/<slug>.mp4 2>&1 | grep -m2 -E "type:'(moov|mdat)'"
+```
+
+`moov` must appear before `mdat`. If it does not, remux — this is a stream copy,
+so it re-encodes nothing:
+
+```bash
+ffmpeg -i in.mp4 -c copy -movflags +faststart public/media/<slug>.mp4
+```
+
+**Then push and reference it as usual:**
+
+```bash
+npm run media:push
+```
+
+```yaml
+mirrorUrl: "/media/<slug>.mp4"   # a talk transcript's self-hosted recording
+```
+
+or in a page, with a caption track where one exists:
+
+```html
+<video controls preload="metadata" src="/media/<slug>.mp4">
+  <track kind="captions" src="/entries/<slug>/captions.vtt" srclang="en" label="English" default>
+</video>
+```
+
+### What a video costs
+
+Worth knowing before adding a second one.
+
+- **Storage** is nothing: ~$0.02 per GB per month.
+- **Egress is the real cost** — roughly $0.085/GB out of CloudFront. A 140 MB
+  file is about **1.2p per full view**; a thousand views is about £10. Linear,
+  and uncapped apart from the WAF rate limit and the billing alarms.
+- **Cold deploys get slower.** `deploy.sh` runs `media-check --pull` before
+  building, and `public/media/` is git-ignored — so a fresh checkout or a CI
+  runner downloads every video before it can build.
+- **There is no adaptive bitrate.** One file means a phone on a weak connection
+  gets the full 1080p or nothing. Keep the original streaming link primary and
+  treat the self-hosted copy as the durable fallback, not the better player.
+
+For reference: a 48-minute screen-recorded talk is about 140 MB at 1080p.
+Slides and terminal text compress far better than real footage, so do not size
+your expectations from a camera video.
 
 ## After cloning the repo
 
@@ -135,6 +215,24 @@ on `/entries/<slug>/` while still looking like a rendered image.
 runs `media-check --offline` and checks that every referenced asset is *in the
 manifest*, not that the file exists. Task 9 (GitHub OIDC role) would let CI run
 the full check.
+
+**A video plays in Chrome and Firefox but not Safari** — it is VP9 in an MP4
+container. YouTube labels that stream `mp4`, so a selector asking only for
+`[ext=mp4]` will happily pick it. Re-pull with `vcodec^=avc1` and confirm with
+`ffprobe` that the codec is `h264`.
+
+**A video takes a long time to start** — the `moov` atom is at the end of the
+file, so the browser must fetch all of it first. Remux with
+`-movflags +faststart`.
+
+**`yt-dlp` leaves `.f137.mp4` and `.f140.m4a` behind and no merged file** —
+`ffmpeg` is not on PATH, so the merge step was skipped. It warns, but the
+message is easy to miss in the download output. Install `ffmpeg` and re-run.
+Do not delete the two parts until you have confirmed the merged file exists.
+
+**Deploys got much slower** — `deploy.sh` pulls managed media before building,
+and a video is three orders of magnitude larger than the images. Expected on a
+cold checkout; on your own machine the file is already there.
 
 ## Related
 
