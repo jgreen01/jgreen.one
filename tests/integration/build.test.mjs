@@ -250,11 +250,29 @@ describe("astro build output", () => {
   test("every published entry has a Markdown copy", () => {
     const entryPages = htmlFiles()
       .map((file) => relative(DIST, file))
-      .filter((file) => file.startsWith("entries/") && file !== "entries/index.html");
+      .filter(
+        (file) =>
+          file.startsWith("entries/") &&
+          file !== "entries/index.html" &&
+          // A transcript lives under an entry but is not an entry page: its
+          // twin is a sibling `<page>.md`, checked in the next test. Without
+          // this the generic rule looks for transcript/index.md and fails.
+          !file.endsWith("/transcript/index.html"),
+      );
 
     assert.ok(entryPages.length > 0, "no entry pages to check");
     for (const page of entryPages) {
       assert.ok(exists(page.replace(/index\.html$/, "index.md")), `missing .md for ${page}`);
+    }
+  });
+
+  test("every published transcript has a Markdown copy", () => {
+    // Vacuous while no talk write-up is published; the transcripts suite below
+    // proves the same thing against a fixture pair regardless.
+    for (const page of htmlFiles()
+      .map((file) => relative(DIST, file))
+      .filter((file) => file.endsWith("/transcript/index.html"))) {
+      assert.ok(exists(page.replace(/\/index\.html$/, ".md")), `missing .md for ${page}`);
     }
   });
 
@@ -352,5 +370,135 @@ describe("draft entries", () => {
         `draft slug leaked into ${relative(DIST, file)}`,
       );
     }
+  });
+});
+
+/**
+ * Transcripts.
+ *
+ * Uses the same throwaway-fixture approach as the draft check above, and for
+ * the same reason: the live content set has no published transcript yet, so
+ * asserting against it would pass vacuously and prove nothing.
+ *
+ * The pair matters. A transcript is only published when its article is, so both
+ * halves are exercised — one live entry with a transcript, one draft entry with
+ * a transcript that must not reach dist/.
+ */
+describe("transcripts", () => {
+  const LIVE = "zz-integration-transcript-fixture";
+  const HIDDEN = "zz-integration-transcript-draft-fixture";
+
+  const entryFile = (slug) => join(ROOT, "src/content/entries", `${slug}.md`);
+  const transcriptFile = (slug) => join(ROOT, "src/content/transcripts", `${slug}.md`);
+
+  const entryContent = (slug, draft) => `---
+title: "Transcript Fixture ${slug}"
+description: "Temporary fixture exercising the transcript routes."
+pubDate: 2026-01-02
+kind: "blog"
+tags: ["${DRAFT_TAG}"]
+draft: ${draft}
+---
+
+Fixture article for the transcript integration test.
+`;
+
+  const transcriptContent = (slug) => `---
+title: "Transcript Fixture ${slug}"
+description: "Temporary transcript fixture."
+entry: "${slug}"
+event: "Fixture Event"
+recordingUrl: "https://www.youtube.com/watch?v=zzfixture01"
+videoId: "zzfixture01"
+recordedDate: 2026-01-02
+durationSeconds: 2928
+mirrorUrl: "/media/zz-fixture-mirror.mp4"
+editedNote: "Fixture note."
+---
+
+**[[00:00](https://www.youtube.com/watch?v=zzfixture01&t=0s)]** **Jon Green:** Fixture opening line.
+
+**[[01:36](https://www.youtube.com/watch?v=zzfixture01&t=96s)]** **Audience:** Fixture question?
+`;
+
+  // The captions route reads the .vtt beside the transcript, so the fixture
+  // needs one too — a real caption excerpt, not an invented string.
+  const captionsFixture = readFileSync(join(ROOT, "tests/fixtures/talk-excerpt.vtt"), "utf-8");
+  const captionsFile = (slug) => join(ROOT, "src/content/transcripts", `${slug}.vtt`);
+
+  const written = [
+    [entryFile(LIVE), entryContent(LIVE, false)],
+    [transcriptFile(LIVE), transcriptContent(LIVE)],
+    [captionsFile(LIVE), captionsFixture],
+    [entryFile(HIDDEN), entryContent(HIDDEN, true)],
+    [transcriptFile(HIDDEN), transcriptContent(HIDDEN)],
+  ];
+
+  let result;
+
+  before(() => {
+    for (const [file, content] of written) writeFileSync(file, content);
+    result = build();
+  });
+
+  after(() => {
+    for (const [file] of written) rmSync(file, { force: true });
+  });
+
+  test("the build succeeds with transcripts present", () => {
+    assert.equal(result.status, 0, result.stderr?.slice(-2000));
+  });
+
+  test("a published transcript emits both an HTML page and a .md twin", () => {
+    assert.ok(exists(`entries/${LIVE}/transcript/index.html`), "missing transcript page");
+    assert.ok(exists(`entries/${LIVE}/transcript.md`), "missing transcript .md twin");
+  });
+
+  test("the page links every timestamp into the recording", () => {
+    const html = read(`entries/${LIVE}/transcript/index.html`);
+    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(amp;)?t=0s/);
+    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(amp;)?t=96s/);
+  });
+
+  test("the page links back to the article it belongs to", () => {
+    assert.match(read(`entries/${LIVE}/transcript/index.html`), new RegExp(`/entries/${LIVE}"`));
+  });
+
+  test("the .md twin stands alone: title, source URL, edit note, body", () => {
+    const md = read(`entries/${LIVE}/transcript.md`);
+    assert.match(md, /^# Transcript Fixture .* — transcript$/m);
+    assert.ok(md.includes(`/entries/${LIVE}/transcript`), "missing canonical URL");
+    assert.ok(md.includes("Fixture note."), "missing edit note");
+    assert.ok(md.includes("Fixture opening line."), "missing transcript body");
+    assert.ok(md.includes("48 minutes"), "missing runtime");
+  });
+
+  // The side door a draft could otherwise walk out of.
+  test("a transcript whose article is a draft is not emitted", () => {
+    assert.ok(!exists(`entries/${HIDDEN}/transcript/index.html`), "draft transcript page leaked");
+    assert.ok(!exists(`entries/${HIDDEN}/transcript.md`), "draft transcript .md leaked");
+  });
+
+  test("the mirrored recording is offered with a caption track", () => {
+    const html = read(`entries/${LIVE}/transcript/index.html`);
+    assert.match(html, /<video[^>]*>/, "no video element for the mirror");
+    assert.ok(html.includes("/media/zz-fixture-mirror.mp4"), "mirror src missing");
+    assert.match(html, /<track[^>]+kind="captions"/, "no caption track");
+    assert.ok(html.includes(`/entries/${LIVE}/captions.vtt`), "track does not point at captions");
+  });
+
+  test("the caption track is emitted as real WEBVTT", () => {
+    assert.ok(exists(`entries/${LIVE}/captions.vtt`), "missing captions route");
+    assert.match(read(`entries/${LIVE}/captions.vtt`), /^WEBVTT/, "not a WEBVTT document");
+  });
+
+  test("a draft transcript's captions are not emitted either", () => {
+    assert.ok(!exists(`entries/${HIDDEN}/captions.vtt`), "draft captions leaked");
+  });
+
+  test("llms.txt advertises the published transcript and not the draft", () => {
+    const llms = read("llms.txt");
+    assert.ok(llms.includes(`/entries/${LIVE}/transcript.md`), "transcript missing from llms.txt");
+    assert.ok(!llms.includes(HIDDEN), "draft transcript listed in llms.txt");
   });
 });
