@@ -1,0 +1,116 @@
+---
+import { getCollection, render } from "astro:content";
+import PageLayout from "../../../layouts/PageLayout.astro";
+import { pairTranscriptsWithEntries, formatDuration } from "../../../utils/transcript";
+
+/**
+ * A talk transcript, at `/entries/<slug>/transcript`.
+ *
+ * Paths come from the transcript↔entry pairing rather than from the transcripts
+ * collection alone, so a transcript whose article is still a draft does not
+ * build. The frontmatter here stays thin: everything that needs testing lives in
+ * `src/utils/transcript.ts`, because `.astro` files cannot be unit-tested.
+ */
+export async function getStaticPaths() {
+  const [transcripts, entries] = await Promise.all([
+    getCollection("transcripts"),
+    getCollection("entries"),
+  ]);
+
+  return pairTranscriptsWithEntries(transcripts, entries).map(({ transcript, entry }) => ({
+    params: { slug: entry.id },
+    props: { transcript, entry },
+  }));
+}
+
+const { transcript, entry } = Astro.props;
+const { Content } = await render(transcript);
+const data = transcript.data;
+
+const articleUrl = `/entries/${entry.id}`;
+const recordedDate = data.recordedDate.toISOString().slice(0, 10);
+const recordedLabel = data.recordedDate.toLocaleDateString("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+const links = [
+  { label: "Watch the recording", href: data.recordingUrl },
+  data.slidesUrl ? { label: "Slides (PDF)", href: data.slidesUrl } : null,
+  data.repoUrl ? { label: "Demo repository", href: data.repoUrl } : null,
+  data.eventUrl ? { label: "Session page", href: data.eventUrl } : null,
+].filter(Boolean) as Array<{ label: string; href: string }>;
+
+// Captions come from the same committed .vtt that generated the transcript
+// below, so the two can never drift apart.
+const captionsUrl = `${articleUrl}/captions.vtt`;
+---
+
+<PageLayout title={`${data.title} — transcript`} description={data.description}>
+  <article>
+    <header class="mb-8">
+      <p class="text-sm opacity-70">
+        <a href={articleUrl} class="underline">&larr; Back to the article</a>
+      </p>
+
+      <h1 class="text-3xl font-bold mt-3">{data.title}</h1>
+      <p class="text-lg opacity-80 mt-1">Transcript</p>
+
+      <p class="text-sm opacity-70 mt-4">
+        {data.eventUrl ? <a href={data.eventUrl} class="underline">{data.event}</a> : data.event}
+        {" · "}
+        <time datetime={recordedDate}>{recordedLabel}</time>
+        {" · "}
+        {formatDuration(data.durationSeconds)}
+      </p>
+
+      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm mt-4 list-none p-0">
+        {links.map((link) => (
+          <li><a href={link.href} class="underline">{link.label}</a></li>
+        ))}
+        <li>
+          <a href={`${articleUrl}/transcript.md`} class="underline">Markdown</a>
+        </li>
+      </ul>
+
+      {
+        data.mirrorUrl && (
+          // A self-hosted copy, so the talk outlives the original upload being
+          // removed — or a viewer who cannot reach it. Deliberately secondary
+          // to the link above: one file with no adaptive bitrate is a worse
+          // player, just a durable one.
+          <figure class="mt-6">
+            <video
+              controls
+              preload="metadata"
+              class="w-full rounded-lg"
+              src={data.mirrorUrl}
+              crossorigin="anonymous"
+            >
+              <track kind="captions" src={captionsUrl} srclang="en" label="English" default />
+              <a href={data.mirrorUrl}>Download the recording</a>
+            </video>
+            <figcaption class="text-sm opacity-70 mt-2">
+              Self-hosted mirror. The original is on{" "}
+              <a href={data.recordingUrl} class="underline">YouTube</a>.
+            </figcaption>
+          </figure>
+        )
+      }
+
+      {
+        data.editedNote && (
+          // Said plainly and up front: a lightly-tidied sentence should never be
+          // quoted as though it were spoken verbatim.
+          <p class="text-sm opacity-70 mt-6 border-l-2 pl-4 italic">{data.editedNote}</p>
+        )
+      }
+    </header>
+
+    <div class="prose dark:prose-invert max-w-none">
+      <Content />
+    </div>
+  </article>
+</PageLayout>
