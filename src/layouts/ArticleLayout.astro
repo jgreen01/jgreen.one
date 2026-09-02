@@ -1,6 +1,7 @@
 ---
 import Base from './Base.astro';
 import { heroImagePath } from '../utils/heroImagePath';
+import { formatDate } from '../utils/formatDate';
 const { frontmatter } = Astro.props;
 // One resolved path for both the OG tag and the visible <img>.
 const heroImage = heroImagePath(frontmatter.heroImage);
@@ -15,8 +16,8 @@ const heroImage = heroImagePath(frontmatter.heroImage);
     <article class="prose dark:prose-invert md:prose-lg prose-pre:overflow-x-auto prose-pre:max-w-[85vw] md:prose-pre:max-w-none">
       <h1 class="text-4xl font-bold mb-4">{frontmatter.title}</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Published on {new Date(frontmatter.pubDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}
-        {frontmatter.updatedDate && ` • Updated on ${new Date(frontmatter.updatedDate).toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' })}`}
+        Published on {formatDate(frontmatter.pubDate)}
+        {frontmatter.updatedDate && ` • Updated on ${formatDate(frontmatter.updatedDate)}`}
       </p>
       {heroImage && <img src={heroImage} alt="" class="w-full h-auto rounded-lg" />}
       <slot />
