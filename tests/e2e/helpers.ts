@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 /**
@@ -48,8 +48,29 @@ export const transcriptPath = (() => {
   return slug ? `/entries/${slug.name}/transcript` : null;
 })();
 
-/** A published entry with no hero image, for the "no broken <img>" path. */
-export const ENTRY_WITHOUT_HERO = "/entries/sample-blog/";
+/**
+ * A published entry with no hero image, for the "no broken <img>" path.
+ *
+ * Found from the content source rather than hardcoded: the placeholder entries
+ * that used to fill this role are gone, and every entry currently carries a
+ * hero, so the test that needs this skips until one does not. Reading dist/
+ * instead would make the assertion circular — it would be looking for the very
+ * absence it then asserts.
+ */
+const ENTRIES_DIR = fileURLToPath(new URL("../../src/content/entries", import.meta.url));
+
+export const entryWithoutHero = (() => {
+  if (!existsSync(ENTRIES_DIR)) return null;
+  for (const file of readdirSync(ENTRIES_DIR).sort()) {
+    if (!file.endsWith(".md")) continue;
+    const source = readFileSync(`${ENTRIES_DIR}/${file}`, "utf8");
+    const frontmatter = source.split("---")[1] ?? "";
+    if (/^heroImage:/m.test(frontmatter)) continue;
+    if (/^draft:\s*true/m.test(frontmatter)) continue;
+    return `/entries/${file.replace(/\.md$/, "")}/`;
+  }
+  return null;
+})();
 
 /**
  * Starts collecting browser-side errors. Call before navigating.

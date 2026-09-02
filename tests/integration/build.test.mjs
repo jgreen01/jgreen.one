@@ -496,6 +496,16 @@ editedNote: "Fixture note."
     assert.ok(!exists(`entries/${HIDDEN}/captions.vtt`), "draft captions leaked");
   });
 
+  // The fixture entry carries no heroImage, which makes it the only
+  // unconditional cover for this: every real entry now has one, so the e2e
+  // check skips. A page-relative or empty src renders as a broken image rather
+  // than failing outright, so "no <img> at all" is the assertion that holds.
+  test("an entry with no heroImage emits no image in its article", () => {
+    const html = read(`entries/${LIVE}/index.html`);
+    const article = html.slice(html.indexOf("<article"), html.indexOf("</article>"));
+    assert.ok(!/<img/i.test(article), "an entry without a hero rendered an <img>");
+  });
+
   test("llms.txt advertises the published transcript and not the draft", () => {
     const llms = read("llms.txt");
     assert.ok(llms.includes(`/entries/${LIVE}/transcript.md`), "transcript missing from llms.txt");
