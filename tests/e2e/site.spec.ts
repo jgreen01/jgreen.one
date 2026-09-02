@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import {
   CORE_PAGES,
+  transcriptPath,
   ENTRY_WITH_HERO,
   ENTRY_WITHOUT_HERO,
   collectPageErrors,
@@ -416,5 +417,47 @@ test.describe("colour scheme", () => {
       await page.goto("/");
       expect(errors).toEqual([]);
     });
+  });
+});
+
+/**
+ * Transcript pages.
+ *
+ * Skipped wholesale when the build produced none — transcripts inherit their
+ * article's draft status, so an unpublished talk write-up legitimately has no
+ * page. The build-integration suite covers the markup unconditionally by
+ * building its own fixture pair; this is the "does it work in a browser" pass.
+ */
+test.describe("transcript page", () => {
+  test.skip(!transcriptPath, "no transcript published in this build");
+
+  test("renders without console errors and links back to its article", async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await gotoClean(page, transcriptPath!);
+
+    await expect(page.locator("h1")).toBeVisible();
+    const back = page.locator('a[href^="/entries/"]').first();
+    await expect(back).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test("every timestamp deep-links into the recording at a whole second", async ({ page }) => {
+    await gotoClean(page, transcriptPath!);
+    const stamps = page.locator('a[href*="youtube.com/watch"][href*="&t="]');
+    expect(await stamps.count()).toBeGreaterThan(0);
+
+    for (const href of await stamps.evaluateAll((as) => as.map((a) => a.getAttribute("href")))) {
+      expect(href).toMatch(/[?&]t=\d+s$/);
+    }
+  });
+
+  test("offers the markdown twin, and it is served as markdown", async ({ page, request }) => {
+    await gotoClean(page, transcriptPath!);
+    const link = page.locator(`a[href="${transcriptPath}.md"]`);
+    await expect(link).toBeVisible();
+
+    const response = await request.get(`${transcriptPath}.md`);
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toContain("— transcript");
   });
 });

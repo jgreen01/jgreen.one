@@ -30,6 +30,24 @@ export const CORE_PAGES = [
 /** A published entry that carries a hero image, tags and body content. */
 export const ENTRY_WITH_HERO = "/entries/how-this-site-was-made/";
 
+/**
+ * Whether the build produced a transcript page.
+ *
+ * Transcripts inherit their article's draft status, so a checkout whose talk
+ * write-up is still unpublished has none — and a test asserting on one would
+ * fail for a reason that is not a defect. Same reasoning as `mediaAvailable`.
+ */
+const TRANSCRIPTS_DIR = fileURLToPath(new URL("../../src/content/transcripts", import.meta.url));
+
+export const transcriptPath = (() => {
+  const dist = fileURLToPath(new URL("../../dist/entries", import.meta.url));
+  if (!existsSync(TRANSCRIPTS_DIR) || !existsSync(dist)) return null;
+  const slug = readdirSync(dist, { withFileTypes: true }).find(
+    (d) => d.isDirectory() && existsSync(`${dist}/${d.name}/transcript/index.html`),
+  );
+  return slug ? `/entries/${slug.name}/transcript` : null;
+})();
+
 /** A published entry with no hero image, for the "no broken <img>" path. */
 export const ENTRY_WITHOUT_HERO = "/entries/sample-blog/";
 
