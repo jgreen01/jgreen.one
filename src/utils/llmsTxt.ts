@@ -8,6 +8,12 @@ export interface ListableEntry extends EntryLike {
   data: EntryLike["data"] & { title: string; description: string };
 }
 
+/** The slice of a transcript↔entry pair `llms.txt` needs. */
+export interface ListableTranscriptPair {
+  transcript: { data: { title: string; description: string } };
+  entry: { id: string };
+}
+
 const SECTIONS = [
   { kind: "blog" as const, heading: "Blog posts" },
   { kind: "project" as const, heading: "Projects" },
@@ -30,6 +36,28 @@ function section(entries: ListableEntry[], heading: string): string[] {
 }
 
 /**
+ * Talk transcripts, listed separately from the writing.
+ *
+ * They are labelled as transcripts because an agent should be able to tell
+ * spoken words from written ones before quoting them — the two carry different
+ * weight, and a transcript is lightly edited speech rather than a considered
+ * sentence.
+ */
+function transcriptSection(pairs: readonly ListableTranscriptPair[]): string[] {
+  if (pairs.length === 0) return [];
+
+  return [
+    "## Transcripts",
+    "",
+    ...pairs.map(({ transcript, entry }) => {
+      const url = `${SEO_DEFAULTS.site}/entries/${entry.id}/transcript.md`;
+      return `- [${transcript.data.title} — transcript](${url}): ${transcript.data.description}`;
+    }),
+    "",
+  ];
+}
+
+/**
  * Renders `/llms.txt` — the convention for telling an agent what a site contains
  * and where to read it cheaply.
  *
@@ -42,7 +70,10 @@ function section(entries: ListableEntry[], heading: string): string[] {
  * are IDE agents — Claude Code, Cursor, Copilot and friends — which is a real
  * enough audience for a file this cheap to produce.
  */
-export function llmsTxt(entries: readonly ListableEntry[]): string {
+export function llmsTxt(
+  entries: readonly ListableEntry[],
+  transcripts: readonly ListableTranscriptPair[] = [],
+): string {
   // Callers filter drafts; doing it again here means a mistake upstream cannot
   // publish unfinished writing to every agent that reads this file.
   const published = filterDrafts(entries) as ListableEntry[];
@@ -58,6 +89,7 @@ export function llmsTxt(entries: readonly ListableEntry[]): string {
     ...SECTIONS.flatMap(({ kind, heading }) =>
       section(filterByKind(published, kind) as ListableEntry[], heading),
     ),
+    ...transcriptSection(transcripts),
   ]
     .join("\n")
     .trimEnd()

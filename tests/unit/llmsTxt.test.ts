@@ -29,9 +29,11 @@ describe("llmsTxt", () => {
 
   describe("what it points at", () => {
     it("links to the .md files, not the HTML pages", () => {
-      // The whole point is directing an agent to the cheap format.
+      // The whole point is directing an agent to the cheap format. Entries end
+      // in /index.md and transcripts in /transcript.md; what matters is that
+      // nothing points at a rendered page.
       for (const [, url] of text.matchAll(/\]\((https:\/\/\S+)\)/g)) {
-        expect(url).toMatch(/\/index\.md$/);
+        expect(url).toMatch(/\.md$/);
       }
     });
 
@@ -86,5 +88,45 @@ describe("llmsTxt", () => {
       expect(text.endsWith("\n")).toBe(true);
       expect(text.endsWith("\n\n")).toBe(false);
     });
+  });
+});
+
+describe("llmsTxt transcripts section", () => {
+  const entry = published[0];
+  const transcript = {
+    id: "a-talk",
+    collection: "transcripts" as const,
+    body: "words",
+    data: {
+      title: "A Talk",
+      description: "Full transcript of a talk.",
+      entry: entry.id,
+      event: "Some Event",
+      recordingUrl: "https://www.youtube.com/watch?v=abc",
+      videoId: "abc",
+      recordedDate: new Date("2025-12-11T00:00:00Z"),
+      durationSeconds: 2928,
+    },
+  };
+  const pairs = [{ transcript, entry }];
+
+  it("omits the section entirely when there are no transcripts", () => {
+    expect(llmsTxt(published, [])).not.toContain("## Transcripts");
+  });
+
+  it("adds a Transcripts section when there are some", () => {
+    expect(llmsTxt(published, pairs)).toContain("## Transcripts");
+  });
+
+  it("points at the transcript's .md twin", () => {
+    expect(llmsTxt(published, pairs)).toContain(`/entries/${entry.id}/transcript.md`);
+  });
+
+  it("labels the link as a transcript so an agent can tell it from the article", () => {
+    expect(llmsTxt(published, pairs)).toMatch(/- \[A Talk — transcript\]/);
+  });
+
+  it("still lists the article itself", () => {
+    expect(llmsTxt(published, pairs)).toContain(`/entries/${entry.id}/index.md`);
   });
 });
