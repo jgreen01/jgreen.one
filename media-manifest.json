@@ -1,8 +1,20 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-01",
+  "generatedAt": "2026-09-02",
   "bucket": "jgreen-one-site",
   "assets": [
+    {
+      "path": "climate-you-lived-through-it.webp",
+      "bytes": 73692,
+      "sha256": "393c38ab3a0d95b323a742dd9ff87ad1d5274b98577a278c713d8b03eea80cd3",
+      "width": 1200,
+      "height": 1012,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-02",
+      "referencedBy": [
+        "entries/climate-you-lived-through-it"
+      ]
+    },
     {
       "path": "how-this-website-was-built.png",
       "bytes": 82261,
