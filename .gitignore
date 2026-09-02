@@ -58,3 +58,6 @@ __pycache__/
 .terraform/
 # design reference assets — kept on disk, deliberately out of git
 /samples/
+
+# manual smoke pass output — look at them, do not commit them
+/smoke-screenshots/

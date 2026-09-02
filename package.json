@@ -13,9 +13,13 @@
     "test:cover": "vitest run --coverage",
     "test:build": "node tests/integration/build.test.mjs",
     "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "media:check": "node scripts/media-check.mjs",
     "media:pull": "node scripts/media-check.mjs --pull",
-    "media:push": "./scripts/media-push.sh"
+    "media:push": "./scripts/media-push.sh",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
