@@ -1,5 +1,10 @@
-# Everything is allowed, deliberately.
-#
+# Everything is allowed, deliberately. The reasoning is at the bottom.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://jgreen.one/sitemap-index.xml
+
 # AI crawlers fall into three kinds, and the trade-off differs for each:
 #
 #   Training        GPTBot, ClaudeBot, Google-Extended, Applebot-Extended
@@ -18,8 +23,3 @@
 #
 # A Markdown copy of each entry is listed in /llms.txt — same content as the
 # HTML, roughly 83% fewer tokens.
-
-User-agent: *
-Allow: /
-
-Sitemap: https://jgreen.one/sitemap-index.xml
