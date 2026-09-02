@@ -28,6 +28,30 @@
       ]
     },
     {
+      "path": "practical-workflow-for-ai-coding-assistants.mp4",
+      "bytes": 146175419,
+      "sha256": "3e10aaeb48c49c6fc112ccc1e53c9bbab6c6b7d77b9583a9bf9c8300f88ca8c6",
+      "width": null,
+      "height": null,
+      "contentType": "video/mp4",
+      "addedAt": "2026-09-01",
+      "referencedBy": [
+        "entries/practical-workflow-for-ai-coding-assistants"
+      ]
+    },
+    {
+      "path": "practical-workflow-for-ai-coding-assistants.pdf",
+      "bytes": 3491731,
+      "sha256": "5575be61d99ebb66dd67f16c6d5c761a8d413d8fced6ee956946f6225e77844b",
+      "width": null,
+      "height": null,
+      "contentType": "application/pdf",
+      "addedAt": "2026-09-01",
+      "referencedBy": [
+        "entries/practical-workflow-for-ai-coding-assistants"
+      ]
+    },
+    {
       "path": "serving-markdown-to-ai-agents.webp",
       "bytes": 65748,
       "sha256": "4a1b0d6ca1cc8e9272559c55efe5aaf9c518f23493116e48e83cbf2935d48c3f",

@@ -1,0 +1,2655 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.663 --> 00:00:05.468
+[JON GREEN] So I'm Jon Green,
+and I'll be presenting a
+
+00:00:05.520 --> 00:00:09.546
+practical workflow for
+AI coding assistants.
+
+00:00:11.163 --> 00:00:14.160
+First of all,
+I want to give special
+
+00:00:14.160 --> 00:00:19.170
+thanks to Ray Saray and
+Ali Karim for giving me
+
+00:00:19.170 --> 00:00:22.860
+access to Claude Code,
+which is what I built this
+
+00:00:22.860 --> 00:00:24.594
+work-- workflow on top of.
+
+00:00:25.621 --> 00:00:30.690
+And also Rafael Cruz
+who tested out all the early
+
+00:00:30.690 --> 00:00:34.500
+versions of this workflow,
+and was very patient about it.
+
+00:00:35.552 --> 00:00:37.800
+Also have a little bit
+of a headache, so I might
+
+00:00:37.800 --> 00:00:41.370
+be sitting down a little bit
+more in this presentation,
+
+00:00:41.370 --> 00:00:43.915
+but still I'll be over here.
+
+00:00:46.810 --> 00:00:48.652
+So let's start.
+
+00:00:51.670 --> 00:00:52.190
+Okay.
+
+00:00:52.290 --> 00:00:59.580
+So I'm sure you've all tried
+copy-pasting from ChatGPT.
+
+00:01:01.100 --> 00:01:03.510
+We're gonna go quite
+a bit far beyond that.
+
+00:01:04.126 --> 00:01:11.401
+So, what we'll be working
+with is an AI that is
+
+00:01:11.401 --> 00:01:16.715
+aware of the whole code
+base, has agents, can make
+
+00:01:16.715 --> 00:01:18.984
+changes directly to the code.
+
+00:01:20.190 --> 00:01:25.496
+So you know,
+there's a bunch of them.
+
+00:01:25.710 --> 00:01:28.710
+You've probably tried,
+you know, Copilot.
+
+00:01:29.610 --> 00:01:34.680
+You've probably tried
+Gemini or Claude Code,
+
+00:01:34.680 --> 00:01:36.068
+which is what this will be on.
+
+00:01:36.835 --> 00:01:41.988
+Maybe even Kero or
+Kero CLI, that's from AWS.
+
+00:01:44.080 --> 00:01:48.675
+But I'll be focusing less
+on the-- the tool, less on the--
+
+00:01:48.675 --> 00:01:51.960
+the AI itself and more on the--
+the workflow that I've
+
+00:01:51.960 --> 00:01:52.800
+developed here.
+
+00:01:55.479 --> 00:02:04.943
+So, why do we want to
+use these AI assistants?
+
+00:02:06.060 --> 00:02:12.660
+Basically, it allows you to
+work a lot faster, so, you know,
+
+00:02:12.660 --> 00:02:17.782
+these studies that I cited here
+were using--are using copilots
+
+00:02:19.287 --> 00:02:24.580
+which is not at the same level
+as the AI I'm gonna show you.
+
+00:02:24.990 --> 00:02:27.528
+It's not the same level
+as--level as Claude Code
+
+00:02:27.528 --> 00:02:34.279
+or Gemini CLI or you
+know, other tools, 'cause
+
+00:02:34.279 --> 00:02:37.240
+they don'-- like,
+can access-- like, copilots,
+
+00:02:37.240 --> 00:02:42.576
+can access the code, but not in
+the same way as an agent that
+
+00:02:42.576 --> 00:02:43.590
+can access the--
+
+00:02:43.590 --> 00:02:48.379
+[TRUCKER HATCH] Command line, it
+can run any command at once.
+
+00:02:48.960 --> 00:02:52.890
+And I'm also
+going to show you how to get
+
+00:02:53.130 --> 00:03:00.240
+above 46% trust in the accuracy
+by, you know, using tests,
+
+00:03:00.720 --> 00:03:05.402
+test-driven development with
+AI, and creating, you know,
+
+00:03:05.550 --> 00:03:07.200
+test document specs.
+
+00:03:08.375 --> 00:03:16.560
+But before we go into the--
+the details, I think a demo will
+
+00:03:16.560 --> 00:03:22.776
+help to show that, you know,
+there's-- there's no magic here,
+
+00:03:22.776 --> 00:03:24.943
+like, I'm-- I'm not a magician.
+
+00:03:25.590 --> 00:03:29.730
+I don't wanna make it look like
+I've got a bag of tricks here.
+
+00:03:30.270 --> 00:03:35.010
+You know, I invite you to,
+you know, look at the code,
+
+00:03:35.310 --> 00:03:39.630
+but this QR code will take
+you directly to the code
+
+00:03:39.630 --> 00:03:42.687
+base on code.stanford.
+
+00:03:44.899 --> 00:03:51.482
+So without further ado,
+I'll just go into the demo.
+
+00:03:52.230 --> 00:03:58.175
+So there's a few things I
+just want to highlight here.
+
+00:03:58.680 --> 00:04:00.990
+So, you know,
+this is using
+
+00:04:00.990 --> 00:04:03.004
+the latest version
+of Claude Code.
+
+00:04:03.930 --> 00:04:08.881
+I have some commands I built
+into this, like this refresh,
+
+00:04:09.750 --> 00:04:11.700
+which refreshes the context.
+
+00:04:11.790 --> 00:04:13.914
+We'll talk about that later.
+
+00:04:15.962 --> 00:04:18.756
+Basically it helps it
+remember what it's doing
+
+00:04:20.519 --> 00:04:22.950
+But, you know,
+there's a lot
+
+00:04:22.950 --> 00:04:26.250
+going on here,
+but let me just copy
+
+00:04:26.250 --> 00:04:27.717
+this first prompt here.
+
+00:04:29.430 --> 00:04:33.780
+So this first prompt is
+just to create a snake game,
+
+00:04:35.100 --> 00:04:40.062
+and what it's going to use
+is this task document.
+
+00:04:40.380 --> 00:04:46.483
+You know, it's a spec that
+I created beforehand.
+
+00:04:47.490 --> 00:04:54.669
+In this spec,
+there's no explicit code.
+
+00:04:54.750 --> 00:04:56.825
+Sometimes there's some paths.
+
+00:04:57.150 --> 00:05:01.871
+There might be a few tests in
+here, files for it to look at.
+
+00:05:03.416 --> 00:05:04.915
+But there's no code here.
+
+00:05:05.603 --> 00:05:11.190
+A few configurations,
+and what the AI's gonna do,
+
+00:05:11.190 --> 00:05:17.070
+it's gonna read this spec,
+which I verified and reviewed
+
+00:05:17.070 --> 00:05:20.316
+before, and create a game.
+
+00:05:21.870 --> 00:05:24.578
+So let me paste that in here.
+
+00:05:39.235 --> 00:05:40.920
+Hello, one moment.
+
+00:05:42.210 --> 00:05:47.331
+I rebound all my keys from my
+keyboard at home,
+
+00:05:48.207 --> 00:05:50.769
+so I'll just
+do it the old-fashioned way.
+
+00:05:51.600 --> 00:05:52.350
+There we go.
+
+00:05:53.349 --> 00:05:53.870
+Okay.
+
+00:05:54.450 --> 00:05:58.386
+So you see, just telling it,
+follow this spec.
+
+00:05:59.190 --> 00:06:02.070
+Also added a instruction
+for it to time itself,
+
+00:06:02.460 --> 00:06:04.322
+so we can see how long it takes.
+
+00:06:05.400 --> 00:06:10.864
+And a game like Snake
+isn't so complicated, but,
+
+00:06:15.394 --> 00:06:18.960
+I don't know if
+anybody could do it quite
+
+00:06:18.960 --> 00:06:21.092
+as fast as this AI
+is about to do it.
+
+00:06:22.193 --> 00:06:23.381
+Is there any,
+are there any
+
+00:06:23.381 --> 00:06:24.614
+game developers here?
+
+00:06:27.205 --> 00:06:27.724
+No?
+
+00:06:28.690 --> 00:06:29.210
+Okay.
+
+00:06:29.250 --> 00:06:31.105
+Oh, there's one game developer.
+
+00:06:35.659 --> 00:06:36.374
+So.
+
+00:06:39.164 --> 00:06:42.848
+Right now it's creating
+the tests, I'll just
+
+00:06:44.910 --> 00:06:46.170
+show you here.
+
+00:06:47.106 --> 00:06:49.420
+Yeah, so it's reading the code.
+
+00:06:49.920 --> 00:06:51.817
+It just created some tests.
+
+00:06:52.830 --> 00:06:56.936
+So you see here,
+it wrote all this
+
+00:06:57.210 --> 00:06:59.670
+and it's going to
+use it to verify that
+
+00:06:59.670 --> 00:07:02.337
+the game is complete
+before we even run it.
+
+00:07:04.734 --> 00:07:06.916
+It's created some more tests.
+
+00:07:07.920 --> 00:07:10.640
+It's running the tests,
+to make sure they're all red.
+
+00:07:12.390 --> 00:07:15.457
+They failed, which was expected.
+
+00:07:17.610 --> 00:07:23.262
+So, this is already
+quite a bit of work.
+
+00:07:23.776 --> 00:07:28.150
+This is 80
+lines of code here.
+
+00:07:29.700 --> 00:07:30.747
+Let's see, oops.
+
+00:07:31.770 --> 00:07:36.609
+There's 162 lines here.
+
+00:07:36.609 --> 00:07:39.060
+So, within two minutes,
+
+00:07:39.060 --> 00:07:42.435
+it's already created a
+substantial amount of code.
+
+00:07:46.399 --> 00:07:49.860
+And let's see.
+
+00:07:55.800 --> 00:07:57.480
+Okay,
+all the tests are passing.
+
+00:07:58.770 --> 00:08:00.750
+I think we've got a game.
+
+00:08:03.270 --> 00:08:04.140
+So,
+
+00:08:08.820 --> 00:08:16.740
+yeah, I've been so this
+game until now didn't
+
+00:08:16.740 --> 00:08:19.317
+exist, this Snake.
+
+00:08:21.990 --> 00:08:23.591
+It took two minutes.
+
+00:08:23.610 --> 00:08:27.883
+Well, let's just go ahead
+and run it, and there we go.
+
+00:08:29.940 --> 00:08:38.332
+In two minutes we created
+Snake, and has collisions,
+
+00:08:41.490 --> 00:08:42.942
+works pretty fast.
+
+00:08:44.820 --> 00:08:48.462
+There's self-collision, yeah,
+you can add self-collision.
+
+00:08:48.600 --> 00:08:50.730
+So
+this is a complete Snake game.
+
+00:08:51.204 --> 00:08:51.725
+Yes?
+
+00:08:52.149 --> 00:08:53.659
+[AUDIENCE MEMBER] Yeah,
+just curious did you start
+
+00:08:53.749 --> 00:08:58.875
+off by like creating a
+spec, a spec-driven
+
+00:08:58.909 --> 00:08:59.517
+[TRUCKER HATCH] Yeah.
+
+00:08:59.865 --> 00:09:02.163
+I started out by, yeah.
+
+00:09:02.957 --> 00:09:03.789
+Oh, sorry.
+
+00:09:04.475 --> 00:09:07.860
+So the question was did
+I start out by creating
+
+00:09:07.860 --> 00:09:11.160
+a spec, whether this is
+a spec-driven development.
+
+00:09:11.730 --> 00:09:14.520
+And yeah, that's how I started.
+
+00:09:15.150 --> 00:09:19.860
+So I would-- I'll go into more
+detail about that later,
+
+00:09:19.890 --> 00:09:24.930
+but basically I have a bunch of
+these for a bunch of games and
+
+00:09:24.930 --> 00:09:27.083
+we're gonna build a few more.
+
+00:09:27.720 --> 00:09:31.230
+But you know,
+you create the
+
+00:09:31.230 --> 00:09:34.536
+spec and then it
+creates the code.
+
+00:09:35.640 --> 00:09:40.650
+So that was pretty fast,
+two minutes, one game.
+
+00:09:41.880 --> 00:09:44.467
+How long do you think
+it'd take to write,
+
+00:09:45.449 --> 00:09:46.800
+to create all these games?
+
+00:09:48.000 --> 00:09:53.040
+Have Frogger, Flappy Bird,
+Minesweeper, Pac-Man,
+
+00:09:53.040 --> 00:09:56.554
+Mario, a basic version.
+
+00:09:58.253 --> 00:10:02.840
+How long do you think that might
+take for a human developer?
+
+00:10:04.770 --> 00:10:09.399
+Probably a few
+hours, maybe days.
+
+00:10:10.440 --> 00:10:12.990
+Well, let me run this here.
+
+00:10:13.410 --> 00:10:14.520
+Set down the mic.
+
+00:10:34.750 --> 00:10:35.270
+Okay.
+
+00:10:36.360 --> 00:10:38.700
+So I'll just put that there.
+
+00:10:40.290 --> 00:10:44.070
+So, I've written all
+these specs ahead of time.
+
+00:10:46.830 --> 00:10:53.010
+It's going to start 14
+agents running in parallel,
+
+00:10:53.400 --> 00:10:57.214
+and we'll see how long
+it takes to do this.
+
+00:10:57.480 --> 00:11:01.590
+We can see it starting up,
+but we're gonna go back
+
+00:11:01.590 --> 00:11:02.730
+to the presentation.
+
+00:11:04.870 --> 00:11:14.476
+Okay, so I'm not a magician
+and these--
+
+00:11:14.476 --> 00:11:17.132
+so, I'm not going to
+hide any tricks from you.
+
+00:11:18.270 --> 00:11:23.310
+This workflow has basically,
+you know, other than the
+
+00:11:23.310 --> 00:11:25.020
+agent, has four parts.
+
+00:11:25.800 --> 00:11:28.530
+It takes notes,
+we have the tasks,
+
+00:11:28.620 --> 00:11:31.950
+we have guides,
+and we have tests.
+
+00:11:34.590 --> 00:11:40.200
+And these work together to,
+you know, create the software
+
+00:11:41.400 --> 00:11:45.000
+mostly automatically by itself,
+although there's a lot of
+
+00:11:45.000 --> 00:11:48.672
+iteration that happens,
+and we'll talk about that.
+
+00:11:48.752 --> 00:11:55.080
+So, the notes-- so,
+this is an instruction
+
+00:11:55.080 --> 00:11:57.858
+I've told the-- the AI to do.
+
+00:11:58.680 --> 00:12:02.852
+Basically, I'm just
+telling it, you know,
+
+00:12:02.892 --> 00:12:04.245
+"Take notes while you're going.
+
+00:12:04.290 --> 00:12:05.607
+Just take notes."
+
+00:12:05.820 --> 00:12:08.670
+You know, it's like a log,
+an audit log.
+
+00:12:08.670 --> 00:12:11.640
+It keeps track of the
+errors it runs into.
+
+00:12:11.640 --> 00:12:16.740
+It keeps track of the solutions
+it comes up with, and this is
+
+00:12:16.740 --> 00:12:19.530
+really important for context.
+
+00:12:20.250 --> 00:12:26.550
+So, you know, the AI
+will eventually run out of
+
+00:12:26.550 --> 00:12:32.700
+space in its context window,
+and we need to be able to
+
+00:12:32.700 --> 00:12:34.680
+refresh that reliably.
+
+00:12:34.772 --> 00:12:37.650
+The compressions, you know,
+there's different ways
+
+00:12:37.650 --> 00:12:38.460
+to compress it.
+
+00:12:38.820 --> 00:12:41.730
+Don't work, you know,
+completely well.
+
+00:12:41.730 --> 00:12:43.380
+It always forgets
+something important.
+
+00:12:43.680 --> 00:12:47.040
+So, that's the main reason,
+but there's also a lot of side
+
+00:12:47.040 --> 00:12:48.780
+benefits you get from notes.
+
+00:12:49.230 --> 00:12:49.890
+Oh, yeah?
+
+00:12:53.814 --> 00:12:54.335
+Yeah.
+
+00:12:54.355 --> 00:12:54.875
+Yeah.
+
+00:12:54.900 --> 00:12:57.540
+Uh, this is on
+Claude at Stanford.
+
+00:12:58.020 --> 00:13:00.060
+Uh, I'll show the,
+the QR code later
+
+00:13:00.060 --> 00:13:01.470
+in the presentation.
+
+00:13:02.070 --> 00:13:05.640
+So let's go here.
+
+00:13:05.640 --> 00:13:10.470
+So, I have it use these
+kind of triggers, habits.
+
+00:13:10.860 --> 00:13:12.660
+Basically, I give
+it instructions.
+
+00:13:13.470 --> 00:13:16.860
+You know, "This is when I
+want you to, you know,
+
+00:13:16.920 --> 00:13:17.970
+take some notes."
+
+00:13:18.030 --> 00:13:21.930
+So, when it's gonna hand off
+to me, I have it take notes.
+
+00:13:22.494 --> 00:13:27.780
+When it makes a commit,
+I have it log the commit
+
+00:13:27.780 --> 00:13:30.450
+ID so we can look it up
+and get history later.
+
+00:13:31.110 --> 00:13:35.392
+Errors, whenever
+there's an error and
+
+00:13:35.400 --> 00:13:36.990
+just throughout the work.
+
+00:13:38.070 --> 00:13:43.398
+Okay, and the tasks
+is the other part of this
+
+00:13:44.760 --> 00:13:48.090
+so, these are the
+specs, basically.
+
+00:13:48.900 --> 00:13:50.790
+They're to-do tasks.
+
+00:13:50.940 --> 00:13:54.090
+Started out as a little
+to-do list I had the
+
+00:13:54.090 --> 00:13:57.986
+AI maintain for me,
+and then it became-- you know,
+
+00:13:57.986 --> 00:14:00.988
+I add more and more detail
+until it became,
+
+00:14:01.610 --> 00:14:03.920
+you know, documents
+of their own.
+
+00:14:04.170 --> 00:14:08.610
+And this workflow, you know,
+kind of just evolved
+
+00:14:08.820 --> 00:14:14.100
+organically as I developed
+using these, using the system.
+
+00:14:15.240 --> 00:14:21.660
+So, you know, in the-- the--
+the code base I'm sharing
+
+00:14:21.750 --> 00:14:26.293
+with you, it's-- they're all
+kept inside this to-do folder,
+
+00:14:26.723 --> 00:14:32.671
+that keeps a master list of
+all tasks in the to-do index.
+
+00:14:33.060 --> 00:14:36.810
+There's a specific
+numbering scheme for tasks.
+
+00:14:37.500 --> 00:14:41.610
+It even keeps track of priority
+and the status of the tasks.
+
+00:14:42.037 --> 00:14:44.010
+I'll show that in
+the code later.
+
+00:14:46.050 --> 00:14:49.179
+And, you know,
+it's an iterative
+
+00:14:49.179 --> 00:14:53.352
+process, creating this,
+these tasks with the AI.
+
+00:14:53.760 --> 00:14:58.740
+So like, start out--You know,
+the task, it what you want it
+
+00:14:59.130 --> 00:15:03.840
+to do, everything it needs to
+know to create this task.
+
+00:15:06.270 --> 00:15:09.360
+You start out just
+telling it what you want.
+
+00:15:10.230 --> 00:15:16.482
+It has instructions built in
+to the prompt to the Claude
+
+00:15:16.482 --> 00:15:18.756
+code like, claude.md .md
+
+00:15:20.431 --> 00:15:23.838
+Like cloud,
+the md file that
+
+00:15:25.278 --> 00:15:26.691
+allows it to understand
+
+00:15:26.691 --> 00:15:29.124
+how to create tasks,
+and you know, like,
+
+00:15:29.124 --> 00:15:32.324
+what to do with them,
+and then you review.
+
+00:15:32.430 --> 00:15:33.916
+So once it creates
+the initial version,
+
+00:15:33.916 --> 00:15:36.540
+you go through a review,
+and it's just iterative.
+
+00:15:36.690 --> 00:15:38.160
+Like, look at the document.
+
+00:15:38.160 --> 00:15:39.894
+If there's something
+there that you don't want,
+
+00:15:40.171 --> 00:15:40.950
+tell it to remove it.
+
+00:15:41.393 --> 00:15:44.310
+If there's something there
+it needs, you add it until,
+
+00:15:44.520 --> 00:15:48.872
+you know, you're happy with it,
+and then after that is
+
+00:15:48.912 --> 00:15:53.850
+the build process where
+it's also iterative.
+
+00:15:54.540 --> 00:15:58.200
+You know, with these games,
+you know, I'll show you a few,
+
+00:15:58.620 --> 00:16:01.890
+it creates a lot of them
+in one shot pretty well.
+
+00:16:02.190 --> 00:16:04.993
+Some of them,
+like Mario and Pac-Man
+
+00:16:04.993 --> 00:16:07.452
+will have a little, some bugs,
+but you know,
+
+00:16:07.452 --> 00:16:09.354
+that's the nature of these,
+you know,
+
+00:16:09.360 --> 00:16:12.559
+non-deterministic systems.
+
+00:16:12.900 --> 00:16:14.700
+It's gonna create
+a different game every time.
+
+00:16:14.700 --> 00:16:17.850
+So I've run this,
+you know, in testing,
+
+00:16:17.850 --> 00:16:20.820
+like, half a dozen times,
+and each time the game
+
+00:16:20.820 --> 00:16:21.570
+is a little different.
+
+00:16:24.229 --> 00:16:28.187
+So anyways, you know,
+
+00:16:28.682 --> 00:16:31.246
+so you work with AI until
+
+00:16:31.246 --> 00:16:35.525
+the implementation is what
+you want, and then, you know,
+
+00:16:35.525 --> 00:16:39.755
+deploy, test, document,
+and eventually archive
+
+00:16:39.786 --> 00:16:44.529
+the task, which has instructions
+on how to do that explicitly.
+
+00:16:47.050 --> 00:16:47.856
+Guides.
+
+00:16:48.362 --> 00:16:52.230
+So, these are like
+documents teaching it
+
+00:16:52.230 --> 00:16:53.902
+how to do certain things.
+
+00:16:54.780 --> 00:17:02.950
+So, this could be how to debug
+webpage, how to patch something.
+
+00:17:03.120 --> 00:17:06.469
+Like, for instance,
+one of the websites I work on,
+
+00:17:06.768 --> 00:17:09.786
+patching is a really
+tedious process.
+
+00:17:10.500 --> 00:17:16.079
+I've created a guide, and the
+AI reads the guide, and then
+
+00:17:16.079 --> 00:17:17.520
+it does the patching for me.
+
+00:17:18.089 --> 00:17:21.059
+You know, there's a few,
+it might not get
+
+00:17:21.511 --> 00:17:25.654
+all the patches done,
+but it does 90% by itself,
+
+00:17:28.884 --> 00:17:31.136
+and I'll be demonstrating that.
+
+00:17:31.140 --> 00:17:33.376
+As well,
+later on.
+
+00:17:36.309 --> 00:17:39.541
+One of the issues I
+found with guides is security.
+
+00:17:40.033 --> 00:17:45.090
+So, I create a custom
+script that checks to
+
+00:17:45.090 --> 00:17:50.370
+see if there's, you know,
+secrets in the guide, you know,
+
+00:17:50.370 --> 00:17:51.960
+passwords or other things.
+
+00:17:51.960 --> 00:17:55.255
+'Cause it really likes to put
+everything into this guide.
+
+00:17:55.740 --> 00:17:57.720
+So you have to be
+a little diligent.
+
+00:17:57.720 --> 00:17:59.460
+You have to check,
+make sure it's not
+
+00:17:59.610 --> 00:18:01.710
+doing anything,
+checking in stuff
+
+00:18:01.710 --> 00:18:02.739
+that shouldn't be there.
+
+00:18:03.600 --> 00:18:07.530
+And, you know, having
+an automated script go
+
+00:18:07.530 --> 00:18:11.700
+through helps it do that
+before coming to you.
+
+00:18:11.760 --> 00:18:15.930
+So you can say, you know,
+run the verification script.
+
+00:18:16.350 --> 00:18:19.740
+It will go and then
+put placeholders
+
+00:18:19.740 --> 00:18:23.330
+itself before you even,
+you know, need to review it.
+
+00:18:25.871 --> 00:18:29.385
+And then testing is another
+part of this system.
+
+00:18:32.691 --> 00:18:36.323
+The testing is kind
+of a guardrail.
+
+00:18:37.598 --> 00:18:40.424
+So, it's a guardrail,
+
+00:18:40.440 --> 00:18:43.198
+it also helps it during
+the development process.
+
+00:18:43.560 --> 00:18:51.245
+So, having the AI create these
+tests helps it,
+
+00:18:51.769 --> 00:18:53.984
+you know, first of all helps
+you be more confident,
+
+00:18:53.984 --> 00:18:56.056
+which goes back to
+that trust part,
+
+00:18:56.484 --> 00:18:59.982
+getting you above the 46% trust.
+
+00:19:00.690 --> 00:19:04.374
+But it also, I found,
+has side benefits in terms
+
+00:19:04.374 --> 00:19:07.953
+of keeping the AI focused
+while it's doing the work.
+
+00:19:08.550 --> 00:19:13.593
+So you can tell it, you know,
+make a test for, you know,
+
+00:19:13.770 --> 00:19:17.430
+making sure the items are
+selectable, making sure,
+
+00:19:17.490 --> 00:19:18.864
+you know, this or that work.
+
+00:19:19.290 --> 00:19:20.790
+And it will put
+that in the code,
+
+00:19:20.880 --> 00:19:24.240
+and then it will
+automatically run the
+
+00:19:24.240 --> 00:19:27.012
+tests and find the issues
+before even coming to you.
+
+00:19:27.720 --> 00:19:31.577
+So it helps make the iteration a
+lot faster.
+
+00:19:31.711 --> 00:19:33.601
+The AI iterates with itself
+
+00:19:34.320 --> 00:19:38.070
+for a while, and then you can
+come back and do the real
+
+00:19:38.070 --> 00:19:42.180
+testing and see, you know,
+if it's up to snuff.
+
+00:19:42.180 --> 00:19:44.410
+And you can even ask
+it to make more tests,
+
+00:19:44.700 --> 00:19:48.981
+which is also helpful
+to prevent regressions.
+
+00:19:49.200 --> 00:19:54.812
+'Cause often the AI will fix one
+thing and then break another.
+
+00:19:55.230 --> 00:19:58.560
+Or it'll fix one thing,
+and then you'll add
+
+00:19:58.560 --> 00:20:00.390
+another feature,
+but it will put
+
+00:20:00.390 --> 00:20:02.379
+back the same
+broken code.
+
+00:20:02.970 --> 00:20:06.219
+And it doesn't make any
+sense, I find, you know,
+
+00:20:06.219 --> 00:20:08.456
+if you'd make it, if you
+have it write a test.
+
+00:20:09.048 --> 00:20:10.878
+You don't get
+that regression.
+
+00:20:11.820 --> 00:20:19.836
+So, let's see how it did
+over here.
+
+00:20:27.569 --> 00:20:29.894
+Looks like it ran into a bug.
+
+00:20:29.894 --> 00:20:30.552
+(laughing)
+
+00:20:33.493 --> 00:20:37.036
+So this didn't happen
+during testing but let's
+
+00:20:38.760 --> 00:20:40.178
+see if it can recover.
+
+00:20:41.520 --> 00:20:44.204
+But while it's doing
+that I'll just show you,
+
+00:20:45.420 --> 00:20:50.850
+it created all this,
+like, all these tests just
+
+00:20:50.910 --> 00:20:52.038
+while we were talking.
+
+00:20:53.310 --> 00:20:56.670
+Created, you know,
+most of the code for these
+
+00:20:56.670 --> 00:20:58.637
+games, they might even work.
+
+00:21:00.150 --> 00:21:03.414
+Okay, context is low, uncompact.
+
+00:21:04.200 --> 00:21:08.234
+Okay, so this, let's try it.
+
+00:21:11.010 --> 00:21:12.750
+So this is what I
+was talking about,
+
+00:21:12.810 --> 00:21:20.283
+the compact, looks like it, the
+conversation's too long.
+
+00:21:22.160 --> 00:21:26.280
+So, this is what I was talking
+about in terms of context.
+
+00:21:30.076 --> 00:21:31.710
+Is it not sharing my screen?
+
+00:21:41.019 --> 00:21:41.959
+Look at this.
+
+00:21:47.430 --> 00:21:51.461
+Sorry, I don't know why
+it's not showing my screen.
+
+00:21:54.430 --> 00:21:55.142
+Okay.
+
+00:21:55.737 --> 00:21:59.084
+Okay, so now you can see
+what I'm talking about.
+
+00:22:00.246 --> 00:22:03.060
+So, this is what I was talking
+about in terms of context.
+
+00:22:03.690 --> 00:22:10.100
+So, basically what happened is
+it ran out of space in the
+
+00:22:10.170 --> 00:22:15.830
+conversation, and it looks like
+Cloud Code can't,
+
+00:22:17.996 --> 00:22:19.001
+there's an issue,
+
+00:22:19.001 --> 00:22:23.020
+an error with Cloud Code itself,
+so I'm just going to exit
+
+00:22:23.020 --> 00:22:24.421
+and restart this.
+
+00:22:26.310 --> 00:22:26.970
+Okay.
+
+00:22:31.740 --> 00:22:33.420
+Let's resume.
+
+00:22:35.795 --> 00:22:36.536
+Okay.
+
+00:22:36.736 --> 00:22:37.980
+Let's see here.
+
+00:22:40.470 --> 00:22:42.090
+Sorry about this.
+
+00:22:42.941 --> 00:22:43.935
+Continue.
+
+00:22:44.555 --> 00:22:46.961
+Okay, now it looks
+like it's gonna work.
+
+00:22:48.249 --> 00:22:51.316
+Or maybe not.
+
+00:22:53.130 --> 00:22:55.830
+Okay, I'm just gonna
+create a new conversation.
+
+00:22:56.875 --> 00:22:57.395
+Okay.
+
+00:23:02.530 --> 00:23:03.050
+Okay.
+
+00:23:03.180 --> 00:23:06.411
+So this is a good
+way to demonstrate
+
+00:23:06.426 --> 00:23:08.370
+the refresh function.
+
+00:23:09.900 --> 00:23:13.890
+So while we were talking,
+it was building all this code.
+
+00:23:14.760 --> 00:23:20.250
+It was also taking some notes,
+or should have been
+
+00:23:20.250 --> 00:23:21.330
+taking some notes.
+
+00:23:22.163 --> 00:23:26.520
+Yeah, so, you know,
+there's some bugs.
+
+00:23:27.090 --> 00:23:27.930
+Of course,
+they always
+
+00:23:27.930 --> 00:23:30.430
+happen live
+when presenting.
+
+00:23:30.593 --> 00:23:32.673
+(laughing)
+
+00:23:33.309 --> 00:23:43.142
+But see-- let's see if
+we have Flappy.
+
+00:23:44.320 --> 00:23:46.961
+Okay, so it did
+create the games.
+
+00:23:47.001 --> 00:23:50.640
+So you can see,
+this is Flappy Bird.
+
+00:23:52.590 --> 00:23:55.248
+Let's see here.
+
+00:23:56.820 --> 00:23:59.609
+Let me just give it
+a quick instruction.
+
+00:24:23.490 --> 00:24:26.610
+Okay, so it's going to
+look at the code and pick
+
+00:24:26.610 --> 00:24:27.630
+up where it left off.
+
+00:24:28.560 --> 00:24:32.220
+But pretty sure all these
+games are gonna work.
+
+00:24:33.300 --> 00:24:34.950
+Let's try running the launcher.
+
+00:24:41.090 --> 00:24:41.610
+Okay.
+
+00:24:41.610 --> 00:24:44.160
+So here's the launcher,
+here's the games.
+
+00:24:45.305 --> 00:24:48.240
+Let's see.
+
+00:24:49.320 --> 00:24:53.289
+Does anyone have a favorite
+game they want to see?
+
+00:24:54.340 --> 00:24:54.860
+Galaga?
+
+00:24:55.575 --> 00:24:56.340
+Pac-man?
+
+00:24:56.840 --> 00:24:57.360
+Okay.
+
+00:24:58.050 --> 00:25:01.214
+Let's let's
+do Frogger first.
+
+00:25:01.858 --> 00:25:02.378
+Okay.
+
+00:25:03.480 --> 00:25:12.030
+So not 100%, but of course,
+it stopped halfway,
+
+00:25:12.840 --> 00:25:14.190
+so I'll just type it in.
+
+00:25:15.257 --> 00:25:16.297
+Frogger.
+
+00:25:16.357 --> 00:25:17.816
+Okay, so here's Frogger.
+
+00:25:19.800 --> 00:25:23.400
+The cars, the logs,
+and you fall in the
+
+00:25:23.400 --> 00:25:24.300
+water, you die.
+
+00:25:28.495 --> 00:25:29.654
+Okay.
+
+00:25:29.713 --> 00:25:31.470
+So then, let's check out,
+
+00:25:34.076 --> 00:25:38.378
+Galaga.
+
+00:25:38.496 --> 00:25:45.357
+So, here we This is pretty good.
+
+00:25:46.557 --> 00:25:47.610
+Just from a prompt.
+
+00:25:51.217 --> 00:25:53.430
+We have lives, we have waves.
+
+00:25:54.354 --> 00:25:55.329
+Geez.
+
+00:25:57.330 --> 00:26:00.210
+They're not shooting, but,
+you know, this is pretty good.
+
+00:26:05.023 --> 00:26:10.500
+Pacman sometimes has
+trouble, but let's see.
+
+00:26:11.670 --> 00:26:13.681
+Yeah, this is-- this is okay.
+
+00:26:14.250 --> 00:26:16.599
+There's some dead
+ends in the maze
+
+00:26:18.183 --> 00:26:19.860
+and doesn't fit exactly there.
+
+00:26:20.580 --> 00:26:21.360
+But yeah,
+if you hit a
+
+00:26:21.360 --> 00:26:23.310
+ghost, you die.
+
+00:26:24.210 --> 00:26:26.640
+So this is pretty good.
+
+00:26:27.270 --> 00:26:28.590
+[AUDIENCE MEMBER] Can
+the Citi have song?
+
+00:26:29.850 --> 00:26:30.420
+[TRUCKER HATCH] No.
+
+00:26:32.970 --> 00:26:33.960
+It doesn't do the song.
+
+00:26:34.410 --> 00:26:40.790
+I could-- didn't want
+to add that, you know,
+
+00:26:40.871 --> 00:26:43.770
+too much noise during
+the presentation.
+
+00:26:44.220 --> 00:26:47.070
+But you're free to, you know,
+copy the code and
+
+00:26:47.070 --> 00:26:47.850
+add that feature.
+
+00:26:47.850 --> 00:26:52.260
+You can use the task system that
+I'm going to demonstrate next.
+
+00:26:52.800 --> 00:27:01.050
+So, that's pretty okay,
+so it ran the tests.
+
+00:27:01.740 --> 00:27:08.160
+All 773 tests passed,
+so-- you know, the tests,
+
+00:27:08.160 --> 00:27:11.899
+obviously, you can see
+how you have to iterate.
+
+00:27:12.300 --> 00:27:19.552
+You know,
+the Pacman
+
+00:27:19.552 --> 00:27:21.630
+game had dead ends,
+it was probably just
+
+00:27:21.630 --> 00:27:24.300
+that one level,
+and it didn't have
+
+00:27:24.390 --> 00:27:25.110
+any of those power-up
+
+00:27:25.110 --> 00:27:26.516
+Those
+power-up balls.
+
+00:27:26.836 --> 00:27:29.729
+So that would be
+part of the iteration, but,
+
+00:27:30.210 --> 00:27:32.681
+and you can see
+in just a few minutes,
+
+00:27:32.681 --> 00:27:36.898
+you can create something,
+and then you can iterate with it
+
+00:27:37.273 --> 00:27:38.712
+and you can create tests.
+
+00:27:41.544 --> 00:27:44.460
+I guess the,
+the next thing I'll show
+
+00:27:44.460 --> 00:27:46.260
+is how to use the guides.
+
+00:27:47.280 --> 00:27:51.570
+So we'll just introduce
+you to this guide here.
+
+00:27:52.320 --> 00:27:55.959
+This is kind of a spec,
+
+00:27:56.756 --> 00:27:59.240
+basically, it's just telling
+it how to do a process.
+
+00:27:59.640 --> 00:28:02.550
+And you can see here,
+it has this table of
+
+00:28:02.550 --> 00:28:07.320
+contents, which helps
+it find the things.
+
+00:28:07.320 --> 00:28:09.870
+It's pretty interesting
+to watch it go through this.
+
+00:28:10.650 --> 00:28:17.038
+But you can see it has
+quick refrences.
+
+00:28:17.095 --> 00:28:19.770
+It has the list of things to do.
+
+00:28:23.318 --> 00:28:26.376
+You know,
+this is pretty complete.
+
+00:28:26.520 --> 00:28:29.130
+So this is also an
+iterative process to create.
+
+00:28:30.855 --> 00:28:32.836
+And we're just going
+to, we're gonna create
+
+00:28:32.836 --> 00:28:35.246
+a game here together.
+
+00:28:36.090 --> 00:28:39.420
+So let me paste in this prompt.
+
+00:28:44.655 --> 00:28:46.170
+So, right now, it's reading it.
+
+00:28:46.500 --> 00:28:48.556
+I gave it instructions
+to read the guide
+
+00:28:49.220 --> 00:28:51.678
+and then, you know, run it.
+
+00:28:55.888 --> 00:28:56.389
+Okay.
+
+00:28:57.510 --> 00:28:59.880
+So, it's asking
+what kind of game.
+
+00:29:01.939 --> 00:29:02.459
+I don't know.
+
+00:29:02.460 --> 00:29:06.450
+Does anyone have a game,
+like a burning, like,
+
+00:29:06.789 --> 00:29:12.120
+a game they've always
+wanted, a 2D arcade-style game?
+
+00:29:12.264 --> 00:29:12.784
+Yeah.
+
+00:29:13.980 --> 00:29:14.668
+Sudoku?
+
+00:29:15.070 --> 00:29:15.590
+Okay.
+
+00:29:16.500 --> 00:29:19.103
+Let's make a Sudoku.
+
+00:29:21.639 --> 00:29:22.159
+Yeah.
+
+00:29:23.280 --> 00:29:26.855
+Oh, maybe, does
+anyone have a,
+
+00:29:27.390 --> 00:29:31.339
+like, an interactive CLI game?
+
+00:29:31.375 --> 00:29:31.895
+No?
+
+00:29:33.290 --> 00:29:33.810
+Okay.
+
+00:29:33.810 --> 00:29:37.799
+Sudoku, Sudoku.
+
+00:29:37.809 --> 00:29:40.384
+And you don't even have
+to spell these things right.
+
+00:29:41.160 --> 00:29:45.600
+So, that's one thing I really
+enjoy, just type in,
+
+00:29:45.930 --> 00:29:47.190
+the faster you type--
+
+00:29:47.190 --> 00:29:47.695
+[JUN PAGOTAISIDRO] Better.
+
+00:29:53.880 --> 00:29:56.790
+Okay,
+so now it's asking what
+
+00:29:56.850 --> 00:30:00.032
+we want to put in the
+v1 of this Sudoku game.
+
+00:30:00.840 --> 00:30:05.057
+So, let's see.
+
+00:30:05.340 --> 00:30:09.924
+One difficulty level,
+pre-generated puzzles.
+
+00:30:09.924 --> 00:30:11.369
+That sounds pretty good.
+
+00:30:12.567 --> 00:30:14.411
+Let's just go with that.
+
+00:30:21.604 --> 00:30:23.164
+Let's copy paste.
+
+00:30:24.565 --> 00:30:25.224
+Paste.
+
+00:30:35.193 --> 00:30:35.713
+Okay.
+
+00:30:37.313 --> 00:30:40.503
+So now it's creating
+the task for us.
+
+00:30:40.950 --> 00:30:45.725
+So this is the idea,
+the spec-driven development
+
+00:30:48.660 --> 00:30:49.854
+you know, with the AI.
+
+00:30:50.820 --> 00:30:54.345
+So first we're gonna
+create the task itself,
+
+00:30:54.510 --> 00:30:58.867
+then we're gonna have it run
+the task to build the software.
+
+00:31:03.546 --> 00:31:04.206
+Yeah.
+
+00:31:06.060 --> 00:31:09.480
+So you can see here,
+it's getting the number
+
+00:31:09.480 --> 00:31:10.500
+for the next one.
+
+00:31:10.500 --> 00:31:12.510
+So it's 17,
+and it just
+
+00:31:12.510 --> 00:31:15.150
+wrote the
+whole thing.
+
+00:31:15.150 --> 00:31:18.360
+Now we can, you know,
+just go through and review it.
+
+00:31:18.360 --> 00:31:22.110
+I'm sure it's probably 100%.
+
+00:31:24.044 --> 00:31:25.159
+Let's see.
+
+00:31:28.342 --> 00:31:31.314
+And you can see how it
+has a testing strategy.
+
+00:31:32.430 --> 00:31:33.975
+This looks pretty good.
+
+00:31:35.550 --> 00:31:37.107
+Technical notes.
+
+00:31:39.390 --> 00:31:42.461
+Yeah, this looks,
+looks pretty good
+
+00:31:43.560 --> 00:31:44.490
+for a Sudoku.
+
+00:31:44.550 --> 00:31:48.105
+So it's gonna build
+this in three phases.
+
+00:31:52.019 --> 00:31:54.300
+Yeah, let's go
+ahead and build it.
+
+00:32:03.129 --> 00:32:03.649
+[JON GREEN] Okay.
+
+00:32:05.379 --> 00:32:05.899
+Yeah?
+
+00:32:06.595 --> 00:32:11.250
+[AUDIENCE MEMBER] So where did
+it come up with the list of
+
+00:32:11.250 --> 00:32:12.910
+requirements for this game?
+
+00:32:13.377 --> 00:32:16.950
+Because you wrote the guide,
+and the guide has enough stuff
+
+00:32:16.950 --> 00:32:20.280
+to tell it that it has to
+then have these sections
+
+00:32:20.280 --> 00:32:22.110
+in the list of tasks.
+
+00:32:22.746 --> 00:32:23.267
+[JON GREEN] No.
+
+00:32:23.429 --> 00:32:27.858
+So, the way it did, oh, okay.
+
+00:32:27.860 --> 00:32:28.379
+Okay.
+
+00:32:28.380 --> 00:32:35.070
+So, the question was basically,
+how did it know to write all
+
+00:32:35.106 --> 00:32:40.577
+the tasks for the spec?
+
+00:32:41.640 --> 00:32:43.245
+Because, you know,
+
+00:32:45.744 --> 00:32:49.287
+it's because it, it knows
+how to play Sudoku already.
+
+00:32:49.560 --> 00:32:52.263
+So this AI already knows
+how to play Sudoku.
+
+00:32:52.620 --> 00:32:57.471
+We could create a more
+imaginative different game here.
+
+00:33:00.443 --> 00:33:02.485
+But that's how it
+wrote the spec.
+
+00:33:03.240 --> 00:33:08.000
+So, I've created,
+you know, different games.
+
+00:33:09.976 --> 00:33:14.633
+The guide I wrote here will
+go through the whole process.
+
+00:33:16.904 --> 00:33:19.860
+I have it ask for
+specific things.
+
+00:33:19.860 --> 00:33:24.609
+So, it wasn't, if it
+had more features, you know,
+
+00:33:24.609 --> 00:33:29.913
+it was different than Sudoku,
+would have asked you, you know,
+
+00:33:29.913 --> 00:33:33.885
+what the core gameplay
+of it is.
+
+00:33:35.345 --> 00:33:39.300
+As you can see here,
+it has even an example of a
+
+00:33:39.300 --> 00:33:41.909
+Zelda game built into the spec.
+
+00:33:42.330 --> 00:33:47.760
+So it, you know,
+it would ask you things
+
+00:33:47.760 --> 00:33:50.991
+like these, you know,
+depending on the game.
+
+00:33:52.530 --> 00:33:56.640
+And then, it lists out the
+different features it believes
+
+00:33:56.640 --> 00:34:00.060
+that are going to be needed,
+like either from your
+
+00:34:00.270 --> 00:34:04.183
+description of what you
+want or from its inference.
+
+00:34:04.500 --> 00:34:07.050
+You know, of course,
+it inferred basically
+
+00:34:07.050 --> 00:34:08.359
+all the Sudoku game.
+
+00:34:10.714 --> 00:34:13.469
+But if you wanted to build a
+more complex game, you could.
+
+00:34:16.553 --> 00:34:22.393
+So right now it's working on
+the red phase of the tests.
+
+00:34:23.969 --> 00:34:25.110
+It's working on the game.
+
+00:34:26.280 --> 00:34:30.567
+So, probably be done
+in a minute here.
+
+00:34:32.000 --> 00:34:32.520
+Okay.
+
+00:34:32.520 --> 00:34:33.746
+All the tests are passing.
+
+00:34:47.563 --> 00:34:48.543
+Okay.
+
+00:34:49.350 --> 00:34:51.900
+Let's just type in Sudoku here.
+
+00:34:53.094 --> 00:34:54.757
+Sudoku.
+
+00:34:57.810 --> 00:35:01.290
+Okay, all tests pass,
+the game is there.
+
+00:35:01.380 --> 00:35:03.510
+Let's play.
+
+00:35:03.720 --> 00:35:05.707
+So, there we have it.
+
+00:35:11.980 --> 00:35:13.300
+Sudoku.
+
+00:35:15.180 --> 00:35:19.650
+So, let's just try putting
+a number down here.
+
+00:35:19.650 --> 00:35:21.775
+I think one might go here.
+
+00:35:23.040 --> 00:35:25.233
+Okay, cool.
+
+00:35:29.484 --> 00:35:32.373
+So, oh.
+
+00:35:40.898 --> 00:35:41.418
+Okay.
+
+00:35:41.953 --> 00:35:48.517
+So, let's, let's go look at
+you know, what, what--based
+
+00:35:48.517 --> 00:35:53.827
+on, you know, this workflow
+I've created what I think is
+
+00:35:54.294 --> 00:35:55.701
+going to come down the line.
+
+00:35:58.691 --> 00:36:01.651
+So today,
+we have this
+
+00:36:01.825 --> 00:36:07.407
+manual workflow,
+which uses files
+
+00:36:07.407 --> 00:36:10.519
+checked into Git,
+you know, files that
+
+00:36:10.519 --> 00:36:12.804
+are version controlled.
+
+00:36:13.530 --> 00:36:14.940
+Down the line,
+we're going to
+
+00:36:14.940 --> 00:36:17.820
+have, obviously,
+integrated tooling.
+
+00:36:19.860 --> 00:36:24.401
+We're going to have different
+things built into the IDE,
+
+00:36:24.401 --> 00:36:29.203
+built into different agents
+that the AI can use.
+
+00:36:30.493 --> 00:36:35.490
+Further down the line,
+we might have repositories
+
+00:36:35.490 --> 00:36:38.160
+of, you know, context.
+
+00:36:38.160 --> 00:36:43.140
+So you can pick up and
+develop code on features
+
+00:36:43.140 --> 00:36:46.308
+that you were working on,
+you know, months before.
+
+00:36:46.773 --> 00:36:49.683
+You might have--well,
+definitely have ways for
+
+00:36:49.683 --> 00:36:54.752
+non-technical users to
+create specs and tasks,
+
+00:36:54.752 --> 00:36:56.656
+and feed into the system.
+
+00:36:56.670 --> 00:37:00.840
+Of course, we'll always need
+someone to review those with
+
+00:37:00.840 --> 00:37:05.899
+the technical knowledge, but
+these are just my ideas of what
+
+00:37:07.980 --> 00:37:09.150
+could be down the line.
+
+00:37:10.983 --> 00:37:15.043
+[TRUCKER HATCH] The developer
+role is moving towards
+
+00:37:15.090 --> 00:37:17.970
+someone who, you know,
+does a lot more reviewing
+
+00:37:17.970 --> 00:37:22.590
+and testing, and focuses a
+lot more on the system design
+
+00:37:22.680 --> 00:37:27.660
+and architecture than, you know,
+the nuts and bolts of the code.
+
+00:37:28.075 --> 00:37:34.041
+You know, I've, I've had
+projects where I've had to
+
+00:37:34.470 --> 00:37:38.213
+change the programming language
+because the library I was using
+
+00:37:38.253 --> 00:37:40.938
+in the, the one language
+wasn't powerful enough.
+
+00:37:41.220 --> 00:37:45.138
+I just told it to
+change, you know.
+
+00:37:45.780 --> 00:37:51.300
+So, you know, and then,
+of course, all I have to
+
+00:37:51.300 --> 00:37:53.370
+do is review the code.
+
+00:37:53.370 --> 00:37:56.700
+But it's a lot easier to review
+code in a different programming
+
+00:37:56.700 --> 00:38:00.059
+language than to, you know,
+just learn a new language.
+
+00:38:01.817 --> 00:38:04.560
+So here's the QR code again.
+
+00:38:05.220 --> 00:38:06.815
+So, I invite you to
+
+00:38:08.880 --> 00:38:12.120
+scan the code,
+download the code,
+
+00:38:12.120 --> 00:38:16.580
+and you can run these if
+you have a cloud coder.
+
+00:38:17.558 --> 00:38:20.640
+You can run it just the
+way I was now during the
+
+00:38:20.640 --> 00:38:22.980
+presentation, and build
+all these games yourself.
+
+00:38:24.456 --> 00:38:27.660
+You can create a Sudoku
+or you can create a more
+
+00:38:27.660 --> 00:38:30.810
+imaginative-- or you can
+create a different game
+
+00:38:30.810 --> 00:38:33.936
+using this task guide here.
+
+00:38:36.820 --> 00:38:42.053
+And, yeah, that's
+my presentation.
+
+00:38:42.330 --> 00:38:45.177
+So, here's a link
+to my LinkedIn.
+
+00:38:45.633 --> 00:38:49.316
+You can add me and
+we can connect.
+
+00:38:49.410 --> 00:38:52.226
+Does anyone have any questions?
+
+00:39:03.700 --> 00:39:04.220
+Go ahead.
+
+00:39:08.279 --> 00:39:12.177
+[AUDIENCE MEMBER] Somebody was
+asking about the specs, right?
+
+00:39:12.318 --> 00:39:15.499
+How much time you spend on it
+and how do you approach--
+
+00:39:16.558 --> 00:39:17.078
+[TRUCKER HATCH] Yeah.
+
+00:39:17.078 --> 00:39:23.550
+So basically,
+a lot of my work
+
+00:39:23.550 --> 00:39:26.610
+is now creating
+the specs, you know,
+
+00:39:26.610 --> 00:39:30.480
+I have to read and make
+sure that they have all
+
+00:39:30.480 --> 00:39:31.830
+the things that are required.
+
+00:39:32.220 --> 00:39:35.552
+So you know,
+it's a lot more
+
+00:39:35.552 --> 00:39:39.360
+reading and reviewing,
+but it's a lot-
+
+00:39:40.023 --> 00:39:40.560
+[JON GREEN] Faster.
+
+00:39:40.560 --> 00:39:43.880
+You can find like,
+you write the spec and you
+
+00:39:43.880 --> 00:39:48.141
+can find the bugs, you know,
+before you write the code, you
+
+00:39:48.141 --> 00:39:51.931
+can look at the architecture,
+can make sure it doesn't create
+
+00:39:51.931 --> 00:39:54.287
+something, you know, wonky.
+
+00:39:56.345 --> 00:40:00.840
+You think at a higher level,
+you know, it's not so much nuts
+
+00:40:00.840 --> 00:40:02.370
+and bolts of the code anymore.
+
+00:40:02.430 --> 00:40:06.360
+It's more like,
+what do I want to create?
+
+00:40:06.390 --> 00:40:08.424
+How's a good design for that?
+
+00:40:09.090 --> 00:40:14.586
+So it's a lot more of the work,
+but it pays off in the end
+
+00:40:16.098 --> 00:40:18.150
+you know, in terms of the
+speed of the development.
+
+00:40:18.480 --> 00:40:22.606
+With these AI agents,
+you can pivot a lot quicker.
+
+00:40:22.606 --> 00:40:25.020
+You know, if you write,
+like my example,
+
+00:40:25.020 --> 00:40:26.317
+I wrote the code in
+
+00:40:28.350 --> 00:40:31.710
+a language that didn't
+have a library that was
+
+00:40:31.710 --> 00:40:36.200
+as powerful as I needed for
+the features that were coming.
+
+00:40:37.140 --> 00:40:39.388
+I just changed the language.
+
+00:40:39.450 --> 00:40:41.558
+I wrote a spec,
+I told it, "You know,
+
+00:40:41.580 --> 00:40:44.640
+we need to change the
+language to this one
+
+00:40:44.640 --> 00:40:46.070
+using this library."
+
+00:40:46.350 --> 00:40:50.068
+And it went through,
+looked at the code in
+
+00:40:50.070 --> 00:40:53.760
+the other language,
+translated it and put
+
+00:40:53.760 --> 00:40:56.103
+all the requirements
+that I asked it to put
+
+00:40:56.460 --> 00:41:00.557
+in the spec into the code.
+
+00:41:01.080 --> 00:41:02.600
+So, yeah.
+
+00:41:14.279 --> 00:41:14.799
+Yeah.
+
+00:41:14.799 --> 00:41:18.304
+So people are, you know,
+I-- oh, sorry.
+
+00:41:19.494 --> 00:41:21.198
+So the question was
+
+00:41:22.805 --> 00:41:25.620
+"Is my interaction with
+the code like a black box?"
+
+00:41:26.280 --> 00:41:30.071
+And I still, you know,
+read the code.
+
+00:41:30.090 --> 00:41:32.177
+I still make sure it's good.
+
+00:41:32.340 --> 00:41:36.780
+I still write tests
+or check the tests,
+
+00:41:36.780 --> 00:41:42.570
+but it's less about
+
+00:41:45.030 --> 00:41:46.890
+writing code,
+for sure, you know.
+
+00:41:47.310 --> 00:41:51.300
+It's more like, "Okay,
+this code looks good," you know.
+
+00:41:52.140 --> 00:41:55.110
+"This code has all the
+things I asked for it,
+
+00:41:55.860 --> 00:41:57.540
+and it's passing all the tests."
+
+00:41:58.050 --> 00:41:59.310
+So, yeah.
+
+00:42:00.480 --> 00:42:02.160
+[MODERATOR] Can we jump
+in with an online question
+
+00:42:02.160 --> 00:42:03.540
+really quickly and then
+we'll get back to you?
+
+00:42:03.685 --> 00:42:04.205
+[JON GREEN] Yeah.
+
+00:42:05.030 --> 00:42:05.550
+[MODERATOR] All right.
+
+00:42:05.610 --> 00:42:08.310
+So from
+Reynaldo "Jon,
+
+00:42:08.370 --> 00:42:10.920
+I can see this
+being used when the AI
+
+00:42:10.920 --> 00:42:13.500
+knows the algorithms,
+such as common games,
+
+00:42:14.070 --> 00:42:17.190
+but how about custom apps
+that is unique, for example,
+
+00:42:17.190 --> 00:42:18.873
+to your business requirements?
+
+00:42:19.379 --> 00:42:22.470
+How will you avoid coding
+and rely on AI in that case?"
+
+00:42:23.030 --> 00:42:23.550
+[JON GREEN] Yeah.
+
+00:42:23.700 --> 00:42:26.010
+So that's a great question.
+
+00:42:26.130 --> 00:42:31.785
+So that's where the iteration in
+the spec becomes very important.
+
+00:42:32.280 --> 00:42:35.229
+You know, have to, you put all
+those business requirements
+
+00:42:35.229 --> 00:42:36.344
+into the spec.
+
+00:42:36.900 --> 00:42:40.481
+You know,
+you work with it as it develops.
+
+00:42:40.560 --> 00:42:42.660
+So you develop,
+you're developing the spec,
+
+00:42:42.660 --> 00:42:43.710
+you're developing the code.
+
+00:42:44.275 --> 00:42:45.420
+It's collaborative.
+
+00:42:45.840 --> 00:42:48.456
+If it's making, you know,
+a webpage that doesn't,
+
+00:42:49.380 --> 00:42:52.380
+isn't the way you want it,
+you tell it to make
+
+00:42:52.380 --> 00:42:53.100
+it a different way.
+
+00:42:54.156 --> 00:42:59.400
+If it's trying to use the wrong
+JSON structure, of course, you
+
+00:42:59.400 --> 00:43:03.898
+have to step in there and tell
+it to correct the structure.
+
+00:43:04.110 --> 00:43:08.000
+So it's not hands off.
+
+00:43:08.490 --> 00:43:11.852
+It's still hands on,
+it's just different level.
+
+00:43:12.270 --> 00:43:13.391
+You know, you're looking,
+
+00:43:14.943 --> 00:43:16.675
+you know, making sure that
+it's building the
+
+00:43:16.675 --> 00:43:19.654
+thing that we want,
+that the user wants
+
+00:43:20.460 --> 00:43:23.612
+less than making sure
+every line of code is,
+
+00:43:23.660 --> 00:43:25.114
+you know, exactly perfect.
+
+00:43:34.290 --> 00:43:35.391
+[AUDIENCE MEMBER] Thank you for
+the presentation,
+
+00:43:35.391 --> 00:43:36.305
+this was great.
+
+00:43:36.914 --> 00:43:39.510
+One of the questions that
+I have is regarding the app
+
+00:43:39.510 --> 00:43:41.023
+development and next steps.
+
+00:43:41.400 --> 00:43:45.120
+So once you develop the app
+locally, how do you verify that
+
+00:43:45.120 --> 00:43:49.230
+this is ready to release to
+the App Store, and have you
+
+00:43:49.230 --> 00:43:52.920
+experimented with the process
+of submitting it to different
+
+00:43:52.920 --> 00:43:57.390
+stores and is there any way
+to make it platform agnostic?
+
+00:43:57.390 --> 00:44:00.552
+So if I develop something
+that I could release to the
+
+00:44:02.100 --> 00:44:04.013
+Google or the Apple Store?
+
+00:44:04.490 --> 00:44:05.010
+[JON GREEN] Yeah.
+
+00:44:05.010 --> 00:44:06.960
+So like a mobile app?
+
+00:44:07.315 --> 00:44:07.835
+[AUDIENCE MEMBER] Right.
+
+00:44:08.575 --> 00:44:09.095
+[JON GREEN] Yeah.
+
+00:44:10.481 --> 00:44:14.321
+Making an app or a website or
+anything,
+
+00:44:14.699 --> 00:44:16.412
+you have to test it yourself.
+
+00:44:16.560 --> 00:44:21.527
+So, of course, then, you know,
+you're not going to go and
+
+00:44:21.567 --> 00:44:23.806
+just have it generate a
+bunch of code and upload it.
+
+00:44:23.847 --> 00:44:28.230
+You know, you have to test it,
+like I have it create, you know,
+
+00:44:28.230 --> 00:44:32.820
+a test suite so that, you know,
+for iteration and
+
+00:44:32.820 --> 00:44:34.983
+verification purposes.
+
+00:44:36.778 --> 00:44:40.417
+You know, have to manually
+test it before uploading
+
+00:44:40.417 --> 00:44:42.318
+it into the, to any store.
+
+00:44:45.164 --> 00:44:46.650
+Did that answer your question?
+
+00:44:57.930 --> 00:45:01.647
+No,
+you upload to the
+
+00:45:01.747 --> 00:45:05.107
+store the normal way
+you would and, you know,
+
+00:45:05.147 --> 00:45:08.569
+you create the build file and
+then you upload it to the store.
+
+00:45:08.924 --> 00:45:12.682
+Of course, they could create
+the build file for you.
+
+00:45:14.341 --> 00:45:16.598
+And then of course
+you would test it and
+
+00:45:16.740 --> 00:45:17.940
+upload it to the store.
+
+00:45:33.120 --> 00:45:34.530
+[AUDIENCE MEMBER ONE] I'm
+curious about your experience
+
+00:45:34.530 --> 00:45:37.770
+with dealing with, like,
+structured data, like a SQL
+
+00:45:37.770 --> 00:45:41.910
+database or any other kind
+of databases that you have to
+
+00:45:41.910 --> 00:45:43.500
+incorporate into an application.
+
+00:45:44.070 --> 00:45:48.104
+Do you write those specs in
+the spec in how it should
+
+00:45:48.144 --> 00:45:49.244
+interact with the database?
+
+00:45:49.247 --> 00:45:52.604
+Or do you have to use
+something like a MCP to let
+
+00:45:52.624 --> 00:45:54.739
+it know what tools to use?
+
+00:45:55.170 --> 00:45:56.490
+How would you go about it?
+
+00:45:57.443 --> 00:46:02.250
+[JON GREEN] So for a cloud
+code, it knows SQL very well.
+
+00:46:02.790 --> 00:46:07.896
+So what I would do is, you know,
+create the schema in the spec.
+
+00:46:08.340 --> 00:46:11.700
+I would say, you know, we need,
+you know, these fields or,
+
+00:46:12.480 --> 00:46:15.411
+you know, you could even go to a
+higher level and say, you know,
+
+00:46:15.444 --> 00:46:20.020
+"I'm creating-- a database needs
+to hold this data," and then
+
+00:46:20.020 --> 00:46:23.997
+have it create a schema, and
+then just check to make sure
+
+00:46:24.005 --> 00:46:26.620
+that that schema makes sense.
+
+00:46:27.120 --> 00:46:31.284
+So you can either be very
+specific and, you know,
+
+00:46:31.290 --> 00:46:34.618
+"This is exactly what I
+want," or you can be more
+
+00:46:34.653 --> 00:46:37.410
+high-level and say, you know,
+"I want something like this.
+
+00:46:37.410 --> 00:46:39.269
+What would that look like?"
+
+00:46:39.930 --> 00:46:42.180
+And, you know,
+it depends on what
+
+00:46:42.180 --> 00:46:42.840
+you're building.
+
+00:46:42.840 --> 00:46:45.060
+If it's a system
+that's in place,
+
+00:46:45.060 --> 00:46:47.029
+of course you need
+it to be specific.
+
+00:46:47.370 --> 00:46:50.430
+But if you're creating something
+new, maybe you see what the
+
+00:46:50.430 --> 00:46:55.890
+AI comes up with first, and
+then refine it or, you know,
+
+00:46:55.890 --> 00:46:58.797
+correct it or, you know, yeah.
+
+00:46:58.813 --> 00:46:59.333
+Good.
+
+00:47:01.284 --> 00:47:02.805
+[AUDIENCE MEMBER TWO] Like,
+cloud code, would-- is there
+
+00:47:02.805 --> 00:47:05.886
+a better agent that works
+better with?
+
+00:47:08.124 --> 00:47:12.686
+[JON GREEN] I've only Used
+Cloud Code for databases.
+
+00:47:13.080 --> 00:47:17.340
+But all the LLMs,
+they're trained on,
+
+00:47:17.550 --> 00:47:19.350
+you know, vast amounts of data.
+
+00:47:19.440 --> 00:47:22.170
+I'd be surprised
+if any of them didn't know
+
+00:47:22.170 --> 00:47:26.130
+how to write SQL code.
+
+00:47:26.790 --> 00:47:30.780
+So this is, you know,
+the system that I
+
+00:47:30.780 --> 00:47:31.560
+have access to.
+
+00:47:31.560 --> 00:47:34.980
+Uh, I've tried a few others.
+
+00:47:35.910 --> 00:47:37.920
+Cloud code is
+
+00:47:40.110 --> 00:47:42.870
+the best that I've,
+I've tested so far,
+
+00:47:42.870 --> 00:47:44.910
+but that doesn't mean it's
+gonna be the best tomorrow.
+
+00:47:45.535 --> 00:47:46.055
+You know?
+
+00:47:46.844 --> 00:47:49.800
+You know, there's Gemini,
+that's also very good
+
+00:47:49.800 --> 00:47:51.180
+and has a free version.
+
+00:47:51.900 --> 00:47:56.790
+Um, there's Kiro that
+Amazon was just doing a
+
+00:47:57.510 --> 00:48:00.720
+demo of, and, you know,
+I'll have to revisit that one.
+
+00:48:00.900 --> 00:48:03.150
+It looks like they've added
+some features to that as well.
+
+00:48:03.690 --> 00:48:06.570
+So you just have to keep
+on trying different ones.
+
+00:48:06.985 --> 00:48:07.505
+You know.
+
+00:48:08.190 --> 00:48:11.730
+And see what one is
+good in the moment,
+
+00:48:11.730 --> 00:48:13.560
+'cause this is just
+changing so fast.
+
+00:48:14.665 --> 00:48:15.185
+So--all
+
+00:48:15.819 --> 00:48:16.406
+[TRUCKER HATCH] All Right.
+
+00:48:16.410 --> 00:48:19.740
+I think we've hit our end
+of the time for the session.
+
+00:48:19.800 --> 00:48:21.750
+Uh, can we thank
+Jon one more time?
+
+00:48:21.822 --> 00:48:24.150
+(applause)
+
+00:48:24.150 --> 00:48:27.150
+If there's any more questions,
+is there any way
+
+00:48:27.150 --> 00:48:27.900
+we can reach you?
+
+00:48:30.319 --> 00:48:30.839
+[JON GREEN] Yeah.
+
+00:48:30.840 --> 00:48:34.320
+You can reach me via
+email or LinkedIn here.
+
+00:48:34.920 --> 00:48:39.660
+You can add me on LinkedIn,
+using the QR code.
+
+00:48:40.410 --> 00:48:43.429
+So, yeah.
+
+00:48:43.824 --> 00:48:44.344
+[TRUCKER HATCH] Awesome.
+
+00:48:44.344 --> 00:48:45.153
+Thank you so much.
+
+00:48:45.153 --> 00:48:47.644
+Yeah.
+
