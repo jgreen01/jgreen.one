@@ -52,6 +52,18 @@
       ]
     },
     {
+      "path": "practical-workflow-for-ai-coding-assistants.webp",
+      "bytes": 59268,
+      "sha256": "0f0df8de6fe0826d22494dc90848fe03561ba5c0d1a2432bd6826fdca1884ed9",
+      "width": 1536,
+      "height": 1024,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-02",
+      "referencedBy": [
+        "entries/practical-workflow-for-ai-coding-assistants"
+      ]
+    },
+    {
       "path": "serving-markdown-to-ai-agents.webp",
       "bytes": 65748,
       "sha256": "4a1b0d6ca1cc8e9272559c55efe5aaf9c518f23493116e48e83cbf2935d48c3f",

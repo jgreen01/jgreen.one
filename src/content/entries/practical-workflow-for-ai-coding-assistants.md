@@ -3,16 +3,10 @@ title: "A Practical Workflow for AI Coding Assistants"
 description: "My Converge 2025 talk: four repo-native habits that turn AI coding assistants from neat tricks into a workflow a whole team can run."
 pubDate: 2025-12-11
 kind: "blog"
+heroImage: "/media/practical-workflow-for-ai-coding-assistants.webp"
 tags: ["ai", "workflow", "testing", "notes", "claude", "conference"]
-draft: true
+draft: false
 ---
-
-<!--
-DRAFT — content complete. Built from the slide deck, the demo repository and the
-session recording's (human-corrected) transcript.
-Remaining before publish: hero image, and Jon's sign-off on the two items in the
-closing comment block.
--->
 
 I gave this talk at [Converge 2025](https://itcommunity.stanford.edu/converge/2025) on 11 December 2025 — Stanford IT's first combined conference, folding fourteen years of IT Unconference and six of CyberFest into one day at the Li Ka Shing Center.
 
@@ -227,11 +221,7 @@ None of it requires a particular assistant, and none of it is wasted when you ch
 *Thanks to Ray Saray and Ali Karim for access to Claude Code, which this workflow is built on, and to Rafael Cruz, who tested every early version and was very patient about it.*
 
 <!--
-TODO before publishing:
-  - Hero image.
-  - Confirm Jon is happy publishing the deck PDF as-is: slide 22 carries his
-    Stanford email address and a LinkedIn QR code, which become public at a
-    stable URL once the site deploys.
-  - Confirm the YouTube recording is meant to be linked publicly.
-  - Flip draft: false.
+Signed off 2026-09-01: publishing the deck PDF as-is (slide 22 carries a
+Stanford email address and a LinkedIn QR code, public once deployed), and
+mirroring the recording, which is published on the "IT at Stanford" channel.
 -->
