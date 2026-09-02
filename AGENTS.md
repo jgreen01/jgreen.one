@@ -85,6 +85,14 @@ npm run preview             # preview the production build
 ./scripts/deploy.sh         # build + sync to S3 + invalidate CloudFront (reads Terraform outputs)
 node scripts/validate_guides.mjs   # validate guides / scan for secrets
 
+# Managed media (images, PDFs, video — S3, not git)
+npm run media:check         # reconcile public/media/, S3 and media-manifest.json
+npm run media:pull          # hydrate public/media/ from S3 (a clean checkout has none)
+npm run media:push          # upload and refresh the manifest
+
+# Transcripts (see guides/transcripts.md)
+./scripts/vtt-to-transcript.mjs --out src/content/transcripts/<slug>.md   # (re)generate a body
+
 # Infrastructure (Terraform)
 cd infra/live && terraform plan     # preview infra changes
 cd infra/live && terraform apply    # apply infra changes
@@ -93,8 +101,10 @@ cd infra/live && terraform apply    # apply infra changes
 ## Architecture
 
 - **Frontend:** Astro 5 + Tailwind CSS v4 (via `@tailwindcss/vite`) + TypeScript. Integrations: sitemap, mdx, astro-favicons; Markdown uses remark-gfm.
-- **Content:** a single Astro content collection `entries` (`src/content/config.ts`). Blog posts AND projects both live in `src/content/entries/` as `.md`, distinguished by the `kind` field (`blog` | `project`). Drafts (`draft: true`) are filtered out of builds.
-- **Layouts/pages:** `Base` → `PageLayout` / `ArticleLayout`. Routes include `/`, `/about`, `/contact`, `/blog`, `/projects`, `/entries`, `/entries/[slug]`, `/tags`, `/tags/[tag]`, `/404`.
+- **Content:** two Astro content collections, both wired in `src/content.config.ts` (Astro 7 ignores the old `src/content/config.ts` path).
+  - `entries` — blog posts AND projects live in `src/content/entries/` as `.md`, distinguished by the `kind` field (`blog` | `project`). Drafts (`draft: true`) are filtered out of builds.
+  - `transcripts` — talk transcripts in `src/content/transcripts/`. Not posts: each names the `entries` id it belongs to and inherits that entry's draft status. Bodies are **generated** by `scripts/vtt-to-transcript.mjs` from a committed `.vtt` — edit the `.corrections.json` sibling, never the Markdown body. See `guides/transcripts.md`.
+- **Layouts/pages:** `Base` → `PageLayout` / `ArticleLayout`. Routes include `/`, `/about`, `/contact`, `/blog`, `/projects`, `/entries`, `/entries/[slug]`, `/tags`, `/tags/[tag]`, `/404`, plus the machine-readable set: `/llms.txt`, `/entries/[slug]/index.md`, and per transcript `/entries/[slug]/transcript`, `/entries/[slug]/transcript.md` and `/entries/[slug]/captions.vtt`.
 - **Infra (Terraform in `infra/`):** S3 (private, OAC, encryption, versioning) + CloudFront (PriceClass_100, `function.js` for clean-URL rewrites) + ACM (us-east-1) + Route 53. `bootstrap/` sets up the state backend; `live/` is the production stack.
 - **Deploy:** `scripts/deploy.sh` pulls Terraform outputs, runs `npm ci && npm run build`, `aws s3 sync ./dist --delete`, then a CloudFront `/*` invalidation.
 
@@ -160,6 +170,12 @@ npm run test:watch # same, in watch mode
 npm run test:cover # with a coverage report
 npm run test:build # build integration: astro build + assertions on dist/ (~13s)
 npm run test:e2e   # Playwright across chromium, firefox, mobile (~70s)
+npm run test:e2e:ui     # Playwright UI mode — time-travel debugger, pick selectors
+npm run test:e2e:headed # watch the tests drive a real browser
+npm run test:e2e:debug  # inspector, pauses on each step
+npm run smoke      # walk the pages in 2 viewports × 2 themes, screenshot each,
+                   # fail on console errors or a sub-resource 4xx (needs a
+                   # running `npm run dev` or `npm run preview`)
 pytest tests/infra # live AWS resource validation — read-only, needs credentials
 ```
 
