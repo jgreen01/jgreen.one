@@ -5,6 +5,7 @@
  */
 import { type CollectionEntry } from "astro:content";
 import { heroImagePath } from "../utils/heroImagePath";
+import { formatDate } from "../utils/formatDate";
 interface Props {
   entry: CollectionEntry<"entries">;
 }
@@ -33,7 +34,7 @@ const heroImage = heroImagePath(data.heroImage);
         {data.title}
       </a>
       <p class="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
-        <span class="capitalize">{collection}</span> &bull; {data.pubDate.toLocaleDateString('en-us', { year:"numeric", month:"short", day:"numeric"})}
+        <span class="capitalize">{collection}</span> &bull; {formatDate(data.pubDate)}
       </p>
       {data.description && <p class="text-foreground/80 dark:text-foregroundDark/80 mt-1">{data.description}</p>}
       <div class="flex flex-wrap gap-2 mt-2">

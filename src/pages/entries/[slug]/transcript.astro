@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import PageLayout from "../../../layouts/PageLayout.astro";
 import { pairTranscriptsWithEntries, formatDuration } from "../../../utils/transcript";
+import { formatLongDate, isoDate } from "../../../utils/formatDate";
 
 /**
  * A talk transcript, at `/entries/<slug>/transcript`.
@@ -28,13 +29,8 @@ const { Content } = await render(transcript);
 const data = transcript.data;
 
 const articleUrl = `/entries/${entry.id}`;
-const recordedDate = data.recordedDate.toISOString().slice(0, 10);
-const recordedLabel = data.recordedDate.toLocaleDateString("en-GB", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
+const recordedDate = isoDate(data.recordedDate);
+const recordedLabel = formatLongDate(data.recordedDate);
 
 const links = [
   { label: "Watch the recording", href: data.recordingUrl },
