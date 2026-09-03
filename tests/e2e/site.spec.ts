@@ -92,6 +92,39 @@ test.describe("listing pages", () => {
     });
   }
 
+  test("a card's hero image links to its entry", async ({ page }) => {
+    await gotoClean(page, "/entries/");
+
+    const linkedHero = page.locator("a .hero-image-container img, .hero-image-container a img").first();
+    await expect(linkedHero).toHaveCount(1);
+
+    const href = await linkedHero
+      .evaluate((img) => img.closest("a")?.getAttribute("href"));
+    expect(href).toMatch(/^\/entries\/[^/]+\/?$/);
+  });
+
+  test("the hero link is hidden from assistive tech, so the entry is announced once", async ({
+    page,
+  }) => {
+    // The title link immediately after points at the same place. Two adjacent
+    // links to one destination is a well-known screen-reader annoyance, so the
+    // image link is a mouse affordance only.
+    await gotoClean(page, "/entries/");
+
+    const heroLink = page.locator(".hero-image-container a").first();
+    await expect(heroLink).toHaveAttribute("aria-hidden", "true");
+    await expect(heroLink).toHaveAttribute("tabindex", "-1");
+  });
+
+  test("clicking a card's hero image opens that entry", async ({ page }) => {
+    await page.goto("/entries/");
+    const heroLink = page.locator(".hero-image-container a").first();
+    const href = await heroLink.getAttribute("href");
+    await heroLink.click();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    await expect(page.locator("article h1")).toBeVisible();
+  });
+
   test("/entries/ is a superset of the blog and project listings", async ({ page }) => {
     const hrefsOn = async (path: string) => {
       await page.goto(path);
