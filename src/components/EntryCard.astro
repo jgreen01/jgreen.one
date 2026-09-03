@@ -12,25 +12,36 @@ interface Props {
 const { entry } = Astro.props;
 const { data, collection } = entry;
 const heroImage = heroImagePath(data.heroImage);
+const href = `/${collection}/${entry.id}`;
 ---
 
 <li class="mb-6">
   <div class="flex flex-col gap-2">
     <!-- Hero Image -->
     {heroImage && (
-          <div class="w-full max-h-80 mb-2 hero-image-container overflow-hidden">
-            <img
-              src={heroImage}
-              alt={data.title}
-              class="w-full h-full object-cover object-top rounded-lg"
-              loading="lazy"
-              onerror="this.closest('.hero-image-container').style.display='none'"
-            />
-          </div>    )}
+      <div class="w-full max-h-80 mb-2 hero-image-container overflow-hidden">
+        {/*
+          A mouse affordance only. The title link below points at the same
+          entry, and two adjacent links to one destination make a screen reader
+          announce it twice — so this one is hidden from assistive tech and
+          skipped by the keyboard, and its image is decorative (empty alt)
+          because the title already names the destination.
+        */}
+        <a href={href} tabindex="-1" aria-hidden="true" class="block h-full">
+          <img
+            src={heroImage}
+            alt=""
+            class="w-full h-full object-cover object-top rounded-lg transition-transform duration-300 hover:scale-[1.02]"
+            loading="lazy"
+            onerror="this.closest('.hero-image-container').style.display='none'"
+          />
+        </a>
+      </div>
+    )}
 
     <!-- Content -->
     <div class="flex-1 min-w-0">
-      <a href={`/${collection}/${entry.id}`} class="text-xl font-semibold text-accent dark:text-accentDark hover:underline">
+      <a href={href} class="text-xl font-semibold text-accent dark:text-accentDark hover:underline">
         {data.title}
       </a>
       <p class="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
