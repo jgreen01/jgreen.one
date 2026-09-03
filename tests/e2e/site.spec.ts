@@ -495,3 +495,129 @@ test.describe("transcript page", () => {
     expect(await response.text()).toContain("— transcript");
   });
 });
+
+/**
+ * The footer nazar.
+ *
+ * Asserting the class alone would pass even if the keyframes were deleted, so
+ * these check the computed transform — proof the animation actually runs.
+ */
+test.describe("footer nazar", () => {
+  test("is present and squashes when tapped", async ({ page }) => {
+    await gotoClean(page, "/");
+    const eye = page.locator(".nazar");
+    await eye.scrollIntoViewIfNeeded();
+    await expect(eye).toBeVisible();
+
+    await eye.click();
+
+    // Sampled mid-blink: the keyframe squashes the Y axis toward nothing, so
+    // the matrix must show a vertical scale well below 1 at some point.
+    const minScaleY = await eye.evaluate(async (el) => {
+      let smallest = 1;
+      for (let i = 0; i < 24; i += 1) {
+        const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        if (m.d < smallest) smallest = m.d;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return smallest;
+    });
+
+    expect(minScaleY, "the eye never squashed — is the keyframe running?").toBeLessThan(0.5);
+  });
+
+  test("clears its own class so it can blink again", async ({ page }) => {
+    await gotoClean(page, "/");
+    const eye = page.locator(".nazar");
+    await eye.scrollIntoViewIfNeeded();
+
+    await eye.click();
+    await expect(eye).toHaveClass(/is-blinking/);
+    // animationend removes it; a stuck class would mean one blink per page load.
+    await expect(eye).not.toHaveClass(/is-blinking/, { timeout: 3000 });
+  });
+
+  // The sequence a person actually performs: move onto it, let the hover
+  // animation finish, then click. Clicking mid-hover happens to work, which is
+  // why the first version of these tests passed while the feature was broken.
+  test("still blinks when clicked after the hover animation has settled", async ({ page }) => {
+    await gotoClean(page, "/");
+    const eye = page.locator(".nazar");
+    await eye.scrollIntoViewIfNeeded();
+
+    await eye.hover();
+    await page.waitForTimeout(400); // let the hover blink run to completion
+    await eye.click();
+
+    const squashed = await eye.evaluate(async (el) => {
+      let smallest = 1;
+      for (let i = 0; i < 24; i += 1) {
+        const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+        if (m.d < smallest) smallest = m.d;
+        await new Promise((r) => requestAnimationFrame(r));
+      }
+      return smallest;
+    });
+
+    expect(squashed, "clicking after hover did not blink").toBeLessThan(0.5);
+  });
+
+  test("does not wedge itself: the class always clears, so it can blink again", async ({
+    page,
+  }) => {
+    await gotoClean(page, "/");
+    const eye = page.locator(".nazar");
+    await eye.scrollIntoViewIfNeeded();
+
+    await eye.hover();
+    await page.waitForTimeout(400);
+    await eye.click();
+    await page.waitForTimeout(600);
+
+    await expect(eye, "the blink class stuck, killing every later blink").not.toHaveClass(
+      /is-blinking/,
+    );
+
+    // And a second blink genuinely starts, rather than being swallowed.
+    const running = await eye.evaluate(async (el) => {
+      el.dispatchEvent(new Event("click"));
+      await new Promise((r) => requestAnimationFrame(r));
+      return el.getAnimations().length;
+    });
+    expect(running, "a later blink never started").toBeGreaterThan(0);
+  });
+
+  test("does not animate when reduced motion is requested", async ({ browser }) => {
+    // An explicit context rather than test.use(): the fixture-level option was
+    // silently not applying here, which left the assertion below checking
+    // nothing at all. Proven active by the guard before it is relied on.
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+
+    try {
+      await page.goto("/");
+      expect(
+        await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
+        "reduced-motion emulation is not active",
+      ).toBe(true);
+
+      const eye = page.locator(".nazar");
+      await eye.scrollIntoViewIfNeeded();
+      await eye.click();
+
+      const minScaleY = await eye.evaluate(async (el) => {
+        let smallest = 1;
+        for (let i = 0; i < 12; i += 1) {
+          const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+          if (m.d < smallest) smallest = m.d;
+          await new Promise((r) => requestAnimationFrame(r));
+        }
+        return smallest;
+      });
+
+      expect(minScaleY, "the eye animated despite reduced motion").toBe(1);
+    } finally {
+      await context.close();
+    }
+  });
+});
