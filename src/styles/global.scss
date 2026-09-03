@@ -172,3 +172,52 @@ a:hover { color: var(--accent-color); }
   --tw-prose-th-borders: var(--text-color);
   --tw-prose-td-borders: var(--text-color);
 }
+
+/* ── The footer nazar ────────────────────────────────────────────────────────
+ *
+ * A blink is a squash, not a fade: scaling the Y axis toward nothing and back
+ * is what reads as an eyelid. It is the emoji glyph being squashed, so this
+ * looks slightly different on each platform's artwork — which is fine, since
+ * the motion carries the effect rather than any internal detail.
+ *
+ * Every rule sits inside `prefers-reduced-motion: no-preference`. Someone who
+ * has asked their OS for less motion gets a plain, still emoji — not a slower
+ * blink, no blink at all.
+ */
+.nazar {
+  display: inline-block;
+  /* The glyph sits on the text baseline; squashing from the middle looks like
+     a wink rather than the eye sinking into the line. */
+  transform-origin: center;
+  cursor: pointer;
+  /* It is interactive but carries no meaning of its own, so it must not become
+     a text-selection target when someone taps it on a phone. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes nazar-blink {
+    0%,
+    100% {
+      transform: scaleY(1);
+    }
+    45% {
+      transform: scaleY(0.08);
+    }
+    55% {
+      transform: scaleY(0.08);
+    }
+  }
+
+  .nazar.is-blinking {
+    animation: nazar-blink 220ms ease-in-out;
+  }
+
+  /* Hover is deliberately NOT handled here. A `.nazar:hover` rule naming this
+     same animation leaves it applied-but-finished while the pointer rests on
+     the eye; adding .is-blinking then changes nothing the browser can see, so
+     no animation restarts, no animationend fires, and the class sticks —
+     killing every later blink. Hover is a JS trigger for that reason. */
+}

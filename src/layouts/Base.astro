@@ -57,8 +57,86 @@ const props = Astro.props;
 
     <footer class="max-w-3xl mx-auto py-8 px-4 border-t border-muted">
       <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
-      <small class="block text-center text-muted-foreground">© <span id="copyright-years" data-start-year={START_YEAR}>{copyrightLabel(START_YEAR, BUILD_YEAR)}</span> — Jon Green — Software Engineering & Data Science • Built with Astro • Open to thoughtful collaboration • 🧿</small>
+      <small class="block text-center text-muted-foreground">© <span id="copyright-years" data-start-year={START_YEAR}>{copyrightLabel(START_YEAR, BUILD_YEAR)}</span> — Jon Green — Software Engineering & Data Science • Built with Astro • Open to thoughtful collaboration • <span class="nazar" title="Nazar — against the evil eye">🧿</span></small>
     </footer>
+
+    <!--
+      The footer nazar blinks: once when it first scrolls into view, then
+      rarely on its own, on hover, and on tap — the last of those because a
+      phone has no hover and the effect would otherwise be desktop-only.
+
+      The idle interval mirrors nextBlinkDelay() in src/utils/nazar.ts, which is
+      where that rule is tested; keep the two in step. Inline so it costs no
+      extra request.
+
+      Nothing runs at all under prefers-reduced-motion: the CSS defines no
+      animation there, so adding the class would be inert, and the timers would
+      be pure waste.
+    -->
+    <script>
+      (function () {
+        const eye = document.querySelector('.nazar');
+        if (!eye) return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        // Mirrors BLINK_MIN_MS / BLINK_MAX_MS in src/utils/nazar.ts.
+        const MIN = 6000;
+        const MAX = 14000;
+        // window.setTimeout rather than the bare global: the bare one resolves
+        // to Node's typing here and returns a Timeout object, not a number.
+        let timer = 0;
+
+        // Function *expressions*, not declarations. A hoisted declaration could
+        // in principle run before the `if (!eye) return` above, so the narrowing
+        // from that guard would not hold inside one.
+        const blink = () => {
+          // Remove, force a reflow, re-add. Re-adding a class that is already
+          // present does not restart a CSS animation, so without the reflow a
+          // second trigger is silently swallowed. getBoundingClientRect is the
+          // reflow: it exists on Element, unlike offsetWidth.
+          eye.classList.remove('is-blinking');
+          eye.getBoundingClientRect();
+          eye.classList.add('is-blinking');
+        };
+
+        eye.addEventListener('animationend', function () {
+          eye.classList.remove('is-blinking');
+        });
+
+        const schedule = () => {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(function () {
+            // A blink nobody can see is just a wasted frame.
+            if (!document.hidden) blink();
+            schedule();
+          }, Math.round(MIN + Math.random() * (MAX - MIN)));
+        };
+
+        eye.addEventListener('click', blink);
+
+        // Pointer devices only: on a touchscreen a tap also fires mouseenter,
+        // which would blink twice for one gesture.
+        if (window.matchMedia('(hover: hover)').matches) {
+          eye.addEventListener('mouseenter', blink);
+        }
+
+        // Idle blinking only while the footer is actually on screen.
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                blink();
+                schedule();
+              } else {
+                window.clearTimeout(timer);
+              }
+            });
+          }, { threshold: 0.5 }).observe(eye);
+        } else {
+          schedule();
+        }
+      })();
+    </script>
     <script>
       const btn = document.getElementById('menu-btn');
       const menu = document.getElementById('mobile-menu');
