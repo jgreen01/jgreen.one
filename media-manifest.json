@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-02",
+  "generatedAt": "2026-09-09",
   "bucket": "jgreen-one-site",
   "assets": [
     {
@@ -97,6 +97,18 @@
       "addedAt": "2026-09-01",
       "referencedBy": [
         "entries/testing-makes-ai-iteration-fast"
+      ]
+    },
+    {
+      "path": "this-site.webp",
+      "bytes": 42908,
+      "sha256": "db3eae347b21599f0034f0b70d1c2065c2ae36b71abe0ad0ce7b93b7ad65f140",
+      "width": 2261,
+      "height": 1028,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-09",
+      "referencedBy": [
+        "entries/this-site"
       ]
     }
   ]
