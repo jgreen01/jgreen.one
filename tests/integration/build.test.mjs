@@ -365,6 +365,57 @@ describe("astro build output", () => {
     assert.ok(exists(name), `missing dist/${name}`);
     assert.match(read(name), /<loc>https:\/\/jgreen\.one\//);
   });
+
+  // Without a lastmod a crawler has no signal that a page changed, so a stale
+  // copy can sit in the index indefinitely.
+  const sitemapUrls = () => {
+    const entries = new Map();
+    for (const block of read("sitemap-0.xml").matchAll(/<url>([\s\S]*?)<\/url>/g)) {
+      const loc = block[1].match(/<loc>([^<]+)<\/loc>/)?.[1];
+      const lastmod = block[1].match(/<lastmod>([^<]+)<\/lastmod>/)?.[1];
+      if (loc) entries.set(new URL(loc).pathname, lastmod);
+    }
+    return entries;
+  };
+
+  test("entry pages carry a lastmod matching their publish date", () => {
+    const urls = sitemapUrls();
+    const entryPaths = [...urls.keys()].filter((path) => /^\/entries\/[^/]+\/$/.test(path));
+    assert.ok(entryPaths.length > 0, "no entry pages in the sitemap");
+    for (const path of entryPaths) {
+      const lastmod = urls.get(path);
+      assert.ok(lastmod, `no lastmod for ${path}`);
+      const slug = path.split("/")[2];
+      const source = readFileSync(join(ROOT, "src/content/entries", `${slug}.md`), "utf-8");
+      const expected = (source.match(/^updatedDate:\s*["']?(\d{4}-\d{2}-\d{2})/m) ??
+        source.match(/^pubDate:\s*["']?(\d{4}-\d{2}-\d{2})/m))[1];
+      assert.ok(
+        lastmod.startsWith(expected),
+        `${path} says ${lastmod}, expected ${expected} from its frontmatter`,
+      );
+    }
+  });
+
+  test("listing pages are dated by the newest entry", () => {
+    const urls = sitemapUrls();
+    const newest = [...urls.entries()]
+      .filter(([path]) => /^\/entries\/[^/]+\/$/.test(path))
+      .map(([, lastmod]) => lastmod)
+      .sort()
+      .at(-1);
+    for (const path of ["/", "/blog/", "/projects/", "/entries/"]) {
+      assert.equal(urls.get(path), newest, `${path} is not dated by the newest entry`);
+    }
+  });
+
+  // Stamping an undatable page with the build time would be a false signal,
+  // and a crawler that learns lastmod is unreliable stops trusting all of them.
+  test("pages that cannot be honestly dated carry no lastmod", () => {
+    const urls = sitemapUrls();
+    for (const path of ["/about/", "/contact/"]) {
+      assert.equal(urls.get(path), undefined, `${path} should not claim a lastmod`);
+    }
+  });
 });
 
 describe("draft entries", () => {
