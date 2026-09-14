@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   CORE_PAGES,
   transcriptPath,
@@ -36,7 +36,7 @@ test.describe("home", () => {
   });
 
   test.describe("progressive reveal", () => {
-    const items = (page) => page.locator("#entry-list > li");
+    const items = (page: Page) => page.locator("#entry-list > li");
 
     test("renders every entry into the page, so nothing depends on JavaScript", async ({
       page,
