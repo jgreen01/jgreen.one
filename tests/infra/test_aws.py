@@ -142,6 +142,43 @@ class TestWaf:
         rule = next(r for r in web_acl["Rules"] if "RateBasedStatement" in r["Statement"])
         assert "Block" in rule["Action"]
 
+    # A plain Block answers 403. CloudFront remaps 403 to 404 so a missing
+    # object reads as "gone" rather than "forbidden" -- and that remapped page
+    # is CACHED BY PATH, not by client. One rate-limited IP therefore poisons
+    # the cache with 404s served to everyone. Answering 429 avoids both halves:
+    # CloudFront only rewrites the codes it is given (403, 404), and it caches
+    # error responses only for 400/403/404/405/414/416/500-504, which excludes
+    # 429.
+    def test_rate_limit_answers_429_not_403(self, web_acl):
+        rule = next(r for r in web_acl["Rules"] if "RateBasedStatement" in r["Statement"])
+        custom = rule["Action"]["Block"].get("CustomResponse")
+        assert custom is not None, "rate limit falls back to a bare 403"
+        assert custom["ResponseCode"] == 429
+
+    def test_rate_limit_tells_the_client_when_to_retry(self, web_acl):
+        rule = next(r for r in web_acl["Rules"] if "RateBasedStatement" in r["Statement"])
+        headers = {
+            h["Name"].lower(): h["Value"]
+            for h in rule["Action"]["Block"]["CustomResponse"].get("ResponseHeaders", [])
+        }
+        assert "retry-after" in headers, "no Retry-After, so a client cannot back off politely"
+        assert int(headers["retry-after"]) > 0
+
+    def test_rate_limit_response_is_not_stored(self, web_acl):
+        rule = next(r for r in web_acl["Rules"] if "RateBasedStatement" in r["Statement"])
+        headers = {
+            h["Name"].lower(): h["Value"]
+            for h in rule["Action"]["Block"]["CustomResponse"].get("ResponseHeaders", [])
+        }
+        assert "no-store" in headers.get("cache-control", "")
+
+    def test_rate_limit_says_why_in_the_body(self, web_acl):
+        rule = next(r for r in web_acl["Rules"] if "RateBasedStatement" in r["Statement"])
+        key = rule["Action"]["Block"]["CustomResponse"].get("CustomResponseBodyKey")
+        assert key, "no custom body, so the client is told nothing"
+        body = web_acl.get("CustomResponseBodies", {}).get(key, {})
+        assert "rate" in body.get("Content", "").lower()
+
     def test_metrics_are_enabled(self, web_acl):
         assert web_acl["VisibilityConfig"]["CloudWatchMetricsEnabled"] is True
 
