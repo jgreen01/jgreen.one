@@ -4,15 +4,16 @@ import EntryCard from "../components/EntryCard.astro";
 import Avatar from "../components/Avatar.astro";
 import { getCollection } from "astro:content";
 import { filterDrafts, sortByDate } from "../utils/entries";
+import { INITIAL_VISIBLE } from "../utils/infiniteList";
 
 /**
- * Fetch all published entries (both kinds), newest first.
- * You can later add "featured: true" to frontmatter to curate.
+ * Every published entry, newest first.
+ *
+ * All of them are rendered into the page and the tail is hidden client-side,
+ * rather than fetched in pages. The whole list stays in the document for
+ * crawlers, and a reader without JavaScript sees all of it.
  */
 const all = sortByDate(filterDrafts(await getCollection("entries")));
-
-// Select top N to feature on the homepage
-const featured = all.slice(0, 4);
 ---
 <PageLayout>
   <section class="flex items-center flex-col sm:flex-row">
@@ -26,11 +27,74 @@ const featured = all.slice(0, 4);
 
   <section class="mt-8">
     <h2 class="text-3xl font-bold mb-4">Latest Entries</h2>
-    <ul class="list-none mt-4">
-      {featured.map((entry) => <EntryCard entry={entry} />)}
+    <ul id="entry-list" class="list-none mt-4" data-initial-visible={INITIAL_VISIBLE}>
+      {all.map((entry) => <EntryCard entry={entry} />)}
     </ul>
+    <div id="entry-sentinel" class="h-px w-full" aria-hidden="true"></div>
+    <p id="entry-list-status" class="sr-only" role="status" aria-live="polite"></p>
     <p class="mt-4">
       <a href="/projects/" class="text-accent dark:text-accentDark hover:underline">Browse Projects</a> • <a href="/blog/" class="text-accent dark:text-accentDark hover:-underline">Read the Blog</a>
     </p>
   </section>
 </PageLayout>
+
+<script>
+  import {
+    INITIAL_VISIBLE,
+    BATCH_SIZE,
+    revealMore,
+    isComplete,
+    remaining,
+  } from "../utils/infiniteList";
+
+  const list = document.getElementById("entry-list");
+  const sentinel = document.getElementById("entry-sentinel");
+  const status = document.getElementById("entry-list-status");
+
+  if (list && sentinel) {
+    const items = Array.from(list.children).filter(
+      (el): el is HTMLElement => el instanceof HTMLElement,
+    );
+    const total = items.length;
+    let visible = Math.min(INITIAL_VISIBLE, total);
+
+    const apply = function () {
+      items.forEach(function (item, index) {
+        item.hidden = index >= visible;
+      });
+      if (status) {
+        status.textContent = isComplete(visible, total)
+          ? `All ${total} entries shown.`
+          : `Showing ${visible} of ${total} entries, ${remaining(visible, total)} more below.`;
+      }
+    };
+
+    // Everything is already in the document, so with no observer the right
+    // outcome is to leave the full list visible rather than hide a tail that
+    // nothing can ever reveal.
+    if (!isComplete(visible, total) && "IntersectionObserver" in window) {
+      apply();
+
+      const observer = new IntersectionObserver(
+        function (records) {
+          records.forEach(function (record) {
+            if (!record.isIntersecting) return;
+            visible = revealMore(visible, total, BATCH_SIZE);
+            apply();
+            if (isComplete(visible, total)) {
+              observer.disconnect();
+              sentinel.hidden = true;
+            }
+          });
+        },
+        // Start loading before the reader reaches the bottom, so the list
+        // grows ahead of the scroll instead of stuttering at the end.
+        { rootMargin: "300px 0px" },
+      );
+
+      observer.observe(sentinel);
+    } else {
+      sentinel.hidden = true;
+    }
+  }
+</script>

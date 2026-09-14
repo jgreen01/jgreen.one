@@ -9,6 +9,7 @@ import {
   expectVisibleWithSize,
   gotoClean,
 } from "./helpers";
+import { INITIAL_VISIBLE } from "../../src/utils/infiniteList";
 
 test.describe("home", () => {
   test("renders the hero, avatar and featured entries without errors", async ({ page }) => {
@@ -32,6 +33,43 @@ test.describe("home", () => {
     await page.goto("/");
     await expect(page.locator("li").filter({ has: page.locator("a[href^='/entries/']") }).first())
       .toBeVisible();
+  });
+
+  test.describe("progressive reveal", () => {
+    const items = (page) => page.locator("#entry-list > li");
+
+    test("renders every entry into the page, so nothing depends on JavaScript", async ({
+      page,
+    }) => {
+      await gotoClean(page, "/");
+      // The full list is in the document; only its visibility is scripted.
+      expect(await items(page).count()).toBeGreaterThan(INITIAL_VISIBLE);
+    });
+
+    test("shows only the first batch before the reader scrolls", async ({ page }) => {
+      await gotoClean(page, "/");
+      await expect(items(page).locator("visible=true")).toHaveCount(INITIAL_VISIBLE);
+    });
+
+    test("reveals the rest as the reader reaches the bottom", async ({ page }) => {
+      await gotoClean(page, "/");
+      const total = await items(page).count();
+      await expect(items(page).locator("visible=true")).toHaveCount(INITIAL_VISIBLE);
+
+      // Walk to the bottom repeatedly: one pass reveals one batch, and a long
+      // list needs several before everything is out.
+      await expect(async () => {
+        await page.mouse.wheel(0, 4000);
+        await expect(items(page).locator("visible=true")).toHaveCount(total);
+      }).toPass({ timeout: 15000 });
+    });
+
+    test("announces the count for a screen reader", async ({ page }) => {
+      await gotoClean(page, "/");
+      await expect(page.locator("#entry-list-status")).toContainText(
+        new RegExp(`Showing ${INITIAL_VISIBLE} of \\d+ entries`),
+      );
+    });
   });
 
   test("the featured-entry links reach real entry pages", async ({ page }) => {
