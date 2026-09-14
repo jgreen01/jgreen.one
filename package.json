@@ -19,7 +19,9 @@
     "media:check": "node scripts/media-check.mjs",
     "media:pull": "node scripts/media-check.mjs --pull",
     "media:push": "./scripts/media-push.sh",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "crawlers": "node scripts/crawler-check.mjs",
+    "crawlers:update": "node scripts/update-ai-crawlers.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
