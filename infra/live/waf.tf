@@ -12,8 +12,35 @@ resource "aws_wafv2_web_acl" "main" {
     name     = "RateLimitRule"
     priority = 1
 
+    # Answer 429, not the default 403.
+    #
+    # CloudFront remaps 403 to 404 so that a missing S3 object reads as "gone"
+    # rather than "forbidden". A WAF block is also a 403, so it was being
+    # remapped too -- and CloudFront caches that generated page BY PATH, not by
+    # client. One rate-limited IP therefore served 404s to everyone who asked
+    # for the same URL.
+    #
+    # 429 avoids both halves. CloudFront only rewrites the codes listed in its
+    # custom_error_response blocks, and it only caches error responses for
+    # 400/403/404/405/414/416/500-504. 429 is in neither set, so it passes
+    # through uncached and says what actually happened.
     action {
-      block {}
+      block {
+        custom_response {
+          response_code            = 429
+          custom_response_body_key = "rate_limited"
+
+          response_header {
+            name  = "Retry-After"
+            value = "60"
+          }
+
+          response_header {
+            name  = "Cache-Control"
+            value = "no-store"
+          }
+        }
+      }
     }
 
     statement {
@@ -28,6 +55,12 @@ resource "aws_wafv2_web_acl" "main" {
       metric_name                = "RateLimitRule"
       sampled_requests_enabled   = true
     }
+  }
+
+  custom_response_body {
+    key          = "rate_limited"
+    content_type = "TEXT_PLAIN"
+    content      = "429 Too Many Requests\n\nThis site rate limits a single IP to 1000 requests per 5 minutes.\nThe page exists; you are simply asking too quickly. Wait 60 seconds\nand retry, or slow down and continue.\n"
   }
 
   visibility_config {
