@@ -9,7 +9,9 @@ import "../styles/import.css";
 
 export interface Props extends SEOProps {}
 
-const props = Astro.props;
+// Every page is its own canonical. Without a url, seoMeta falls back to "/",
+// which makes each page claim to be a duplicate of the homepage.
+const props = { ...Astro.props, url: Astro.props.url ?? Astro.url.pathname };
 ---
 <!doctype html>
 <html lang="en">

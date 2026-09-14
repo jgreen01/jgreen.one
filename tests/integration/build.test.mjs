@@ -14,7 +14,7 @@ import test, { after, before, describe } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import robotsParser from "robots-parser";
 
@@ -133,6 +133,42 @@ describe("astro build output", () => {
         /<link rel="canonical" href="https:\/\/[^"]+"/,
         `missing absolute canonical in ${where}`,
       );
+    }
+  });
+
+  // A canonical link that is merely *absolute* can still be wrong. When every
+  // page names the same URL, search engines treat the whole site as duplicates
+  // of that one page and drop the rest from the index. So assert the canonical
+  // points at the page carrying it.
+  const pathForPage = (file) => {
+    const rel = relative(DIST, file).split(sep).join("/");
+    if (rel === "index.html") return "/";
+    if (rel === "404.html") return "/404/";
+    return `/${rel.replace(/index\.html$/, "")}`;
+  };
+
+  test("every page's canonical URL points at that page", () => {
+    for (const file of htmlFiles()) {
+      const html = readFileSync(file, "utf-8");
+      const where = relative(DIST, file);
+      const match = html.match(/<link rel="canonical" href="([^"]*)"/);
+      assert.ok(match, `missing canonical in ${where}`);
+      assert.equal(
+        match[1],
+        `https://jgreen.one${pathForPage(file)}`,
+        `canonical in ${where} names a different page`,
+      );
+    }
+  });
+
+  test("every og:url matches that page's canonical URL", () => {
+    for (const file of htmlFiles()) {
+      const html = readFileSync(file, "utf-8");
+      const where = relative(DIST, file);
+      const canonical = html.match(/<link rel="canonical" href="([^"]*)"/);
+      const ogUrl = html.match(/<meta property="og:url" content="([^"]*)"/);
+      assert.ok(ogUrl, `missing og:url in ${where}`);
+      assert.equal(ogUrl[1], canonical[1], `og:url disagrees with canonical in ${where}`);
     }
   });
 
