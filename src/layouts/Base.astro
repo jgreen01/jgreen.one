@@ -3,6 +3,7 @@ import type { Props as SEOProps } from '../components/SEO.astro';
 import SEO from '../components/SEO.astro';
 import Favicons from '../components/Favicons.astro';
 import { START_YEAR, BUILD_YEAR, copyrightLabel } from '../utils/copyright';
+import { CONTACT } from '../utils/contact';
 import "../styles/global.scss";
 import "../styles/import.css";
 
@@ -56,8 +57,19 @@ const props = Astro.props;
     <slot />
 
     <footer class="max-w-3xl mx-auto py-8 px-4 border-t border-muted">
-      <!-- Footer placeholder: add links (GitHub, LinkedIn, email) later -->
-      <small class="block text-center text-muted-foreground">© <span id="copyright-years" data-start-year={START_YEAR}>{copyrightLabel(START_YEAR, BUILD_YEAR)}</span> — Jon Green — Software Engineering & Data Science • Built with Astro • Open to thoughtful collaboration • <span class="nazar" title="Nazar — against the evil eye">🧿</span></small>
+      <small class="block text-center text-muted-foreground">
+        © <span id="copyright-years" data-start-year={START_YEAR}>{copyrightLabel(START_YEAR, BUILD_YEAR)}</span> {CONTACT.name} • {CONTACT.role}
+      </small>
+      <small class="block text-center text-muted-foreground mt-1">
+        <a class="hover:underline" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+        {" • "}
+        <a class="hover:underline" href={CONTACT.github} rel="me">{CONTACT.githubHandle}</a>
+        {" • "}
+        <a class="hover:underline" href={CONTACT.linkedin} rel="me">{CONTACT.linkedinHandle}</a>
+      </small>
+      <small class="block text-center text-muted-foreground mt-1">
+        Built with Astro • <span class="nazar" title="Nazar — against the evil eye">🧿</span>
+      </small>
     </footer>
 
     <!--

@@ -1,13 +1,14 @@
 ---
 import PageLayout from "../layouts/PageLayout.astro";
+import { CONTACT } from "../utils/contact";
 ---
 <PageLayout title="Contact — Jon Green" description="Ways to reach me for projects, collaboration, or a quick hello.">
   <section class="prose dark:prose-invert">
     <h1 class="text-4xl font-bold mb-4">Let’s connect</h1>
     <ul>
-      <li><strong>Email:</strong> <a href="mailto:hello@jgreen.one">hello@jgreen.one</a></li>
-      <li><strong>GitHub:</strong> <a href="https://github.com/jgreen01">github.com/jgreen01</a></li>
-      <li><strong>LinkedIn:</strong> <a href="https://linkedin.com/in/jgreen01">linkedin.com/in/jgreen01</a></li>
+      <li><strong>Email:</strong> <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></li>
+      <li><strong>GitHub:</strong> <a href={CONTACT.github} rel="me">{CONTACT.githubHandle}</a></li>
+      <li><strong>LinkedIn:</strong> <a href={CONTACT.linkedin} rel="me">{CONTACT.linkedinHandle}</a></li>
     </ul>
     <p>I read every message; short and specific is appreciated.</p>
   </section>
