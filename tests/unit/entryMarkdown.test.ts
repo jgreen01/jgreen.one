@@ -48,8 +48,11 @@ describe("entryMarkdown", () => {
       expect(md).toContain("aws");
     });
 
-    it("ends with the body", () => {
-      expect(md.trimEnd().endsWith("More prose.")).toBe(true);
+    // The document used to end with the body. It now ends with the contact
+    // footer, so what matters is that the body is the last of the *content*.
+    it("ends its content with the body, before the footer", () => {
+      const beforeFooter = md.slice(0, md.lastIndexOf("---"));
+      expect(beforeFooter.trimEnd().endsWith("More prose.")).toBe(true);
     });
   });
 
@@ -126,5 +129,22 @@ describe("entryMarkdown", () => {
       const preamble = entryMarkdown(entry).split("\n---\n")[0];
       expect(preamble.length).toBeLessThan(400);
     });
+  });
+});
+
+describe("the contact footer", () => {
+  const md = entryMarkdown(entry);
+
+  // The file is read with no surrounding page, so the only way back to the
+  // author is whatever the file itself carries.
+  it("names the author and all three contact routes", () => {
+    expect(md).toContain("Jon Green");
+    expect(md).toContain("hello@jgreen.one");
+    expect(md).toContain("github.com/jgreen01");
+    expect(md).toContain("linkedin.com/in/jgreen01");
+  });
+
+  it("puts it after the body, not before it", () => {
+    expect(md.indexOf("hello@jgreen.one")).toBeGreaterThan(md.indexOf("More prose."));
   });
 });

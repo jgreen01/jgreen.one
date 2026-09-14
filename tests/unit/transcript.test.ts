@@ -145,3 +145,18 @@ describe("transcriptMarkdown", () => {
     expect(out).not.toContain("undefined");
   });
 });
+
+describe("the contact footer on a transcript", () => {
+  const md = transcriptMarkdown(transcript, publishedEntry);
+
+  it("names the author and all three contact routes", () => {
+    expect(md).toContain("Jon Green");
+    expect(md).toContain("hello@jgreen.one");
+    expect(md).toContain("github.com/jgreen01");
+    expect(md).toContain("linkedin.com/in/jgreen01");
+  });
+
+  it("puts it after the transcript body", () => {
+    expect(md.indexOf("hello@jgreen.one")).toBeGreaterThan(md.indexOf("Hello."));
+  });
+});

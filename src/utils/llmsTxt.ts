@@ -1,4 +1,5 @@
 import { SEO_DEFAULTS } from "./seoMeta";
+import { CONTACT } from "./contact";
 import { filterByKind, filterDrafts, sortByDate, type EntryLike } from "./entries";
 
 /** The slice of an entry `llms.txt` needs. */
@@ -85,6 +86,12 @@ export function llmsTxt(
     "",
     "Each link below points at a Markdown copy of the page — same content as the",
     "HTML, without the markup.",
+    "",
+    // An agent may read only this file. Without these it has the writing and no
+    // route back to whoever wrote it. Plain text, not links, so the assertion
+    // that every markdown link ends in .md still holds.
+    `Author: ${CONTACT.name}, ${CONTACT.role}`,
+    `Contact: ${CONTACT.email} | ${CONTACT.githubHandle} | ${CONTACT.linkedinHandle}`,
     "",
     ...SECTIONS.flatMap(({ kind, heading }) =>
       section(filterByKind(published, kind) as ListableEntry[], heading),
