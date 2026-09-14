@@ -62,7 +62,7 @@ function writeMediaCheckStub(log: string, exitCode = 0) {
     join(workdir, "scripts", "media-check.mjs"),
     [
       "import { appendFileSync } from 'node:fs';",
-      `appendFileSync(${JSON.stringify(log)}, 'media-check\\t' + process.cwd() + '\\t' + process.argv.slice(2).join(' ') + '\\n');`,
+      `appendFileSync(${JSON.stringify(log)}, 'media-check\\t' + process.cwd() + '\\t' + process.argv.slice(2).join('\\x1f') + '\\n');`,
       `process.exit(${exitCode});`,
     ].join("\n"),
     "utf-8",
@@ -78,7 +78,7 @@ function writeFunctionTestStub(log: string, exitCode = 0) {
   const file = join(workdir, "scripts", "test-cloudfront-function.sh");
   writeFileSync(
     file,
-    `#!/usr/bin/env bash\nprintf '%s\\t%s\\t%s\\n' "cf-function-test" "$PWD" "$*" >> "${log}"\nexit ${exitCode}\n`,
+    `#!/usr/bin/env bash\nprintf '%s\\t%s\\t%s\\n' "cf-function-test" "$PWD" "$(IFS=$'\\x1f'; echo "$*")" >> "${log}"\nexit ${exitCode}\n`,
     "utf-8",
   );
   chmodSync(file, 0o755);
@@ -98,7 +98,11 @@ function setupWorkdir(
   copyFileSync(REAL_SCRIPT, join(workdir, "scripts", "deploy.sh"));
 
   const log = join(workdir, "invocations.log");
-  const record = `printf '%s\\t%s\\t%s\\n' "$(basename "$0")" "$PWD" "$*" >> "${log}"`;
+  // Arguments are joined with a unit separator rather than a space: an
+  // argument may legitimately contain a space (`--content-type "text/plain;
+  // charset=utf-8"`), and `"$*"` would make that indistinguishable from two
+  // arguments, so an assertion on it could never be accurate.
+  const record = `printf '%s\\t%s\\t%s\\n' "$(basename "$0")" "$PWD" "$(IFS=$'\\x1f'; echo "$*")" >> "${log}"`;
 
   writeMock("terraform", `${record}\nif [ "$1" = "output" ]; then cat <<'EOF'\n${tfOutput}\nEOF\nfi`);
   writeMock("aws", record);
@@ -127,7 +131,7 @@ function invocations(): Invocation[] {
     .filter(Boolean)
     .map((line) => {
       const [command, cwd, args] = line.split("\t");
-      return { command, cwd, args: args ? args.split(" ") : [] };
+      return { command, cwd, args: args ? args.split("\x1f") : [] };
     });
 }
 
@@ -206,6 +210,74 @@ describe("scripts/deploy.sh", () => {
         "s3://jgreen-one-site/",
         "--delete",
       ]);
+    });
+
+    // `aws s3 sync` guesses Content-Type from the file extension and never adds
+    // a charset. Without one a client falls back to a legacy default and reads
+    // UTF-8 bytes as windows-1252, so an em dash arrives as "a€"". HTML escapes
+    // this because it carries <meta charset>; a plain-text or Markdown file has
+    // nowhere else to say it.
+    describe("text formats are stamped as UTF-8", () => {
+      const restamps = () =>
+        callsTo("aws").filter(
+          (i) => i.args[0] === "s3" && i.args[1] === "cp" && i.args.includes("REPLACE"),
+        );
+
+      it.each([
+        [".txt", "text/plain; charset=utf-8"],
+        [".md", "text/markdown; charset=utf-8"],
+        [".vtt", "text/vtt; charset=utf-8"],
+      ])("declares the charset for %s", (extension, contentType) => {
+        runDeploy();
+        const call = restamps().find((i) => i.args.includes(`*${extension}`));
+        expect(call, `nothing restamps *${extension}`).toBeDefined();
+        const typeIndex = call!.args.indexOf("--content-type");
+        expect(typeIndex).toBeGreaterThanOrEqual(0);
+        expect(call!.args[typeIndex + 1]).toBe(contentType);
+      });
+
+      it("restamps in place inside the deployed bucket", () => {
+        runDeploy();
+        for (const call of restamps()) {
+          expect(call.args).toContain("s3://jgreen-one-site/");
+          expect(call.args).toContain("--recursive");
+        }
+      });
+
+      // --delete on a filtered pass would read every excluded file as absent
+      // from the source and remove it from the bucket, taking the site with it.
+      it("never passes --delete on a filtered pass", () => {
+        runDeploy();
+        for (const call of restamps()) {
+          expect(call.args).not.toContain("--delete");
+        }
+      });
+
+      it("restamps after the sync has uploaded the files", () => {
+        runDeploy();
+        const order = callsTo("aws");
+        const sync = order.findIndex((i) => i.args[0] === "s3" && i.args[1] === "sync");
+        const firstRestamp = order.findIndex(
+          (i) => i.args[0] === "s3" && i.args[1] === "cp" && i.args.includes("REPLACE"),
+        );
+        expect(sync).toBeGreaterThanOrEqual(0);
+        expect(firstRestamp).toBeGreaterThan(sync);
+      });
+
+      it("restamps before the cache is invalidated", () => {
+        runDeploy();
+        const order = callsTo("aws");
+        const lastRestamp = order.reduce(
+          (last, call, index) =>
+            call.args[0] === "s3" && call.args[1] === "cp" && call.args.includes("REPLACE")
+              ? index
+              : last,
+          -1,
+        );
+        const invalidation = order.findIndex((i) => i.args[0] === "cloudfront");
+        expect(lastRestamp).toBeGreaterThanOrEqual(0);
+        expect(invalidation).toBeGreaterThan(lastRestamp);
+      });
     });
 
     it("invalidates the whole distribution using the Terraform output id", () => {
