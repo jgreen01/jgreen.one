@@ -1,4 +1,5 @@
 import { SEO_DEFAULTS } from "./seoMeta";
+import { contactBlock } from "./contact";
 
 /** The slice of a collection entry needed to render its Markdown document. */
 export interface MarkdownableEntry {
@@ -54,5 +55,6 @@ export function entryMarkdown(entry: MarkdownableEntry): string {
     "",
     entry.body.trim(),
     "",
+    contactBlock(),
   ].join("\n");
 }

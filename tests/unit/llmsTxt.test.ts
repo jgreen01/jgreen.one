@@ -130,3 +130,22 @@ describe("llmsTxt transcripts section", () => {
     expect(llmsTxt(published, pairs)).toContain(`/entries/${entry.id}/index.md`);
   });
 });
+
+describe("llms.txt identifies the author", () => {
+  // An agent reading this file may never fetch a page. Without contact details
+  // here, it has the site's content and no route back to whoever wrote it.
+  const text = llmsTxt(published);
+
+  it("names Jon and gives all three contact routes", () => {
+    expect(text).toContain("Jon Green");
+    expect(text).toContain("hello@jgreen.one");
+    expect(text).toContain("github.com/jgreen01");
+    expect(text).toContain("linkedin.com/in/jgreen01");
+  });
+
+  it("keeps them out of the link sections, which must stay .md URLs", () => {
+    for (const [, url] of text.matchAll(/\]\((https:\/\/\S+)\)/g)) {
+      expect(url).toMatch(/\.md$/);
+    }
+  });
+});

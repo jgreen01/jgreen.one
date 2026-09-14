@@ -1,4 +1,5 @@
 import { SEO_DEFAULTS } from "./seoMeta";
+import { contactBlock } from "./contact";
 
 /** The slice of a transcript these helpers read. */
 export interface TranscriptLike {
@@ -121,5 +122,6 @@ export function transcriptMarkdown(transcript: TranscriptLike, entry: PairableEn
     "",
     (transcript.body ?? "").trim(),
     "",
+    contactBlock(),
   ].join("\n");
 }
