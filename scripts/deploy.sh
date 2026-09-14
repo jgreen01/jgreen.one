@@ -48,7 +48,27 @@ npm run build   # outputs to ./dist
 echo "Syncing files to S3..."
 aws s3 sync ./dist "s3://${BUCKET}/" --delete
 
-# 4) Invalidate everything (1,000 paths/month free)
+# 4) Declare the encoding on text formats.
+# `aws s3 sync` guesses Content-Type from the extension and never adds a
+# charset. Without one a client falls back to a legacy default and reads UTF-8
+# bytes as windows-1252, so an em dash arrives as mojibake. HTML escapes this
+# because it carries <meta charset>; plain text and Markdown have nowhere else
+# to say it, and the Markdown twins exist to be read by machines.
+#
+# --delete is deliberately absent here: on a filtered pass every excluded file
+# looks absent from the source, and the bucket would be emptied.
+echo "Declaring UTF-8 on text formats..."
+for spec in "txt:text/plain" "md:text/markdown" "vtt:text/vtt"; do
+  ext="${spec%%:*}"
+  type="${spec#*:}"
+  aws s3 cp "s3://${BUCKET}/" "s3://${BUCKET}/" \
+    --recursive \
+    --exclude "*" --include "*.${ext}" \
+    --content-type "${type}; charset=utf-8" \
+    --metadata-directive REPLACE
+done
+
+# 5) Invalidate everything (1,000 paths/month free)
 echo "Invalidating CloudFront distribution..."
 aws cloudfront create-invalidation \
   --distribution-id "${DIST_ID}" \
