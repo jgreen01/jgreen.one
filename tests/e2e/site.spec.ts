@@ -256,7 +256,11 @@ test.describe("static pages", () => {
   test("/contact renders cleanly", async ({ page }) => {
     await gotoClean(page, "/contact");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByRole("link", { name: /hello@jgreen\.one/ })).toBeVisible();
+    // Scoped to the main content: the same address is in the footer of every
+    // page now, so an unscoped lookup matches twice and trips strict mode.
+    await expect(
+      page.getByRole("main").getByRole("link", { name: /hello@jgreen\.one/ }),
+    ).toBeVisible();
   });
 });
 
@@ -618,6 +622,39 @@ test.describe("footer nazar", () => {
       expect(minScaleY, "the eye animated despite reduced motion").toBe(1);
     } finally {
       await context.close();
+    }
+  });
+});
+
+/**
+ * Contact details in the footer.
+ *
+ * Every page carries them so a reader who lands deep in the site, or an agent
+ * reading one Markdown twin, always has a route back to the author.
+ */
+test.describe("footer contact details", () => {
+  for (const path of ["/", "/entries/", "/about"] as const) {
+    test(`${path} carries email, GitHub and LinkedIn in the footer`, async ({ page }) => {
+      await gotoClean(page, path);
+      const footer = page.getByRole("contentinfo");
+
+      await expect(footer.getByRole("link", { name: /hello@jgreen\.one/ })).toBeVisible();
+      await expect(footer.getByRole("link", { name: /github\.com\/jgreen01/ })).toBeVisible();
+      await expect(footer.getByRole("link", { name: /linkedin\.com\/in\/jgreen01/ })).toBeVisible();
+    });
+  }
+
+  test("the email is a mailto link and the profiles are absolute", async ({ page }) => {
+    await gotoClean(page, "/");
+    const footer = page.getByRole("contentinfo");
+
+    await expect(footer.getByRole("link", { name: /hello@jgreen\.one/ })).toHaveAttribute(
+      "href",
+      "mailto:hello@jgreen.one",
+    );
+    for (const name of [/github/, /linkedin/]) {
+      const href = await footer.getByRole("link", { name }).getAttribute("href");
+      expect(href).toMatch(/^https:\/\//);
     }
   });
 });
