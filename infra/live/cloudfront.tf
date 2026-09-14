@@ -50,6 +50,25 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
   }
 
+  # S3 answers a missing key with 403 AccessDenied rather than 404 NoSuchKey,
+  # because the bucket is private behind OAC and the caller is never granted
+  # s3:ListBucket. Without these, every unknown URL returned raw S3 error XML
+  # with a 403 status, which reads to a crawler or an AI fetcher as "you are
+  # not allowed" rather than "this page does not exist".
+  custom_error_response {
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 60
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 60
+  }
+
   web_acl_id  = aws_wafv2_web_acl.main.arn
   price_class = var.price_class
 

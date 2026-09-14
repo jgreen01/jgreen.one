@@ -60,6 +60,25 @@ class TestCloudFront:
     def test_uses_the_cheapest_price_class(self, distribution):
         assert distribution["DistributionConfig"]["PriceClass"] == "PriceClass_100"
 
+    # The bucket is private behind OAC and the caller is never granted
+    # s3:ListBucket, so S3 answers a missing key with 403 AccessDenied rather
+    # than 404 NoSuchKey. Without these mappings CloudFront passed that
+    # straight through, and every unknown URL returned raw S3 error XML with a
+    # 403 -- which reads to a crawler as "you are not allowed" rather than
+    # "this page does not exist".
+    @pytest.mark.parametrize("error_code", [403, 404])
+    def test_missing_pages_are_served_as_404(self, distribution, error_code):
+        responses = distribution["DistributionConfig"]["CustomErrorResponses"]
+        assert responses["Quantity"] > 0, "no custom error responses configured"
+        match = next(
+            (r for r in responses["Items"] if r["ErrorCode"] == error_code), None
+        )
+        assert match is not None, f"{error_code} is not remapped"
+        assert match["ResponseCode"] == "404", (
+            f"{error_code} does not answer with a 404 status"
+        )
+        assert match["ResponsePagePath"] == "/404.html"
+
 
 class TestSiteBucket:
     def test_all_public_access_is_blocked(self, s3):
