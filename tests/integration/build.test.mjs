@@ -16,6 +16,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import robotsParser from "robots-parser";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const DIST = join(ROOT, "dist");
@@ -510,5 +511,94 @@ editedNote: "Fixture note."
     const llms = read("llms.txt");
     assert.ok(llms.includes(`/entries/${LIVE}/transcript.md`), "transcript missing from llms.txt");
     assert.ok(!llms.includes(HIDDEN), "draft transcript listed in llms.txt");
+  });
+});
+
+/**
+ * robots.txt.
+ *
+ * Twice now an external tool has reported this site as opting out of AI
+ * crawling when it does not. The file has always allowed everything; what it
+ * also had was a comment block naming crawlers next to the word "Blocking",
+ * which a scanner matching tokens rather than parsing the standard can read
+ * backwards. These assertions lock the policy so an edit cannot quietly
+ * reverse it, and so the explicit per-agent groups stay.
+ */
+describe("robots.txt", () => {
+  // Lazy: a describe body executes at collection time, before the build that
+  // produces dist/, so reading here would assert against stale output.
+  const robots = () => read("robots.txt");
+
+  test("disallows nothing at all", () => {
+    assert.ok(!/^\s*Disallow:\s*\S/m.test(robots()), "a Disallow directive appeared");
+  });
+
+  test("allows every agent through the wildcard group", () => {
+    assert.match(robots(), /^User-agent:\s*\*\s*$/m);
+    assert.match(robots(), /^Allow:\s*\/\s*$/m);
+  });
+
+  test("names the AI agents explicitly, so a token scanner cannot misread it", () => {
+    for (const agent of [
+      "Google-Extended",
+      "GPTBot",
+      "ClaudeBot",
+      "anthropic-ai",
+      "CCBot",
+      "PerplexityBot",
+      "Applebot-Extended",
+    ]) {
+      const group = new RegExp(`^User-agent:\\s*${agent}\\s*\\nAllow:\\s*/\\s*$`, "m");
+      assert.match(robots(), group, `${agent} has no explicit Allow group`);
+    }
+  });
+
+  test("points at the sitemap", () => {
+    assert.match(robots(), /^Sitemap:\s*https:\/\/jgreen\.one\/sitemap-index\.xml\s*$/m);
+  });
+
+  // The checks above assert the file says the right thing. These assert it
+  // MEANS the right thing, by running it through a real implementation of the
+  // exclusion protocol rather than matching text. Allow/Disallow precedence
+  // and group selection are exactly the parts a regex cannot judge.
+  test("a real robots parser agrees every named agent is allowed", () => {
+    const parsed = robotsParser("https://jgreen.one/robots.txt", robots());
+
+    for (const agent of [
+      "Google-Extended",
+      "GoogleOther",
+      "Googlebot",
+      "GPTBot",
+      "OAI-SearchBot",
+      "ChatGPT-User",
+      "ClaudeBot",
+      "Claude-SearchBot",
+      "Claude-User",
+      "anthropic-ai",
+      "PerplexityBot",
+      "Perplexity-User",
+      "Applebot-Extended",
+      "CCBot",
+      "some-crawler-nobody-has-heard-of",
+    ]) {
+      for (const path of ["/", "/entries/", "/entries/this-site/", "/llms.txt"]) {
+        assert.equal(
+          parsed.isAllowed(`https://jgreen.one${path}`, agent),
+          true,
+          `${agent} is not allowed to fetch ${path}`,
+        );
+      }
+    }
+  });
+
+  test("the parser finds the sitemap", () => {
+    const parsed = robotsParser("https://jgreen.one/robots.txt", robots());
+    assert.deepEqual(parsed.getSitemaps(), ["https://jgreen.one/sitemap-index.xml"]);
+  });
+
+  test("keeps the word Blocking away from the agent names", () => {
+    // The prose that caused the misread. Explaining the policy is fine; doing
+    // it beside a list of crawler names is what reads as a block list.
+    assert.ok(!/Blocking/.test(robots()), "the word 'Blocking' is back in robots.txt");
   });
 });

@@ -37,6 +37,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "image-size": "^2.0.2",
     "node-html-parser": "^9.0.2",
+    "robots-parser": "^3.0.1",
     "sass": "^1.103.1",
     "vitest": "^4.1.11"
   }
