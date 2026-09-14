@@ -1,6 +1,6 @@
 ---
 title: "jgreen.one: The Site as a Workbench"
-description: "A static blog with 639 automated checks, Terraform-managed AWS infrastructure, and an edge function. Deliberately more machinery than it needs."
+description: "A static site on AWS built the way a production one would be, with a Markdown twin of every page for AI agents and 639 automated checks."
 pubDate: 2026-09-03
 kind: "project"
 heroImage: "/media/this-site.webp"
@@ -8,9 +8,9 @@ tags: ["astro", "aws", "terraform", "testing", "cloudfront", "iac"]
 draft: false
 ---
 
-This site is a personal blog with roughly a dozen pages. It also has 639 automated checks, its infrastructure in Terraform, an edge function serving content negotiation, and a media pipeline that reconciles S3 against a committed manifest.
+A static site on AWS: S3 behind CloudFront, certificates, DNS, and a viewer-request function for clean URLs, all in Terraform. That part is the standard playbook, and it is standard on purpose. There is no reason to invent a new way to host a dozen pages.
 
-That is more machinery than the content justifies, which is the point. The site is where I try things that would be reckless to try first on something that matters.
+Two things here are not standard. Every page has a Markdown twin that an AI agent can ask for by content negotiation at the edge. And a blog this size has 639 automated checks across four layers, which is the part I would not recommend to anyone whose site is only a site. This one doubles as the place I try a practice before using it somewhere that matters.
 
 - **Live:** you are reading it
 - **Source:** [github.com/jgreen01/jgreen.one](https://github.com/jgreen01/jgreen.one)
