@@ -74,6 +74,23 @@ function writeMediaCheckStub(log: string, exitCode = 0) {
  * Logs its invocation so ordering can be asserted, and exits with `exitCode` so
  * the "function test fails, deploy aborts" path is testable.
  */
+/**
+ * Stubs `scripts/audit.mjs`, which deploy.sh invokes by path. Logs its
+ * arguments and exits with `exitCode` so the "audit fails, deploy aborts" path
+ * is testable without running Lighthouse or a browser.
+ */
+function writeAuditStub(log: string, exitCode = 0) {
+  writeFileSync(
+    join(workdir, "scripts", "audit.mjs"),
+    [
+      "import { appendFileSync } from 'node:fs';",
+      `appendFileSync(${JSON.stringify(log)}, 'audit\\t' + process.cwd() + '\\t' + process.argv.slice(2).join('\\x1f') + '\\n');`,
+      `process.exit(${exitCode});`,
+    ].join("\n"),
+    "utf-8",
+  );
+}
+
 function writeFunctionTestStub(log: string, exitCode = 0) {
   const file = join(workdir, "scripts", "test-cloudfront-function.sh");
   writeFileSync(
@@ -88,6 +105,7 @@ function setupWorkdir(
   tfOutput: string = DEFAULT_TF_OUTPUT,
   mediaCheckExit = 0,
   functionTestExit = 0,
+  auditExit = 0,
 ) {
   mkdirSync(join(workdir, "infra", "live"), { recursive: true });
   mkdirSync(join(workdir, "scripts"), { recursive: true });
@@ -109,6 +127,7 @@ function setupWorkdir(
   writeMock("npm", record);
   writeMediaCheckStub(log, mediaCheckExit);
   writeFunctionTestStub(log, functionTestExit);
+  writeAuditStub(log, auditExit);
 }
 
 function runDeploy() {
@@ -280,6 +299,49 @@ describe("scripts/deploy.sh", () => {
       });
     });
 
+    // Lighthouse judges the built HTML, so the defects it catches -- a
+    // canonical naming the wrong page, a missing title or description -- are
+    // present in dist/ before anything reaches S3. Auditing the live site
+    // after a deploy would only confirm the bad version had already shipped.
+    describe("the pre-deploy audit", () => {
+      const auditCall = () => invocations().find((i) => i.command === "audit");
+
+      it("audits the build", () => {
+        runDeploy();
+        expect(auditCall()).toBeDefined();
+      });
+
+      it("audits what was just built, not the live site", () => {
+        runDeploy();
+        const base = auditCall()!.args;
+        const index = base.indexOf("--base");
+        expect(index).toBeGreaterThanOrEqual(0);
+        expect(base[index + 1]).toMatch(/^http:\/\/(127\.0\.0\.1|localhost)/);
+      });
+
+      it("runs after the build, since it needs dist/", () => {
+        runDeploy();
+        const order = invocations();
+        const build = order.findIndex(
+          (i) => i.command === "npm" && i.args.join(" ") === "run build",
+        );
+        const audit = order.findIndex((i) => i.command === "audit");
+        expect(build).toBeGreaterThanOrEqual(0);
+        expect(audit).toBeGreaterThan(build);
+      });
+
+      // The whole point of a gate: nothing may reach the bucket until it passes.
+      it("runs before anything is uploaded", () => {
+        runDeploy();
+        const order = invocations();
+        const audit = order.findIndex((i) => i.command === "audit");
+        const sync = order.findIndex(
+          (i) => i.command === "aws" && i.args[0] === "s3" && i.args[1] === "sync",
+        );
+        expect(sync).toBeGreaterThan(audit);
+      });
+    });
+
     it("invalidates the whole distribution using the Terraform output id", () => {
       runDeploy();
       const invalidation = callsTo("aws").find((i) => i.args[0] === "cloudfront");
@@ -389,6 +451,25 @@ describe("scripts/deploy.sh", () => {
 
       runDeploy();
       expect(callsTo("npm").map((i) => i.args.join(" "))).not.toContain("run build");
+    });
+  });
+
+  describe("audit failure", () => {
+    beforeEach(() => setupWorkdir(DEFAULT_TF_OUTPUT, 0, 0, 1));
+
+    it("aborts the deploy", () => {
+      expect(runDeploy().status).not.toBe(0);
+    });
+
+    it("uploads nothing", () => {
+      runDeploy();
+      const uploads = callsTo("aws").filter((i) => i.args[0] === "s3");
+      expect(uploads).toHaveLength(0);
+    });
+
+    it("does not invalidate the cache", () => {
+      runDeploy();
+      expect(callsTo("aws").filter((i) => i.args[0] === "cloudfront")).toHaveLength(0);
     });
   });
 
