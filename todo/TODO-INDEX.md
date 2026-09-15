@@ -1,7 +1,7 @@
-# TODO Index: 0 open — all tasks resolved
-*Last updated: 2026-08-31*
+# TODO Index: 1 open
+*Last updated: 2026-09-14*
 
-**Nothing open.** Recently resolved below; completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
+Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ---
 
@@ -11,7 +11,7 @@
 
 ## MEDIUM Priority
 
-(none)
+- [A add-json-ld-structured-data](A-json-ld-structured-data.md) — the site emits no structured data; authorship is inferred from prose rather than stated, and nothing in the stack can detect its absence.
 
 ## LOW Priority
 
