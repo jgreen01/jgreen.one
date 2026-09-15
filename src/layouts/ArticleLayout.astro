@@ -15,8 +15,14 @@ const heroImage = heroImagePath(frontmatter.heroImage);
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
     <article class="prose dark:prose-invert md:prose-lg prose-pre:overflow-x-auto prose-pre:max-w-[85vw] md:prose-pre:max-w-none">
       <h1 class="text-4xl font-bold mb-4">{frontmatter.title}</h1>
+      {/*
+        The byline is rendered, not merely implied by the footer. A reader
+        should see who wrote the piece, and structured data may only claim an
+        author that is visible on the page.
+      */}
       <p class="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Published on {formatDate(frontmatter.pubDate)}
+        <span class="font-medium text-foreground/80 dark:text-foregroundDark/80">{frontmatter.author}</span>
+        {' • '}Published on {formatDate(frontmatter.pubDate)}
         {frontmatter.updatedDate && ` • Updated on ${formatDate(frontmatter.updatedDate)}`}
       </p>
       {heroImage && <img src={heroImage} alt="" class="w-full h-auto rounded-lg" />}

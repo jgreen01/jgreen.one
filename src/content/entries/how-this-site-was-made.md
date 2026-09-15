@@ -1,6 +1,7 @@
 ---
 title: "How This Site Was Built: A Look Under the Hood"
 description: "A technical deep-dive into the infrastructure, tools, and AI-assisted workflow used to create this website."
+author: "Jon Green"
 pubDate: 2025-09-21
 kind: "blog"
 heroImage: "/media/how-this-website-was-built.png"

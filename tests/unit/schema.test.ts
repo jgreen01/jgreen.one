@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { entrySchema } from "../../src/content/schema";
+import { CONTACT } from "../../src/utils/contact";
 import {
   validFullFrontmatter,
   minimalFrontmatter,
@@ -75,6 +76,31 @@ describe("entrySchema", () => {
 
     it("keeps an explicit draft: true", () => {
       expect(entrySchema.parse({ ...minimalFrontmatter, draft: true }).draft).toBe(true);
+    });
+  });
+
+  describe("author", () => {
+    it("accepts an author from frontmatter", () => {
+      const parsed = entrySchema.parse({ ...minimalFrontmatter, author: "Jon Green" });
+      expect(parsed.author).toBe("Jon Green");
+    });
+
+    // Every entry here is written by one person, so an omitted author is not a
+    // mistake worth failing a build over — it is the ordinary case.
+    it("defaults to the site owner when omitted", () => {
+      expect(entrySchema.parse(minimalFrontmatter).author).toBe(CONTACT.name);
+    });
+
+    // The byline is rendered, and will be claimed in structured data where
+    // Google requires the name field to hold a name and nothing else.
+    it.each(["", "   "])("rejects a blank author (%j)", (author) => {
+      expect(() => entrySchema.parse({ ...minimalFrontmatter, author })).toThrow();
+    });
+
+    it("trims surrounding whitespace", () => {
+      expect(
+        entrySchema.parse({ ...minimalFrontmatter, author: "  Jon Green  " }).author,
+      ).toBe("Jon Green");
     });
   });
 

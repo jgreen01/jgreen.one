@@ -1,6 +1,7 @@
 ---
 title: "Under the Hood, One Year On: Tests Are What Make AI Iteration Fast"
 description: "Zero tests to 484, two Astro majors migrated, an edge feature shipped — in a day. The tests were what made the speed possible, not what slowed it."
+author: "Jon Green"
 pubDate: 2026-08-31
 kind: "blog"
 heroImage: "/media/testing-makes-ai-iteration-fast.webp"
