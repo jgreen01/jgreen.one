@@ -44,11 +44,20 @@ echo "Testing the CloudFront function in the real runtime..."
 echo "Building Astro site..."
 npm run build   # outputs to ./dist
 
-# 3) Sync static files to S3 (delete removed files)
+# 3) Audit the build before any of it ships.
+# Lighthouse judges the HTML, so the defects it catches -- a canonical naming
+# the wrong page, a missing title or description -- are already present in
+# dist/. Auditing the live site after a deploy would only confirm that the bad
+# version had shipped. This serves dist/ locally and audits that instead, and
+# exits non-zero if anything fails, so nothing reaches the bucket.
+echo "Auditing the build with Lighthouse..."
+node scripts/audit.mjs --preview --base http://127.0.0.1:4322
+
+# 4) Sync static files to S3 (delete removed files)
 echo "Syncing files to S3..."
 aws s3 sync ./dist "s3://${BUCKET}/" --delete
 
-# 4) Declare the encoding on text formats.
+# 5) Declare the encoding on text formats.
 # `aws s3 sync` guesses Content-Type from the extension and never adds a
 # charset. Without one a client falls back to a legacy default and reads UTF-8
 # bytes as windows-1252, so an em dash arrives as mojibake. HTML escapes this
@@ -68,7 +77,7 @@ for spec in "txt:text/plain" "md:text/markdown" "vtt:text/vtt"; do
     --metadata-directive REPLACE
 done
 
-# 5) Invalidate everything (1,000 paths/month free)
+# 6) Invalidate everything (1,000 paths/month free)
 echo "Invalidating CloudFront distribution..."
 aws cloudfront create-invalidation \
   --distribution-id "${DIST_ID}" \
