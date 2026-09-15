@@ -418,6 +418,70 @@ describe("astro build output", () => {
   });
 });
 
+// Google forbids marking up an author a reader cannot see, so the byline has
+// to be rendered before it can be claimed in structured data. It also just
+// tells a reader who wrote the thing.
+describe("the article byline", () => {
+  let result;
+
+  before(() => {
+    result = build();
+  });
+
+  const entryPages = () =>
+    htmlFiles()
+      .map((file) => relative(DIST, file).split(sep).join("/"))
+      .filter((path) => /^entries\/[^/]+\/index\.html$/.test(path));
+
+  test("the build succeeded", () => {
+    assert.equal(result.status, 0, result.stderr);
+  });
+
+  test("every entry page names its author in visible text", () => {
+    const pages = entryPages();
+    assert.ok(pages.length > 0, "no entry pages were built");
+    for (const page of pages) {
+      const html = read(page);
+      const article = html.slice(html.indexOf("<article"), html.indexOf("</article>"));
+      assert.match(article, /Jon Green/, `no byline inside <article> on ${page}`);
+    }
+  });
+
+  test("the byline sits with the date, above the content", () => {
+    for (const page of entryPages()) {
+      const html = read(page);
+      const byline = html.indexOf("Jon Green", html.indexOf("<article"));
+      const published = html.indexOf("Published on");
+      assert.ok(byline > -1, `no byline on ${page}`);
+      // Same line of metadata: adjacent, not separated by the whole article.
+      assert.ok(
+        Math.abs(byline - published) < 400,
+        `byline and date are not adjacent on ${page}`,
+      );
+    }
+  });
+
+  test("the byline comes from frontmatter, not a hardcoded string", () => {
+    // A fixture entry with a different author proves the value is read rather
+    // than baked in. Removed again in the finally.
+    const slug = "zz-byline-fixture";
+    const file = join(ROOT, "src/content/entries", `${slug}.md`);
+    writeFileSync(
+      file,
+      `---\ntitle: "Byline Fixture"\ndescription: "Temporary fixture proving the byline is read from frontmatter."\nauthor: "Ada Lovelace"\npubDate: 2026-01-02\nkind: "blog"\ndraft: false\n---\n\nBody.\n`,
+      "utf-8",
+    );
+    try {
+      const rebuilt = build();
+      assert.equal(rebuilt.status, 0, rebuilt.stderr);
+      const html = read(`entries/${slug}/index.html`);
+      assert.match(html, /Ada Lovelace/, "frontmatter author was not rendered");
+    } finally {
+      rmSync(file, { force: true });
+    }
+  });
+});
+
 describe("draft entries", () => {
   let result;
 

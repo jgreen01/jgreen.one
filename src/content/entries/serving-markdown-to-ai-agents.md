@@ -1,6 +1,7 @@
 ---
 title: "Serving Markdown to AI Agents: 73% Fewer Tokens, Same Content"
 description: "How to publish a Markdown copy of every page from Astro and negotiate it at the CloudFront edge — without accidentally cloaking your site."
+author: "Jon Green"
 pubDate: 2026-08-31
 kind: "blog"
 heroImage: "/media/serving-markdown-to-ai-agents.webp"

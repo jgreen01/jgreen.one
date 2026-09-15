@@ -1,6 +1,7 @@
 ---
 title: "You've Already Lived Through It"
 description: "An interactive D3 data story: how many extreme temperature days 166 cities have already gained, and how far their two futures diverge."
+author: "Jon Green"
 pubDate: 2026-07-30
 kind: "project"
 heroImage: "/media/climate-you-lived-through-it.webp"

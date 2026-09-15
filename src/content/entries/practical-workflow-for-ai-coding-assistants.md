@@ -1,6 +1,7 @@
 ---
 title: "A Practical Workflow for AI Coding Assistants"
 description: "My Converge 2025 talk: four repo-native habits that turn AI coding assistants from neat tricks into a workflow a whole team can run."
+author: "Jon Green"
 pubDate: 2025-12-11
 kind: "blog"
 heroImage: "/media/practical-workflow-for-ai-coding-assistants.webp"

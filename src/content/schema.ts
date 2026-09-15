@@ -1,4 +1,5 @@
 import { z } from "astro/zod";
+import { CONTACT } from "../utils/contact";
 
 /**
  * Frontmatter contract for the `entries` collection.
@@ -10,6 +11,12 @@ import { z } from "astro/zod";
 export const entrySchema = z.object({
   title: z.string().describe("Short, human-readable title"),
   description: z.string().max(160).describe("1–2 sentence summary for cards & SEO"),
+  author: z
+    .string()
+    .trim()
+    .min(1, "author must be a name, not blank")
+    .default(CONTACT.name)
+    .describe("Byline shown above the article; defaults to the site owner"),
   pubDate: z.coerce.date().describe("Publish date (YYYY-MM-DD)"),
   updatedDate: z.coerce.date().optional().describe("Last updated date, optional"),
   kind: z.enum(["project", "blog"]).default("blog"),

@@ -1,6 +1,7 @@
 ---
 title: "jgreen.one: The Site as a Workbench"
 description: "A static site on AWS built the way a production one would be, with a Markdown twin of every page for AI agents and 639 automated checks."
+author: "Jon Green"
 pubDate: 2026-09-03
 kind: "project"
 heroImage: "/media/this-site.webp"
