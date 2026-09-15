@@ -7,72 +7,133 @@
 
 ## Description
 
-The site emits no structured data at all. Every page carries complete Open
-Graph and Twitter Card tags, which describe how to *render a link preview*, but
-nothing that states what the page *is* or who wrote it.
+The site emits no structured data at all. Open Graph and Twitter Card tags are
+complete, but those describe how to render a link preview, not what a page *is*
+or who wrote it. Authorship is left to be inferred from prose.
 
-JSON-LD is a `<script type="application/ld+json">` block in `<head>` holding
-JSON in the schema.org vocabulary, which Google, Bing, Yandex and Apple
-maintain jointly. It renders nothing. It is read by machines.
+JSON-LD is a `<script type="application/ld+json">` block in `<head>` carrying
+schema.org vocabulary. It renders nothing and is read by machines. Google
+[recommends JSON-LD](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)
+over microdata or RDFa.
 
-Three things it would buy:
+Worth doing here because the site already optimises the *format* machines
+receive — Markdown twins, `/llms.txt`, edge content negotiation. Structured
+data is the *meaning* layer, and it is the piece missing.
 
-1. **Authorship becomes asserted rather than inferred.** Today an AI agent
-   summarising an entry works out the author from prose. With an `author` node
-   it is stated. For a portfolio whose purpose is being credited, that is the
-   gap worth closing.
-2. **Entity resolution via `sameAs`.** Linking the author to the GitHub and
-   LinkedIn profiles lets a search engine merge jgreen.one, github.com/jgreen01
-   and linkedin.com/in/jgreen01 into one person rather than three unrelated
-   pages that share a name.
-3. **Eligibility for rich results.** Article structured data is the
-   precondition. Without it the site is not penalised, it is simply not a
-   candidate.
+**Nothing in the stack can detect its absence.** Lighthouse's `structured-data`
+audit has `scoreDisplayMode: "manual"` and `score: null`, so it is never
+scored; the site's SEO 100 is silent on it. Any check must be written here.
 
-This fits the site's existing argument. The Markdown twins, `/llms.txt` and
-edge content negotiation already optimise the *format* machines receive.
-Structured data is the *meaning* layer, and it is the piece missing.
+## What the current specs actually say
 
-**Nothing in the current stack can catch its absence.** Lighthouse's
-`structured-data` audit has `scoreDisplayMode: "manual"` and `score: null`, so
-it is never scored — the site's SEO 100 is silent on this. Any check has to be
-written here.
+Checked against Google Search Central and schema.org (V30.0, 2026-03-19) on
+2026-09-14. Several of these contradict the obvious first guess.
+
+- **There are no required properties.** Google: "There are no required
+  properties; instead, add the properties that apply to your content." So this
+  is not a checklist to satisfy — each property either describes the page
+  truthfully or is omitted.
+- **Markup must match visible content.** Google: "Don't mark up content that is
+  not visible to readers of the page." This is the binding constraint here —
+  see the byline problem below.
+- **Dates need an explicit timezone.** Google: "Google will default to
+  Googlebot's timezone if timezone information isn't provided." `isoDate()` in
+  `src/utils/formatDate.ts` currently emits `2026-09-03`, date-only, so
+  Googlebot would supply its own timezone. Needs a full ISO 8601 value with an
+  explicit offset.
+- **`author.name` takes the name and nothing else.** Google: "In the
+  author.name property, only specify the name of the author. Don't add any
+  other piece of information." No job title, no honorific, no "posted by".
+  `CONTACT.role` therefore belongs in `jobTitle`, never in `name`.
+- **An internal author page should be `ProfilePage`.** Google recommends that
+  when `author.url` points at your own profile page, that page is marked up
+  with ProfilePage structured data. Its `mainEntity` is the `Person`. Blog
+  "About Me" pages are named as a valid use.
+- **`WebSite` no longer buys a rich result.** The sitelinks search box was
+  deprecated on 2024-11-21. `WebSite` remains valid for site identification and
+  unsupported markup causes no errors, but do not add `potentialAction` /
+  `SearchAction` expecting a search box — it produces nothing.
+- **`BlogPosting` is not right for every entry.** The hierarchy is
+  Thing > CreativeWork > Article > SocialMediaPosting > BlogPosting. Entries
+  carry `kind: "blog" | "project"`; a project page is not a blog posting.
+  Use `BlogPosting` for `kind: blog` and `Article` for `kind: project`.
+- **`sameAs` and `author.url` are both understood** for author disambiguation.
+  `author.url` should be "a link to a web page that uniquely identifies the
+  author".
+- **Images** in markup must be crawlable and indexable, relevant to the
+  article rather than a logo, and ideally at least 50K pixels.
+- **`headline`** should be concise; long titles get truncated.
+- **`@id`** links entities across separate blocks, so the `Person` on an entry
+  and the `Person` on `/about` resolve to one entity rather than two.
+
+## The byline problem — decide this first
+
+Google forbids marking up what a reader cannot see. On an entry page today,
+"Jon Green" appears exactly twice in visible text: the site header brand link,
+and the contact block in the footer. **There is no byline on the article
+itself** — `ArticleLayout.astro` renders the title, then "Published on
+{date}", then the hero image.
+
+Two options:
+
+1. **Add a visible byline** to `ArticleLayout` ("Jon Green • Published on …").
+   Puts the markup on firm ground and helps human readers too. Preferred.
+2. **Rely on the footer**, which does name Jon Green with role and contact
+   details on every page. Defensible, since the name is in the body, but it is
+   site attribution rather than an article byline.
+
+Option 1 changes rendered output, which is why this is a decision rather than
+an implementation detail.
 
 ## Acceptance Criteria
 
-- [ ] `BlogPosting` on every entry, built from existing frontmatter: `headline`,
-      `description`, `datePublished`, `dateModified` when `updatedDate` is set,
-      `image` from `heroImage`, `keywords` from `tags`, `mainEntityOfPage`
-- [ ] `author` as a nested `Person` node with `name`, `url` and `sameAs`
-      pointing at the GitHub and LinkedIn profiles, sourced from
-      `src/utils/contact.ts` so identity stays in one place
-- [ ] `Person` on `/about`
-- [ ] `WebSite` on the homepage
-- [ ] Logic lives in a plain module under `src/utils/` with unit tests;
-      `.astro` files cannot be unit-tested, so the component stays a wrapper
-- [ ] Build-integration assertions that every entry page carries exactly one
-      `application/ld+json` block, that it parses as JSON, and that its
-      `datePublished` matches the frontmatter
-- [ ] No page emits a literal `undefined` or an empty `sameAs`
-- [ ] Validated against Google's Rich Results Test before it is called done
+- [ ] Decide the byline question above; if option 1, the visible byline ships
+      in the same change as the markup
+- [ ] `BlogPosting` for `kind: blog`, `Article` for `kind: project`, built from
+      existing frontmatter: `headline`, `description`, `datePublished`,
+      `dateModified` only when `updatedDate` is set, `image` from `heroImage`
+      as an absolute URL, `keywords` from `tags`, `mainEntityOfPage`
+- [ ] `author` as a nested `Person` with `name` (name only), `url` pointing at
+      `/about`, `jobTitle` from `CONTACT.role`, and `sameAs` listing the GitHub
+      and LinkedIn profiles — all sourced from `src/utils/contact.ts` so
+      identity stays in one place
+- [ ] A stable `@id` for the author so the entry and `/about` resolve to one
+      entity
+- [ ] `/about` marked up as `ProfilePage` with `mainEntity` set to that same
+      `Person`
+- [ ] `WebSite` on the homepage for identification only, with no
+      `potentialAction`
+- [ ] A new date helper emitting full ISO 8601 with an explicit UTC offset,
+      unit-tested against a non-UTC `TZ`, since date-only values let Googlebot
+      choose the timezone
+- [ ] Draft entries emit no structured data, as with listings and the sitemap
+- [ ] Logic in a plain module under `src/utils/` with unit tests; `.astro`
+      cannot be unit-tested, so the component stays a thin wrapper
+- [ ] Build-integration assertions: exactly one `application/ld+json` block per
+      entry page, it parses as JSON, `datePublished` matches frontmatter and
+      carries a timezone, `@type` matches `kind`, and no literal `undefined`
+      or empty `sameAs` reaches the output
+- [ ] Every URL in the markup is absolute
+- [ ] Validated with Google's Rich Results Test and the schema.org validator
+      before this is called done
 
 ## Notes
 
-Decision deferred deliberately: `sameAs` is an identity claim — it tells search
-engines which accounts belong to Jon — so the exact profile list wants a look
-before it ships.
+Filed rather than built because `sameAs` is an identity claim — it tells search
+engines which accounts belong to Jon — and the profile list wants a look before
+it ships.
 
-Dates must use the UTC helpers in `src/utils/formatDate.ts`. A date rendered a
-day early for anyone west of Greenwich has already been a bug here once, and
-`datePublished` is exactly the kind of field where it would go unnoticed.
+`src/utils/seoMeta.ts` and `src/components/SEO.astro` already centralise head
+metadata and are the natural home for this. `src/utils/contact.ts` is already
+the single source of identity and should stay so.
 
-Draft entries must not emit structured data, on the same reasoning that keeps
-them out of listings and the sitemap.
+Optional, not required: `BreadcrumbList`, which is still a supported Google
+rich result, unlike the sitelinks search box.
 
-Worth considering but not required: `BreadcrumbList` for navigation.
-
-Related: `src/utils/seoMeta.ts` and `src/components/SEO.astro` already
-centralise head metadata and are the natural home for this.
+Sources checked 2026-09-14: Google Article structured data and its author best
+practices, Google ProfilePage structured data, Google structured data general
+policies, the Search Central post "Farewell, Sitelinks Search Box"
+(2024-10-21), and schema.org V30.0.
 
 ## Log
 
@@ -80,3 +141,9 @@ centralise head metadata and are the natural home for this.
   tooling: a live check showed zero `application/ld+json` blocks on both the
   homepage and an article, and `grep -rl "ld+json\|schema.org" src/` matched
   nothing.
+- 2026-09-14 Rewritten against the current specs. Six corrections to the first
+  draft: dates need an explicit timezone and `isoDate()` does not provide one;
+  `author.name` must exclude the role; `/about` wants `ProfilePage` rather than
+  a bare `Person`; `WebSite` no longer yields a rich result; project entries are
+  `Article` not `BlogPosting`; and the visible-content rule makes the missing
+  byline a blocking decision rather than a detail.
