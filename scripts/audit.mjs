@@ -118,21 +118,6 @@ function runLighthouse(url, outDir) {
   });
 }
 
-/** Resolves once the server answers, or rejects after `timeoutMs`. */
-async function waitForServer(url, timeoutMs = 60_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(url, { redirect: "manual" });
-      if (response.status > 0) return;
-    } catch {
-      // Not listening yet.
-    }
-    await new Promise((resolve) => setTimeout(resolve, 300));
-  }
-  throw new Error(`preview server did not start at ${url}`);
-}
-
 /**
  * Serve ./dist in this process for the duration of the run.
  *

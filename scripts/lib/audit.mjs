@@ -54,6 +54,10 @@ const isRealFailure = (audit) =>
  * Lighthouse's own explanation is quoted rather than paraphrased: it names the
  * specific failure mode, and rewording it would only lose detail.
  */
+/**
+ * @param {any} lhr
+ * @param {{ thresholds?: Record<string, number> }} [options]
+ */
 export function evaluateLighthouse(lhr, { thresholds = CATEGORY_THRESHOLDS } = {}) {
   const findings = [];
   const audits = lhr.audits ?? {};

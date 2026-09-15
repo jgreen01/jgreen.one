@@ -33,6 +33,22 @@ const DATASET_PATH = fileURLToPath(new URL("../data/ai-crawlers.json", import.me
 const ROBOTS_PATH = fileURLToPath(new URL("../../public/robots.txt", import.meta.url));
 
 /** The vendored snapshot; refresh with `npm run crawlers:update`. */
+/**
+ * One crawler profile.
+ *
+ * `accept` is present only on the profile used to exercise content
+ * negotiation, so it is optional; without the typedef the array's type is
+ * inferred from the first entry and rejects it.
+ *
+ * @typedef {{
+ *   name: string,
+ *   token: string,
+ *   userAgent: string,
+ *   operator: string,
+ *   accept?: string,
+ * }} Crawler
+ */
+
 export const loadDataset = () => JSON.parse(readFileSync(DATASET_PATH, "utf-8"));
 
 /** The site's own policy, which decides whose access is worth checking. */
@@ -93,6 +109,7 @@ export function agentsNamedIn(robotsTxt) {
  */
 export function rosterFromDataset(dataset) {
   const seen = new Set();
+  /** @type {Crawler[]} */
   const roster = [];
 
   for (const token of Object.keys(dataset)) {
@@ -127,6 +144,12 @@ export function unknownAgents(robotsTxt, dataset) {
  * `extra` tokens, plus one profile that asks for Markdown so content
  * negotiation is exercised.
  */
+/**
+ * @param {string} robotsTxt
+ * @param {Record<string, any>} dataset
+ * @param {{ extra?: string[] }} [options]
+ * @returns {Crawler[]}
+ */
 export function buildRoster(robotsTxt, dataset, { extra = [] } = {}) {
   const tokens = [...agentsNamedIn(robotsTxt)];
   for (const token of extra) if (!tokens.includes(token)) tokens.push(token);
@@ -134,6 +157,7 @@ export function buildRoster(robotsTxt, dataset, { extra = [] } = {}) {
   const entry = (token) =>
     dataset[Object.keys(dataset).find((k) => k.toLowerCase() === token.toLowerCase())] ?? {};
 
+  /** @type {Crawler[]} */
   const roster = tokens.map((token) => ({
     name: token,
     token,
@@ -178,7 +202,7 @@ const HAS_MARKDOWN_TWIN = /^\/entries\/[^/]+/;
  * wrong. Findings rather than a boolean, because one response can be wrong in
  * more than one way at once.
  */
-export function evaluateResponse(crawler, url, { status, contentType, expectMissing }) {
+export function evaluateResponse(crawler, url, { status, contentType, expectMissing = false }) {
   const findings = [];
 
   if (expectMissing) {
