@@ -1,0 +1,242 @@
+{
+  "requestedUrl": "https://jgreen.one/entries/this-site/",
+  "finalDisplayedUrl": "https://jgreen.one/entries/this-site/",
+  "categories": {
+    "best-practices": {
+      "id": "best-practices",
+      "title": "Best Practices",
+      "score": 1
+    },
+    "seo": {
+      "id": "seo",
+      "title": "SEO",
+      "score": 1
+    }
+  },
+  "audits": {
+    "is-on-https": {
+      "id": "is-on-https",
+      "title": "Uses HTTPS",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "redirects-http": {
+      "id": "redirects-http",
+      "title": "Redirects HTTP traffic to HTTPS",
+      "score": null,
+      "scoreDisplayMode": "notApplicable",
+      "explanation": null
+    },
+    "errors-in-console": {
+      "id": "errors-in-console",
+      "title": "No browser errors logged to the console",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "image-aspect-ratio": {
+      "id": "image-aspect-ratio",
+      "title": "Displays images with correct aspect ratio",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "image-size-responsive": {
+      "id": "image-size-responsive",
+      "title": "Serves images with appropriate resolution",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "deprecations": {
+      "id": "deprecations",
+      "title": "Avoids deprecated APIs",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "third-party-cookies": {
+      "id": "third-party-cookies",
+      "title": "Avoids third-party cookies",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "valid-source-maps": {
+      "id": "valid-source-maps",
+      "title": "Page has valid source maps",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "csp-xss": {
+      "id": "csp-xss",
+      "title": "Ensure CSP is effective against XSS attacks",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "has-hsts": {
+      "id": "has-hsts",
+      "title": "Use a strong HSTS policy",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "origin-isolation": {
+      "id": "origin-isolation",
+      "title": "Ensure proper origin isolation with COOP",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "clickjacking-mitigation": {
+      "id": "clickjacking-mitigation",
+      "title": "Mitigate clickjacking with XFO or CSP",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "trusted-types-xss": {
+      "id": "trusted-types-xss",
+      "title": "Mitigate DOM-based XSS with Trusted Types",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "document-title": {
+      "id": "document-title",
+      "title": "Document has a `<title>` element",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "image-alt": {
+      "id": "image-alt",
+      "title": "Image elements have `[alt]` attributes",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "doctype": {
+      "id": "doctype",
+      "title": "Page has the HTML doctype",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "charset": {
+      "id": "charset",
+      "title": "Properly defines charset",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "geolocation-on-start": {
+      "id": "geolocation-on-start",
+      "title": "Avoids requesting the geolocation permission on page load",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "inspector-issues": {
+      "id": "inspector-issues",
+      "title": "No issues in the `Issues` panel in Chrome Devtools",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "js-libraries": {
+      "id": "js-libraries",
+      "title": "Detected JavaScript libraries",
+      "score": null,
+      "scoreDisplayMode": "notApplicable",
+      "explanation": null
+    },
+    "notification-on-start": {
+      "id": "notification-on-start",
+      "title": "Avoids requesting the notification permission on page load",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "paste-preventing-inputs": {
+      "id": "paste-preventing-inputs",
+      "title": "Allows users to paste into input fields",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "baseline": {
+      "id": "baseline",
+      "title": "Baseline Features",
+      "score": 1,
+      "scoreDisplayMode": "informative",
+      "explanation": null
+    },
+    "meta-description": {
+      "id": "meta-description",
+      "title": "Document has a meta description",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "http-status-code": {
+      "id": "http-status-code",
+      "title": "Page has successful HTTP status code",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "link-text": {
+      "id": "link-text",
+      "title": "Links have descriptive text",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "crawlable-anchors": {
+      "id": "crawlable-anchors",
+      "title": "Links are crawlable",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "is-crawlable": {
+      "id": "is-crawlable",
+      "title": "Page isn\u2019t blocked from indexing",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "robots-txt": {
+      "id": "robots-txt",
+      "title": "robots.txt is valid",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "hreflang": {
+      "id": "hreflang",
+      "title": "Document has a valid `hreflang`",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "canonical": {
+      "id": "canonical",
+      "title": "Document has a valid `rel=canonical`",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "structured-data": {
+      "id": "structured-data",
+      "title": "Structured data is valid",
+      "score": null,
+      "scoreDisplayMode": "manual",
+      "explanation": null
+    }
+  }
+}

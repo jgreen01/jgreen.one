@@ -1,0 +1,90 @@
+{
+  "requestedUrl": "http://localhost:8099/page/",
+  "finalDisplayedUrl": "http://localhost:8099/page/",
+  "categories": {
+    "seo": {
+      "id": "seo",
+      "title": "SEO",
+      "score": 0.91
+    }
+  },
+  "audits": {
+    "document-title": {
+      "id": "document-title",
+      "title": "Document has a `<title>` element",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "image-alt": {
+      "id": "image-alt",
+      "title": "Image elements have `[alt]` attributes",
+      "score": null,
+      "scoreDisplayMode": "notApplicable",
+      "explanation": null
+    },
+    "meta-description": {
+      "id": "meta-description",
+      "title": "Document has a meta description",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "http-status-code": {
+      "id": "http-status-code",
+      "title": "Page has successful HTTP status code",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "link-text": {
+      "id": "link-text",
+      "title": "Links have descriptive text",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "crawlable-anchors": {
+      "id": "crawlable-anchors",
+      "title": "Links are crawlable",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "is-crawlable": {
+      "id": "is-crawlable",
+      "title": "Page isn\u2019t blocked from indexing",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "robots-txt": {
+      "id": "robots-txt",
+      "title": "robots.txt is valid",
+      "score": null,
+      "scoreDisplayMode": "notApplicable",
+      "explanation": null
+    },
+    "hreflang": {
+      "id": "hreflang",
+      "title": "Document has a valid `hreflang`",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "explanation": null
+    },
+    "canonical": {
+      "id": "canonical",
+      "title": "Document does not have a valid `rel=canonical`",
+      "score": 0,
+      "scoreDisplayMode": "binary",
+      "explanation": "Points to the domain's root URL (the homepage), instead of an equivalent page of content"
+    },
+    "structured-data": {
+      "id": "structured-data",
+      "title": "Structured data is valid",
+      "score": null,
+      "scoreDisplayMode": "manual",
+      "explanation": null
+    }
+  }
+}
