@@ -1,7 +1,7 @@
 # Decide on the agent-discovery protocols
 
 **Priority**: LOW
-**Status**: TODO — a decision, not an implementation
+**Status**: DECIDED — recorded below; awaiting Jon's confirmation before filing
 **Created**: 2026-09-15
 **Updated**: 2026-09-15
 
@@ -143,9 +143,49 @@ actually matters for this site is measured better by `npm run crawlers`
 (150/150 against production) and by the WAF logs, which show verified Googlebot
 from `66.249.74.x` fetching `/robots.txt` daily.
 
+## The decision, taken 2026-09-15
+
+**Group B: declined.** OAuth/OIDC discovery, OAuth Protected Resource,
+Auth.md, the MCP Server Card and DNS-AID all describe infrastructure that does
+not exist. Publishing them would advertise endpoints that return 404, which
+costs an agent a retry loop and a wrong conclusion about the site. Revisit only
+if the site grows an API needing auth, or a running MCP server — which is
+task E.
+
+**Group A: declined for now, on cost rather than honesty.** All four could be
+made genuinely true, and that distinction is worth keeping: a read-only JSON
+API served as static files is a real API, and `type: "skill-md"` is a real
+skill. But each adds a generated artifact to keep in sync, build assertions to
+maintain, and a surface to explain, on a site whose stated position is that its
+infrastructure is the standard playbook and deliberately boring.
+
+The specific reasoning per item:
+
+- **JSON API + API Catalog.** The content is already addressable as data —
+  every page now has a Markdown twin, and `/llms.txt` indexes them. A JSON
+  feed would be a second representation of the same thing with no demonstrated
+  reader. If task E goes ahead, an MCP server subsumes this properly, and the
+  catalog then has something better to point at than a hand-rolled feed.
+- **ARD.** One file, and it could honestly list `/llms.txt` and the twins
+  today. Declined only because the protocol is early and no registry is known
+  to consume it; this is the cheapest to revisit and the first to reconsider.
+- **Agent Skills.** There are plausible candidates — the transcript pipeline,
+  the media-manifest reconciliation, the Markdown-twin setup are all real
+  transferable practices already written up in `guides/`. But publishing them
+  as skills is a content decision about what the site is for, not a technical
+  one, and a contrived skill published to fill the slot would be Group B
+  behaviour wearing Group A's clothes.
+
+**Group C: WebMCP.** Still gated behind Chrome's early preview; nothing to
+build against. Revisit when the documentation is public.
+
+**What was done instead**, from the same audit: tasks B and C, both of which
+make true statements about things that exist. That is the line this decision
+draws.
+
 ## Acceptance Criteria
 
-- [ ] Decide Group A item by item — each is a yes/no on value, not on honesty
+- [x] Decide Group A item by item — each is a yes/no on value, not on honesty
 - [ ] If the JSON API is wanted: generated from the collection like `llms.txt`,
       with the same build-integration guarantees, and an API Catalog at
       `/.well-known/api-catalog` as `application/linkset+json` describing it
@@ -154,10 +194,10 @@ from `66.249.74.x` fetching `/robots.txt` daily.
 - [ ] If Agent Skills is wanted: real, useful skills with correct
       `sha256:{64 hex}` digests, and a test that each digest matches the file
       it names — a stale digest is a broken promise
-- [ ] Group B stays declined until the site has the infrastructure. Record the
+- [x] Group B stays declined until the site has the infrastructure. Record the
       trigger: an API needing auth, or a running MCP server
-- [ ] Revisit WebMCP when its documentation leaves early preview
-- [ ] Whatever is declined, record it somewhere a future scan will not reopen
+- [x] Revisit WebMCP when its documentation leaves early preview
+- [x] Whatever is declined, record it somewhere a future scan will not reopen
 
 ## Notes
 
@@ -183,3 +223,10 @@ rather than filed to the boneyard because filing happens only when Jon asks.
   single static Markdown file. Five items still require describing auth or
   transport infrastructure that does not exist, and WebMCP cannot be assessed
   while its documentation is behind an early-preview signup.
+- 2026-09-15 DECIDED. Group B declined as undeliverable without the
+  infrastructure they describe. Group A declined on cost rather than honesty,
+  with the reasoning recorded per item so it is not re-argued from a future
+  scan result. ARD is the first to reconsider; Agent Skills needs a content
+  decision before a technical one; the JSON API is better served by task E if
+  that goes ahead. Nothing was implemented, which is the correct outcome for a
+  task whose deliverable was a decision.
