@@ -39,13 +39,23 @@ const linkOf = (uri: string, headers = {}) => respond(uri, headers).headers.link
 describe("the Markdown twin Link header", () => {
   // RFC 8288, and the relation the llms.txt spec recommends. The HTML <link>
   // says the same thing; this reaches a client that never parses the body.
+  // The URI this function sees is the one the viewer-request function
+  // produced, not the one the viewer typed — verified in production, where an
+  // earlier version derived the twin from the raw URI and emitted nothing at
+  // all for a page, because "/about/index.html" has a dot and no trailing
+  // slash. Both forms are handled now rather than relying on which arrives.
   it.each([
     ["/", "https://jgreen.one/index.md"],
+    ["/index.html", "https://jgreen.one/index.md"],
     ["/about/", "https://jgreen.one/about/index.md"],
     ["/about", "https://jgreen.one/about/index.md"],
+    ["/about/index.html", "https://jgreen.one/about/index.md"],
     ["/blog/", "https://jgreen.one/blog/index.md"],
+    ["/blog/index.html", "https://jgreen.one/blog/index.md"],
     ["/tags/astro/", "https://jgreen.one/tags/astro/index.md"],
+    ["/tags/astro/index.html", "https://jgreen.one/tags/astro/index.md"],
     ["/entries/this-site/", "https://jgreen.one/entries/this-site/index.md"],
+    ["/entries/this-site/index.html", "https://jgreen.one/entries/this-site/index.md"],
   ])("%s advertises %s", (uri, twin) => {
     expect(linkOf(uri)).toBe(`<${twin}>; rel="alternate"; type="text/markdown"`);
   });

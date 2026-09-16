@@ -38,12 +38,22 @@ function handler(event) {
 
     var uri = typeof request.uri === 'string' ? request.uri : '';
 
-    // A page is anything that does not already name a file. Those are assets,
-    // or the twin itself, and have no twin of their own.
-    var isPage = uri.length > 0 && (uri.indexOf('.') === -1 || uri.endsWith('/'));
+    // The URI here is the one the viewer-request function produced, not the
+    // one the viewer typed: a request for /about/ arrives as
+    // /about/index.html. Both forms are handled, because the documentation
+    // describes this object as the request "received from the viewer" and
+    // production does otherwise — so neither is safe to assume.
+    var path = uri;
+    if (path.endsWith('/index.html')) {
+        path = path.slice(0, path.length - 'index.html'.length);
+    }
+
+    // A page is anything that does not name a file. What is left is an asset,
+    // or a twin itself, and neither has a twin of its own.
+    var isPage = path.length > 0 && (path.endsWith('/') || path.indexOf('.') === -1);
 
     if (isPage && !headers.link) {
-        var twin = SITE + (uri.endsWith('/') ? uri + 'index.md' : uri + '/index.md');
+        var twin = SITE + (path.endsWith('/') ? path + 'index.md' : path + '/index.md');
         headers.link = { value: '<' + twin + '>; rel="alternate"; type="text/markdown"' };
     }
 
