@@ -1,50 +1,81 @@
 # Everything here is allowed, deliberately. The groups below say so by name,
 # and the reasoning is at the bottom.
+#
+# Each group also states what may be done with what it fetches, using the
+# Content-Usage rule from the IETF AIPREF drafts (draft-ietf-aipref-attach for
+# the syntax, draft-ietf-aipref-vocab for the vocabulary). All three categories
+# are stated because an omitted one means "unknown" rather than "yes":
+#
+#   train-ai  modifying the learned parameters of a generative model
+#   ai-use    using this page as model input the user did not supply
+#   search    indexing it to point people back here
+#
+# A blank line ends a group, so the directive sits directly under the Allow it
+# belongs to rather than being written once at the top.
+#
+# Cloudflare's Content-Signal spelling is deliberately absent: it is a vendor
+# convention resting on an expired individual draft that never defined a
+# syntax, and following it only to satisfy a third-party readiness score is not
+# a good enough reason.
 
 User-agent: *
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 # Named explicitly so the permission is unambiguous to anything that looks for
 # a specific token rather than parsing the wildcard group above.
 
 User-agent: Google-Extended
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: GoogleOther
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: GPTBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: OAI-SearchBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: ChatGPT-User
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: ClaudeBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: Claude-SearchBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: Claude-User
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: anthropic-ai
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: PerplexityBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: Perplexity-User
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: Applebot-Extended
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 User-agent: CCBot
 Allow: /
+Content-Usage: train-ai=y, ai-use=y, search=y
 
 Sitemap: https://jgreen.one/sitemap-index.xml
 
