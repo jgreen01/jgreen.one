@@ -5,6 +5,7 @@ import Avatar from "../components/Avatar.astro";
 import { getCollection } from "astro:content";
 import { filterDrafts, sortByDate } from "../utils/entries";
 import { INITIAL_VISIBLE } from "../utils/infiniteList";
+import { websiteJsonLd } from "../utils/structuredData";
 
 /**
  * Every published entry, newest first.
@@ -15,7 +16,7 @@ import { INITIAL_VISIBLE } from "../utils/infiniteList";
  */
 const all = sortByDate(filterDrafts(await getCollection("entries")));
 ---
-<PageLayout>
+<PageLayout jsonLd={websiteJsonLd()}>
   <section class="flex items-center flex-col sm:flex-row">
     <Avatar class="avatar w-3/5 mb-2 sm:mb-0 sm:mr-4" />
     <span>

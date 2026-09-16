@@ -482,6 +482,124 @@ describe("the article byline", () => {
   });
 });
 
+// Structured data is invisible on the page, so a mistake in it survives every
+// visual check. These assertions are the only thing that looks at it.
+describe("structured data", () => {
+  let result;
+
+  before(() => {
+    result = build();
+  });
+
+  const nodeIn = (relativePath) => {
+    const html = read(relativePath);
+    const matches = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    return { count: matches.length, json: matches[0] ? JSON.parse(matches[0][1]) : null };
+  };
+
+  const entryPages = () =>
+    htmlFiles()
+      .map((file) => relative(DIST, file).split(sep).join("/"))
+      .filter((path) => /^entries\/[^/]+\/index\.html$/.test(path));
+
+  test("the build succeeded", () => {
+    assert.equal(result.status, 0, result.stderr);
+  });
+
+  test("every entry page carries exactly one JSON-LD block that parses", () => {
+    const pages = entryPages();
+    assert.ok(pages.length > 0, "no entry pages were built");
+    for (const page of pages) {
+      const { count, json } = nodeIn(page);
+      assert.equal(count, 1, `${page} has ${count} JSON-LD blocks`);
+      assert.equal(json["@context"], "https://schema.org", `wrong @context in ${page}`);
+    }
+  });
+
+  // A project is not a blog posting; the type has to follow `kind`.
+  test("the @type follows the entry kind", () => {
+    for (const page of entryPages()) {
+      const slug = page.split("/")[1];
+      const source = readFileSync(join(ROOT, "src/content/entries", `${slug}.md`), "utf-8");
+      const kind = source.match(/^kind:\s*"?(\w+)"?/m)?.[1] ?? "blog";
+      const expected = kind === "project" ? "Article" : "BlogPosting";
+      assert.equal(nodeIn(page).json["@type"], expected, `${page} is typed wrong for kind ${kind}`);
+    }
+  });
+
+  // Google substitutes Googlebot's timezone when none is given, which is how a
+  // publication date silently moves by a day.
+  test("datePublished matches the frontmatter and states a timezone", () => {
+    for (const page of entryPages()) {
+      const slug = page.split("/")[1];
+      const source = readFileSync(join(ROOT, "src/content/entries", `${slug}.md`), "utf-8");
+      const day = source.match(/^pubDate:\s*"?(\d{4}-\d{2}-\d{2})/m)[1];
+      const published = nodeIn(page).json.datePublished;
+      assert.ok(published.startsWith(day), `${page}: ${published} does not start with ${day}`);
+      assert.match(published, /(Z|[+-]\d{2}:\d{2})$/, `${page}: ${published} has no timezone`);
+    }
+  });
+
+  test("the author is named, with the role kept out of the name", () => {
+    for (const page of entryPages()) {
+      const author = nodeIn(page).json.author;
+      assert.equal(author["@type"], "Person", `${page} author is not a Person`);
+      assert.equal(author.name, "Jon Green", `${page} author name is wrong`);
+      assert.ok(author.sameAs.length > 0, `${page} has an empty sameAs`);
+      for (const url of author.sameAs) {
+        assert.match(url, /^https:\/\//, `${page} sameAs entry is not absolute: ${url}`);
+      }
+    }
+  });
+
+  // The author markup is only permitted because the byline is rendered.
+  test("the author it claims is visible on the page", () => {
+    for (const page of entryPages()) {
+      const html = read(page);
+      const article = html.slice(html.indexOf("<article"), html.indexOf("</article>"));
+      assert.match(article, new RegExp(nodeIn(page).json.author.name), `author not visible on ${page}`);
+    }
+  });
+
+  test("no JSON-LD block contains a relative URL or a literal undefined", () => {
+    for (const page of [...entryPages(), "index.html", "about/index.html"]) {
+      const { json } = nodeIn(page);
+      const text = JSON.stringify(json);
+      assert.ok(!text.includes("undefined"), `'undefined' in the JSON-LD on ${page}`);
+      const relative = text.match(/"(\/[^"]*)"/g) ?? [];
+      assert.equal(relative.length, 0, `relative URLs on ${page}: ${relative.join(", ")}`);
+    }
+  });
+
+  test("the about page is a ProfilePage whose mainEntity is the author", () => {
+    const { json } = nodeIn("about/index.html");
+    assert.equal(json["@type"], "ProfilePage");
+    assert.equal(json.mainEntity["@type"], "Person");
+    assert.equal(json.mainEntity["@id"], "https://jgreen.one/about/#person");
+  });
+
+  // One identity across pages, rather than two people who share a name.
+  test("the author @id is the same on an entry and on the about page", () => {
+    const onEntry = nodeIn(entryPages()[0]).json.author["@id"];
+    assert.equal(onEntry, nodeIn("about/index.html").json.mainEntity["@id"]);
+  });
+
+  test("the homepage is a WebSite with no potentialAction", () => {
+    const { json } = nodeIn("index.html");
+    assert.equal(json["@type"], "WebSite");
+    assert.ok(
+      !("potentialAction" in json),
+      "the sitelinks search box was deprecated in 2024; potentialAction produces nothing",
+    );
+  });
+
+  test("listing pages carry no article markup", () => {
+    for (const page of ["blog/index.html", "projects/index.html", "tags/index.html"]) {
+      assert.equal(nodeIn(page).count, 0, `${page} should not describe itself as an article`);
+    }
+  });
+});
+
 describe("draft entries", () => {
   let result;
 

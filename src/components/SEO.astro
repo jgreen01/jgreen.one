@@ -1,9 +1,11 @@
 ---
 import { seoMeta, type SeoProps } from '../utils/seoMeta';
+import { serializeJsonLd } from '../utils/structuredData';
 
 export type Props = SeoProps;
 
 const { title, description, url, image, type } = seoMeta(Astro.props);
+const { jsonLd } = Astro.props;
 ---
 <title>{title}</title>
 <link rel="canonical" href={url} />
@@ -22,3 +24,10 @@ const { title, description, url, image, type } = seoMeta(Astro.props);
 <meta name="twitter:image" content={image} />
 
 <meta name="theme-color" content="#f6780a" />
+
+{/*
+  Structured data. Angle brackets and ampersands are escaped as unicode in
+  serializeJsonLd, so a literal </script> inside a value cannot close this
+  block early and spill JSON into the document as markup.
+*/}
+{jsonLd && <script is:inline type="application/ld+json" set:html={serializeJsonLd(jsonLd)} />}
