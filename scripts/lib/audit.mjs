@@ -30,6 +30,25 @@ export const CRITICAL_AUDITS = [
   "hreflang",
 ];
 
+/**
+ * Audits that may fail without failing the run, each with the reason.
+ *
+ * An exemption is a claim that Lighthouse is wrong for this site, not that the
+ * problem does not matter — so each one needs a justification that outlives
+ * whoever added it.
+ */
+export const EXEMPT_AUDITS = {
+  "robots-txt":
+    "Lighthouse scores robots.txt 0 for an 'Unknown directive', which it " +
+    "reports for the AIPREF Content-Usage rule. RFC 9309 requires the " +
+    "opposite: 'Parsing of other records MUST NOT interfere with the parsing " +
+    "of explicitly defined records.' A spec-compliant parser reads the file " +
+    "correctly — verified with robots-parser, every agent allowed and the " +
+    "sitemap intact — so the audit is stricter than the standard rather than " +
+    "finding a fault. Remove this exemption once Lighthouse recognises the " +
+    "directive, or if the Content-Usage rule is ever dropped.",
+};
+
 /** A static site with a handful of pages has no excuse for less than perfect. */
 export const CATEGORY_THRESHOLDS = {
   seo: 1,
@@ -65,18 +84,27 @@ export function evaluateLighthouse(lhr, { thresholds = CATEGORY_THRESHOLDS } = {
   for (const id of CRITICAL_AUDITS) {
     const audit = audits[id];
     if (!isRealFailure(audit)) continue;
+    if (id in EXEMPT_AUDITS) continue;
     const why = audit.explanation ? ` — ${audit.explanation}` : "";
     findings.push(`${id}: ${audit.title ?? "failed"}${why}`);
   }
 
+  // A category score is an average over its audits, so an exempt audit drags
+  // the number down even though nothing is wrong. Rather than lowering the
+  // threshold — which would hide a real regression of the same size — the
+  // shortfall is forgiven only when every failing audit is exempt.
+  const failing = Object.values(audits).filter(isRealFailure).map((audit) => audit.id);
+  const unexplained = failing.filter((id) => !(id in EXEMPT_AUDITS));
+
   for (const [name, minimum] of Object.entries(thresholds)) {
     const category = (lhr.categories ?? {})[name];
     if (!category || typeof category.score !== "number") continue;
-    if (category.score < minimum) {
-      findings.push(
-        `${name} scored ${Math.round(category.score * 100)}, below the required ${Math.round(minimum * 100)}`,
-      );
-    }
+    if (category.score >= minimum) continue;
+    if (failing.length > 0 && unexplained.length === 0) continue;
+
+    findings.push(
+      `${name} scored ${Math.round(category.score * 100)}, below the required ${Math.round(minimum * 100)}`,
+    );
   }
 
   return findings;

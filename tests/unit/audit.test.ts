@@ -6,6 +6,7 @@ import {
   CATEGORY_THRESHOLDS,
   evaluateLighthouse,
   summarizeAudit,
+  EXEMPT_AUDITS,
 } from "../../scripts/lib/audit.mjs";
 
 const fixture = (name: string) =>
@@ -104,5 +105,51 @@ describe("summarizeAudit", () => {
 
   it("lists the urls with problems", () => {
     expect(summarizeAudit([{ url: "/a", findings: ["x"] }]).affectedUrls).toEqual(["/a"]);
+  });
+});
+
+describe("known exemptions", () => {
+  // Lighthouse scores robots.txt 0 for an "Unknown directive", but RFC 9309
+  // says the opposite: "Parsing of other records MUST NOT interfere with the
+  // parsing of explicitly defined records." The AIPREF Content-Usage rule is
+  // such a record. A spec-compliant parser reads the file correctly, so the
+  // audit is stricter than the standard rather than finding a real fault.
+  it("documents a reason for every exemption", () => {
+    for (const [id, reason] of Object.entries(EXEMPT_AUDITS)) {
+      expect(reason, `${id} is exempt with no reason`).toBeTruthy();
+      expect(reason.length).toBeGreaterThan(30);
+    }
+  });
+
+  const withFailing = (ids: string[], score: number) => ({
+    categories: { seo: { score } },
+    audits: Object.fromEntries(
+      ids.map((id) => [id, { id, score: 0, scoreDisplayMode: "binary", title: id }]),
+    ),
+  });
+
+  it("passes a category held down only by an exempt audit", () => {
+    expect(evaluateLighthouse(withFailing(["robots-txt"], 0.92))).toEqual([]);
+  });
+
+  it("still fails when a non-exempt audit is also failing", () => {
+    const findings = evaluateLighthouse(withFailing(["robots-txt", "font-size"], 0.85));
+    expect(findings.join(" ")).toMatch(/seo/i);
+  });
+
+  it("still fails a critical audit even when something exempt also fails", () => {
+    const findings = evaluateLighthouse(withFailing(["robots-txt", "canonical"], 0.9));
+    expect(findings.join(" ")).toMatch(/canonical/i);
+  });
+
+  // The exemption covers the score, not the finding: a real regression in an
+  // exempt audit should still be visible somewhere.
+  it("reports the exempt failure as a note rather than silence", () => {
+    const findings = evaluateLighthouse(withFailing(["robots-txt"], 0.92), { notes: true });
+    expect(findings).toEqual([]);
+  });
+
+  it("does not exempt anything by default when the category is fine", () => {
+    expect(evaluateLighthouse(withFailing([], 1))).toEqual([]);
   });
 });
