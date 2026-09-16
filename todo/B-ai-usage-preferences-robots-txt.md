@@ -1,7 +1,7 @@
 # Declare AI usage preferences in robots.txt
 
 **Priority**: LOW
-**Status**: TODO — needs a decision before implementation
+**Status**: IN_PROGRESS — implemented and tested locally, not deployed
 **Created**: 2026-09-15
 **Updated**: 2026-09-15
 
@@ -102,17 +102,17 @@ a third-party score is the same trap as the API-discovery checks in task D.
 
 ## Acceptance Criteria
 
-- [ ] Decide which syntax, and record why in the file's comment block
-- [ ] If `Content-Usage`: `train-ai=y`, `ai-use=y`, `search=y`, matching the
+- [x] Decide which syntax, and record why in the file's comment block
+- [x] If `Content-Usage`: `train-ai=y`, `ai-use=y`, `search=y`, matching the
       prose already in the file
-- [ ] Placed inside **every** `User-agent` group it is meant to cover, not once
+- [x] Placed inside **every** `User-agent` group it is meant to cover, not once
       at the top — group scoping is the easy thing to get wrong here, and
       `public/robots.txt` currently has fourteen groups
-- [ ] Verify the syntax against the then-current draft before writing it;
+- [x] Verify the syntax against the then-current draft before writing it;
       these revise roughly every six months
-- [ ] `robots-parser` assertions still pass — an unrecognised directive must
+- [x] `robots-parser` assertions still pass — an unrecognised directive must
       not disturb exclusion-protocol parsing for any agent
-- [ ] Build-integration assertion that the directive is present, permissive,
+- [x] Build-integration assertion that the directive is present, permissive,
       and in every group, alongside the existing robots.txt tests
 - [ ] `npm run crawlers` still 150/150 against production
 
@@ -134,3 +134,23 @@ Control. The scan's other findings are tasks C and D.
   convention. The standards-track directive is `Content-Usage` with
   `train-ai`/`ai-use`/`search` and `y`/`n`, it is scoped per User-agent group,
   and absence means unknown rather than refusal.
+- 2026-09-15 DECIDED `Content-Usage`, the standards-track directive, and
+  implemented. `Content-Signal` is deliberately absent; following an expired
+  vendor draft to satisfy a third-party readiness score is the same trap task D
+  declines, and the reasoning is written into the file's comment block so it is
+  not reopened.
+
+  `Content-Usage: train-ai=y, ai-use=y, search=y` now sits inside all fourteen
+  groups, directly under each `Allow: /`. All three categories are stated
+  because an omitted one means "unknown" rather than "yes".
+
+  A BUG WORTH RECORDING: the first attempt inserted the directive after the
+  blank line that terminates each group, leaving it orphaned and meaningless —
+  and the test passed, because its group parser did not treat a blank line as a
+  separator. Both were wrong. The parser now ends a group at a blank line and
+  asserts that no directive sits outside one, which is what would have caught
+  it. Verified the guard fires on the orphaned shape.
+
+  VERIFIED LOCALLY: `robots-parser` reads the file with all seven sampled
+  agents allowed and the sitemap intact, so the unrecognised directive does not
+  disturb exclusion parsing.

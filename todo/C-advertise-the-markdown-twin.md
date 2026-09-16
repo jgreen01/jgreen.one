@@ -1,7 +1,7 @@
 # Advertise the Markdown twin to agents
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: IN_PROGRESS — built and tested locally, not deployed
 **Created**: 2026-09-15
 **Updated**: 2026-09-15
 
@@ -132,27 +132,27 @@ engine. Any change here goes through both.
 
 ## Acceptance Criteria
 
-- [ ] Entry pages carry `<link rel="alternate" type="text/markdown" href="…">`
+- [x] Entry pages carry `<link rel="alternate" type="text/markdown" href="…">`
       pointing at the twin, absolute, built from the same helper that produces
       the canonical URL so the two cannot drift
-- [ ] Transcript pages do the same — they also have a `.md` route
-- [ ] Pages with no twin carry no such link
-- [ ] Unit tests for the helper; build-integration assertion that every
+- [x] Transcript pages do the same — they also have a `.md` route
+- [x] Pages with no twin carry no such link
+- [x] Unit tests for the helper; build-integration assertion that every
       advertised href resolves to a file that actually exists in `dist/`,
       rather than to a plausible-looking path
-- [ ] Decide: full coverage or entry-only. If full:
-  - [ ] `.md.ts` routes for `/`, `/blog/`, `/projects/`, `/entries/`, `/tags/`
+- [x] Decide: full coverage or entry-only. If full:
+  - [x] `.md.ts` routes for `/`, `/blog/`, `/projects/`, `/entries/`, `/tags/`
         and `/tags/<tag>`, generated from the collection
-  - [ ] `/about` and `/contact` prose moved to a single source that renders
+  - [x] `/about` and `/contact` prose moved to a single source that renders
         both the HTML and the twin
-  - [ ] Edge function rewrites every HTML path, with a build-integration
+  - [x] Edge function rewrites every HTML path, with a build-integration
         assertion that **every** HTML route in `dist/` has a sibling `.md` —
         the invariant the blanket rewrite depends on
-  - [ ] A test that a path with no twin never rewrites to a 404
+  - [x] A test that a path with no twin never rewrites to a 404
 - [ ] Optional, decide separately: emit `x-markdown-tokens` on `.md` responses
 - [ ] Optional: HTTP `Link` header — only if it can be scoped correctly, see
       below
-- [ ] Re-run `npm run crawlers`; the Markdown-negotiating profile must still
+- [x] Re-run `npm run crawlers`; the Markdown-negotiating profile must still
       pass
 
 ## Notes
@@ -187,3 +187,35 @@ one.
   `.astro`. Also identified the constraint that shapes the design: a blanket
   edge rewrite with any page lacking a twin would answer 404 for a URL that has
   good HTML, which is why partial coverage is more dangerous than none.
+- 2026-09-15 DECIDED full coverage, and implemented locally. Every page now has
+  a twin at `<path>index.md`, so the edge rewrite is a blanket rule rather than
+  a prefix list — the safer of the two consistent designs, since a hand-kept
+  list in `function.js` would drift from the routes.
+
+  What was built: `src/utils/pageMarkdown.ts` generates listing twins from the
+  same collection queries the HTML pages run (19 unit tests); `.md.ts` routes
+  for `/`, `/blog/`, `/projects/`, `/entries/`, `/tags/` and `/tags/<tag>`; a
+  new `pages` collection holding the about prose, so `/about` and its twin
+  render from one source instead of the prose living as HTML in a `.astro`
+  file; a `/contact` twin generated from `src/utils/contact.ts`; and a second
+  transcript twin at `/entries/<slug>/transcript/index.md` so the blanket rule
+  holds without exception.
+
+  `rel="alternate" type="text/markdown"` is derived from the canonical URL in
+  `seoMeta`, so the advertised twin is always this page's twin and cannot drift
+  from the rewrite. `/404` opts out with `markdown={false}` — it has no twin,
+  and advertising one would be a false claim.
+
+  VERIFIED LOCALLY: 36 of 36 pages resolve to an existing file under both
+  `Accept: text/markdown` and `Accept: text/html`, simulated by running the real
+  `function.js` over the real `dist/`; six assets and already-final URLs are
+  left untouched. 19 tests in the CloudFront runtime via
+  `scripts/test-cloudfront-function.sh`. Build assertions now cover the
+  invariant the rewrite depends on, that every advertised twin was built, and
+  that the link and the rewrite agree.
+
+  NOT DONE, deliberately: the `x-markdown-tokens` header and the HTTP `Link`
+  header, both of which need a CloudFront response headers policy — and with
+  every page advertising its twin in HTML, the header adds little. Also not
+  done: listing the new page twins in `/llms.txt`, which is worth considering
+  separately.
