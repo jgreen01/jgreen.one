@@ -1,7 +1,7 @@
 # Add JSON-LD structured data
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: IN_PROGRESS
 **Created**: 2026-09-14
 **Updated**: 2026-09-14
 
@@ -87,33 +87,33 @@ an implementation detail.
 
 ## Acceptance Criteria
 
-- [ ] Decide the byline question above; if option 1, the visible byline ships
+- [x] Decide the byline question above; if option 1, the visible byline ships
       in the same change as the markup
-- [ ] `BlogPosting` for `kind: blog`, `Article` for `kind: project`, built from
+- [x] `BlogPosting` for `kind: blog`, `Article` for `kind: project`, built from
       existing frontmatter: `headline`, `description`, `datePublished`,
       `dateModified` only when `updatedDate` is set, `image` from `heroImage`
       as an absolute URL, `keywords` from `tags`, `mainEntityOfPage`
-- [ ] `author` as a nested `Person` with `name` (name only), `url` pointing at
+- [x] `author` as a nested `Person` with `name` (name only), `url` pointing at
       `/about`, `jobTitle` from `CONTACT.role`, and `sameAs` listing the GitHub
       and LinkedIn profiles — all sourced from `src/utils/contact.ts` so
       identity stays in one place
-- [ ] A stable `@id` for the author so the entry and `/about` resolve to one
+- [x] A stable `@id` for the author so the entry and `/about` resolve to one
       entity
-- [ ] `/about` marked up as `ProfilePage` with `mainEntity` set to that same
+- [x] `/about` marked up as `ProfilePage` with `mainEntity` set to that same
       `Person`
-- [ ] `WebSite` on the homepage for identification only, with no
+- [x] `WebSite` on the homepage for identification only, with no
       `potentialAction`
-- [ ] A new date helper emitting full ISO 8601 with an explicit UTC offset,
+- [x] A new date helper emitting full ISO 8601 with an explicit UTC offset,
       unit-tested against a non-UTC `TZ`, since date-only values let Googlebot
       choose the timezone
-- [ ] Draft entries emit no structured data, as with listings and the sitemap
-- [ ] Logic in a plain module under `src/utils/` with unit tests; `.astro`
+- [x] Draft entries emit no structured data, as with listings and the sitemap
+- [x] Logic in a plain module under `src/utils/` with unit tests; `.astro`
       cannot be unit-tested, so the component stays a thin wrapper
-- [ ] Build-integration assertions: exactly one `application/ld+json` block per
+- [x] Build-integration assertions: exactly one `application/ld+json` block per
       entry page, it parses as JSON, `datePublished` matches frontmatter and
       carries a timezone, `@type` matches `kind`, and no literal `undefined`
       or empty `sameAs` reaches the output
-- [ ] Every URL in the markup is absolute
+- [x] Every URL in the markup is absolute
 - [ ] Validated with Google's Rich Results Test and the schema.org validator
       before this is called done
 
@@ -147,3 +147,15 @@ policies, the Search Central post "Farewell, Sitelinks Search Box"
   a bare `Person`; `WebSite` no longer yields a rich result; project entries are
   `Article` not `BlogPosting`; and the visible-content rule makes the missing
   byline a blocking decision rather than a detail.
+- 2026-09-14 Implemented and verified locally; not deployed. `isoDateTime()`
+  added to `src/utils/formatDate.ts`; `src/utils/structuredData.ts` builds the
+  nodes; `SEO.astro` renders the block with `is:inline` and unicode-escaped
+  angle brackets so a `</script>` in a value cannot close it early. Wired
+  through `PageLayout` and `ArticleLayout`; the entry route builds the node
+  because the canonical URL needs `entry.id`, which `entry.data` lacks.
+  36 unit tests for the builder, 8 for `isoDateTime`, 11 build-integration
+  assertions. All six entries carry the right type: `Article` for the two
+  projects, `BlogPosting` for the four posts. Every document expands cleanly
+  under JSON-LD 1.1 against schema.org with every property mapping to a real
+  IRI (8 on entries, 3 on the homepage, 1 on /about). Remaining: validation
+  with Google's Rich Results Test, which needs a published URL.
