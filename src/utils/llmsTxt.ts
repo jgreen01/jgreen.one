@@ -15,6 +15,36 @@ export interface ListableTranscriptPair {
   entry: { id: string };
 }
 
+/**
+ * The site's own pages, each of which now has a Markdown twin.
+ *
+ * Listed first because they are the way in: an agent that follows `/entries/`
+ * or `/tags/` can navigate the whole site from there, whereas the sections
+ * below are a flat dump of everything. Hard-coded rather than derived, because
+ * these are the site's fixed routes and there are seven of them.
+ */
+const PAGES = [
+  ["/index.md", "Home", "The site's front page, with the most recent entries."],
+  ["/about/index.md", "About", "Who I am and what I work on."],
+  ["/blog/index.md", "Blog", "Every post, newest first."],
+  ["/projects/index.md", "Projects", "Every project, newest first."],
+  ["/entries/index.md", "All entries", "Posts and projects together in one list."],
+  ["/tags/index.md", "Tags", "Every tag, and how many entries carry it."],
+  ["/contact/index.md", "Contact", "Ways to get in touch."],
+] as const;
+
+function pagesSection(): string[] {
+  return [
+    "## Pages",
+    "",
+    ...PAGES.map(
+      ([path, title, description]) =>
+        `- [${title}](${SEO_DEFAULTS.site}${path}): ${description}`,
+    ),
+    "",
+  ];
+}
+
 const SECTIONS = [
   { kind: "blog" as const, heading: "Blog posts" },
   { kind: "project" as const, heading: "Projects" },
@@ -85,7 +115,8 @@ export function llmsTxt(
     `> ${SEO_DEFAULTS.description}`,
     "",
     "Each link below points at a Markdown copy of the page — same content as the",
-    "HTML, without the markup.",
+    "HTML, without the markup. Every page on the site has one: append index.md to",
+    "any path, or send Accept: text/markdown and the edge will serve it.",
     "",
     // An agent may read only this file. Without these it has the writing and no
     // route back to whoever wrote it. Plain text, not links, so the assertion
@@ -93,6 +124,7 @@ export function llmsTxt(
     `Author: ${CONTACT.name}, ${CONTACT.role}`,
     `Contact: ${CONTACT.email} | ${CONTACT.githubHandle} | ${CONTACT.linkedinHandle}`,
     "",
+    ...pagesSection(),
     ...SECTIONS.flatMap(({ kind, heading }) =>
       section(filterByKind(published, kind) as ListableEntry[], heading),
     ),

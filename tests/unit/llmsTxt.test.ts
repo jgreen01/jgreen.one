@@ -149,3 +149,44 @@ describe("llms.txt identifies the author", () => {
     }
   });
 });
+
+describe("the site's own pages", () => {
+  // Every page has a Markdown twin now, not only entries. An agent reading
+  // this file should be able to reach the listings and the about page, not
+  // just the writing.
+  const out = () => llmsTxt(published);
+
+  it("lists the pages under their own heading", () => {
+    expect(out()).toMatch(/^## Pages$/m);
+  });
+
+  it.each([
+    ["the homepage", "https://jgreen.one/index.md"],
+    ["about", "https://jgreen.one/about/index.md"],
+    ["blog", "https://jgreen.one/blog/index.md"],
+    ["projects", "https://jgreen.one/projects/index.md"],
+    ["all entries", "https://jgreen.one/entries/index.md"],
+    ["tags", "https://jgreen.one/tags/index.md"],
+    ["contact", "https://jgreen.one/contact/index.md"],
+  ])("links %s", (_name, url) => {
+    expect(out()).toContain(url);
+  });
+
+  it("gives each page a description, so the list is navigable", () => {
+    const pages = out().split("## Pages")[1].split("##")[0].trim().split("\n");
+    for (const line of pages.filter((l) => l.startsWith("-"))) {
+      expect(line, `no description: ${line}`).toMatch(/\):\s+\S/);
+    }
+  });
+
+  it("still points every link at a .md file", () => {
+    for (const link of out().match(/\]\((https:[^)]+)\)/g) ?? []) {
+      expect(link).toMatch(/\.md\)$/);
+    }
+  });
+
+  it("puts the pages before the writing, since they are the way in", () => {
+    const body = out();
+    expect(body.indexOf("## Pages")).toBeLessThan(body.indexOf("## Blog posts"));
+  });
+});
