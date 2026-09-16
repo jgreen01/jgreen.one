@@ -15,6 +15,19 @@ resource "aws_cloudfront_function" "subdirectory_index_rewrite" {
   code = file("${path.module}/function.js")
 }
 
+# Advertises each page's Markdown twin, and surfaces the per-document token
+# count written onto the object at deploy time. Both values differ per
+# resource, so a response headers policy — which sets fixed values — cannot
+# express either.
+resource "aws_cloudfront_function" "markdown_twin_headers" {
+  name    = "markdown-twin-headers"
+  runtime = "cloudfront-js-1.0"
+  comment = "Adds the Markdown twin Link header and x-markdown-tokens"
+  publish = true
+
+  code = file("${path.module}/response-function.js")
+}
+
 # CloudFront distribution
 locals {
   s3_origin_id = "s3-origin-${var.site_bucket_name}"
@@ -47,6 +60,14 @@ resource "aws_cloudfront_distribution" "cdn" {
     function_association {
       event_type   = "viewer-request"
       function_arn = aws_cloudfront_function.subdirectory_index_rewrite.arn
+    }
+
+    # CloudFront does not invoke a function when the origin returns 400 or
+    # above, so the 404 page never reaches this one and cannot be handed a link
+    # to a twin it does not have.
+    function_association {
+      event_type   = "viewer-response"
+      function_arn = aws_cloudfront_function.markdown_twin_headers.arn
     }
   }
 
