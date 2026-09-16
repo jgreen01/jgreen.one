@@ -144,6 +144,9 @@ if [ -f "$RESPONSE_SOURCE" ]; then
   # name | uri | content-type | expected link header ("-" for none)
   RESPONSE_CASES=$(cat <<'EOF'
 homepage advertises its twin|/|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"
+homepage as rewritten|/index.html|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"
+about as rewritten|/about/index.html|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
+tag page as rewritten|/tags/astro/index.html|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"
 about advertises its twin|/about/|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
 extensionless advertises its twin|/about|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
 tag page advertises its twin|/tags/astro/|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"
