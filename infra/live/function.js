@@ -15,19 +15,26 @@ function handler(event) {
     var uri = request.uri;
 
     // Content negotiation: an agent asking for Markdown gets the Markdown copy
-    // of an entry. Note this branches on what the client ASKED FOR, never on who
+    // of the page. Note this branches on what the client ASKED FOR, never on who
     // it claims to be — a search engine and a person always receive identical
     // HTML, which is what keeps this content negotiation rather than cloaking.
     var acceptHeader = request.headers && request.headers['accept'];
     var accept = acceptHeader && acceptHeader.value ? acceptHeader.value.toLowerCase() : '';
 
-    if (accept.indexOf('text/markdown') !== -1 && uri.indexOf('/entries/') === 0) {
-        // Only individual entries have a Markdown copy; /entries/ is a listing.
-        var slug = uri.slice('/entries/'.length).replace(/\/$/, '');
-        if (slug.length > 0 && slug.indexOf('/') === -1 && slug.indexOf('.') === -1) {
-            request.uri = '/entries/' + slug + '/index.md';
-            return request;
-        }
+    // Every page has a Markdown twin at <path>index.md, so the rule is blanket
+    // rather than a list of prefixes. A list kept by hand in this file would
+    // drift from the routes, and a rewrite pointing at a twin that does not
+    // exist would 404 a URL that has perfectly good HTML — worse than not
+    // negotiating at all. `tests/integration/build.test.mjs` asserts the
+    // invariant this depends on: every HTML route in dist/ has a sibling .md.
+    //
+    // A URI that already names a file is never rewritten: it is an asset, not
+    // a page, and has no twin.
+    var isPage = uri.indexOf('.') === -1 || uri.endsWith('/');
+
+    if (isPage && accept.indexOf('text/markdown') !== -1) {
+        request.uri = uri.endsWith('/') ? uri + 'index.md' : uri + '/index.md';
+        return request;
     }
 
     // Clean URLs: map a directory-style path to the index document.

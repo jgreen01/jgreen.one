@@ -4,11 +4,17 @@ import { serializeJsonLd } from '../utils/structuredData';
 
 export type Props = SeoProps;
 
-const { title, description, url, image, type } = seoMeta(Astro.props);
+const { title, description, url, image, type, markdownUrl } = seoMeta(Astro.props);
 const { jsonLd } = Astro.props;
 ---
 <title>{title}</title>
 <link rel="canonical" href={url} />
+{/*
+  The Markdown twin. The llms.txt specification recommends advertising it this
+  way as well as by the URL convention, and `alternate` is the registered IANA
+  relation for an alternate representation of the same resource.
+*/}
+{markdownUrl && <link rel="alternate" type="text/markdown" href={markdownUrl} />}
 <meta name="description" content={description} />
 
 <meta property="og:type" content={type} />
