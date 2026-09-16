@@ -2,6 +2,7 @@
 import { getCollection, render } from "astro:content";
 import ArticleLayout from "../../layouts/ArticleLayout.astro";
 import { filterDrafts } from "../../utils/entries";
+import { entryJsonLd } from "../../utils/structuredData";
 
 export async function getStaticPaths() {
   // Astro 6: entries expose `id`, not `slug`. The route param keeps the name
@@ -16,8 +17,11 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 // Astro 6: `entry.render()` was replaced by the standalone `render(entry)`.
 const { Content } = await render(entry);
+// Built here rather than in the layout: the canonical URL needs the entry id,
+// which `entry.data` alone does not carry.
+const jsonLd = entryJsonLd(entry);
 ---
 
-<ArticleLayout frontmatter={entry.data}>
+<ArticleLayout frontmatter={entry.data} jsonLd={jsonLd}>
   <Content />
 </ArticleLayout>

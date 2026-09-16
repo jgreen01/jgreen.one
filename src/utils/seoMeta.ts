@@ -11,6 +11,11 @@ export interface SeoProps {
   type?: "website" | "article";
   /** Base URL; override for staging or preview builds. */
   site?: string;
+  /**
+   * A schema.org node to embed as JSON-LD. Passed straight through rather than
+   * resolved here: it describes the page's meaning, not its presentation.
+   */
+  jsonLd?: unknown;
 }
 
 export interface SeoMeta {

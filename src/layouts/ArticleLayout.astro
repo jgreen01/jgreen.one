@@ -2,7 +2,7 @@
 import Base from './Base.astro';
 import { heroImagePath } from '../utils/heroImagePath';
 import { formatDate } from '../utils/formatDate';
-const { frontmatter } = Astro.props;
+const { frontmatter, jsonLd } = Astro.props;
 // One resolved path for both the OG tag and the visible <img>.
 const heroImage = heroImagePath(frontmatter.heroImage);
 ---
@@ -10,6 +10,7 @@ const heroImage = heroImagePath(frontmatter.heroImage);
   title={'Jon Green :: ' + frontmatter.title}
   description={frontmatter.description}
   image={heroImage}
+  jsonLd={jsonLd}
   type="article"
 >
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
