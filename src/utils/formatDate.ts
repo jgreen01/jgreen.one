@@ -57,3 +57,21 @@ export function isoDate(value: DateInput): string {
   const date = toDate(value);
   return date ? date.toISOString().slice(0, 10) : "";
 }
+
+/**
+ * `2026-07-30T00:00:00.000Z` — the full timestamp for structured data.
+ *
+ * Distinct from `isoDate` because a date-only value leaves the timezone
+ * unstated, and Google's structured data documentation says it "will default
+ * to Googlebot's timezone if timezone information isn't provided". That hands
+ * the choice of calendar day to the crawler — the same one-day drift this
+ * module exists to prevent, except invisible, because nothing on the page
+ * renders it.
+ *
+ * Returns an empty string for junk so an absent date omits the property rather
+ * than writing "Invalid Date" into the markup.
+ */
+export function isoDateTime(value: DateInput): string {
+  const date = toDate(value);
+  return date ? date.toISOString() : "";
+}

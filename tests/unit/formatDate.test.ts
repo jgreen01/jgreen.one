@@ -4,7 +4,7 @@
 process.env.TZ = "America/Los_Angeles";
 
 import { describe, it, expect } from "vitest";
-import { formatDate, formatLongDate } from "../../src/utils/formatDate";
+import { formatDate, formatLongDate, isoDate, isoDateTime } from "../../src/utils/formatDate";
 
 describe("formatDate", () => {
   // Frontmatter dates are bare `YYYY-MM-DD`, which Zod coerces to midnight UTC.
@@ -50,5 +50,48 @@ describe("formatLongDate", () => {
 
   it("returns an empty string for an unparseable value", () => {
     expect(formatLongDate("nonsense")).toBe("");
+  });
+});
+
+describe("isoDateTime", () => {
+  // Google's structured data documentation: "Google will default to
+  // Googlebot's timezone if timezone information isn't provided." A date-only
+  // value therefore hands the choice to the crawler, which is how a
+  // publication date silently moves by a day.
+  it("carries an explicit UTC offset", () => {
+    expect(isoDateTime("2026-07-30")).toBe("2026-07-30T00:00:00.000Z");
+  });
+
+  it("keeps the calendar day written in the file, in a negative-offset zone", () => {
+    expect(isoDateTime("2026-07-30")).toMatch(/^2026-07-30T/);
+  });
+
+  it("preserves a time that was supplied", () => {
+    expect(isoDateTime("2026-07-30T13:45:00Z")).toBe("2026-07-30T13:45:00.000Z");
+  });
+
+  it("accepts a Date", () => {
+    expect(isoDateTime(new Date("2026-01-02T03:04:05Z"))).toBe("2026-01-02T03:04:05.000Z");
+  });
+
+  // A missing date must leave the property out rather than emit "Invalid Date"
+  // into structured data.
+  it.each(["", "not a date", "2026-13-45"])("returns an empty string for %j", (value) => {
+    expect(isoDateTime(value)).toBe("");
+  });
+
+  it("never returns a value without a timezone", () => {
+    const out = isoDateTime("2026-07-30");
+    expect(out.endsWith("Z")).toBe(true);
+  });
+});
+
+describe("isoDate, alongside isoDateTime", () => {
+  it("still renders the bare calendar day for a <time datetime> attribute", () => {
+    expect(isoDate("2026-07-30")).toBe("2026-07-30");
+  });
+
+  it("agrees with isoDateTime on the day", () => {
+    expect(isoDateTime("2026-07-30").slice(0, 10)).toBe(isoDate("2026-07-30"));
   });
 });
