@@ -112,8 +112,29 @@ function setupWorkdir(
   mkdirSync(join(workdir, "bin"), { recursive: true });
   mkdirSync(join(workdir, "dist"), { recursive: true });
   writeFileSync(join(workdir, "dist", "index.html"), "<!doctype html>", "utf-8");
+  // Two Markdown twins of clearly different lengths, so a test can tell a
+  // per-document token count from a single number stamped on everything.
+  writeFileSync(join(workdir, "dist", "index.md"), "# Home\n\nShort.\n", "utf-8");
+  mkdirSync(join(workdir, "dist", "blog"), { recursive: true });
+  writeFileSync(
+    join(workdir, "dist", "blog", "index.md"),
+    `# Blog\n\n${"a much longer document ".repeat(80)}\n`,
+    "utf-8",
+  );
 
   copyFileSync(REAL_SCRIPT, join(workdir, "scripts", "deploy.sh"));
+  // The token counter runs for real against the fixture dist/, rather than
+  // being stubbed: the point of the assertions below is that each document
+  // gets its own count, which a stub could not demonstrate.
+  mkdirSync(join(workdir, "scripts", "lib"), { recursive: true });
+  copyFileSync(
+    resolve(__dirname, "../../scripts/markdown-tokens.mjs"),
+    join(workdir, "scripts", "markdown-tokens.mjs"),
+  );
+  copyFileSync(
+    resolve(__dirname, "../../scripts/lib/tokens.mjs"),
+    join(workdir, "scripts", "lib", "tokens.mjs"),
+  );
 
   const log = join(workdir, "invocations.log");
   // Arguments are joined with a unit separator rather than a space: an
@@ -242,11 +263,13 @@ describe("scripts/deploy.sh", () => {
           (i) => i.args[0] === "s3" && i.args[1] === "cp" && i.args.includes("REPLACE"),
         );
 
+      // .txt and .vtt are stamped in one recursive pass each. Markdown is
+      // stamped one object at a time, because each also carries its own token
+      // count, so it is matched by key rather than by an --include pattern.
       it.each([
         [".txt", "text/plain; charset=utf-8"],
-        [".md", "text/markdown; charset=utf-8"],
         [".vtt", "text/vtt; charset=utf-8"],
-      ])("declares the charset for %s", (extension, contentType) => {
+      ])("declares the charset for %s in one pass", (extension, contentType) => {
         runDeploy();
         const call = restamps().find((i) => i.args.includes(`*${extension}`));
         expect(call, `nothing restamps *${extension}`).toBeDefined();
@@ -255,11 +278,32 @@ describe("scripts/deploy.sh", () => {
         expect(call!.args[typeIndex + 1]).toBe(contentType);
       });
 
+      it("declares the charset on every markdown object it stamps", () => {
+        runDeploy();
+        const md = restamps().filter((i) => i.args.some((a) => a.endsWith(".md")));
+        expect(md.length, "no markdown object was stamped").toBeGreaterThan(0);
+        for (const call of md) {
+          expect(call.args[call.args.indexOf("--content-type") + 1]).toBe(
+            "text/markdown; charset=utf-8",
+          );
+        }
+      });
+
       it("restamps in place inside the deployed bucket", () => {
         runDeploy();
         for (const call of restamps()) {
-          expect(call.args).toContain("s3://jgreen-one-site/");
-          expect(call.args).toContain("--recursive");
+          const target = call.args.find((a) => a.startsWith("s3://"));
+          expect(target, `no bucket URI in ${call.args.join(" ")}`).toMatch(
+            /^s3:\/\/jgreen-one-site\//,
+          );
+        }
+      });
+
+      it("uses a recursive pass for the pattern-matched formats only", () => {
+        runDeploy();
+        for (const call of restamps()) {
+          const perFile = call.args.some((a) => a.endsWith(".md"));
+          expect(call.args.includes("--recursive")).toBe(!perFile);
         }
       });
 
@@ -281,6 +325,38 @@ describe("scripts/deploy.sh", () => {
         );
         expect(sync).toBeGreaterThanOrEqual(0);
         expect(firstRestamp).toBeGreaterThan(sync);
+      });
+
+      // The count differs per document, so it cannot come from a CloudFront
+      // response headers policy, which sets fixed values. It is written onto
+      // each object here and renamed to x-markdown-tokens at the edge.
+      it("writes a token count onto each Markdown object", () => {
+        runDeploy();
+        const stamped = callsTo("aws").filter(
+          (i) => i.args.includes("--metadata") && i.args.includes("REPLACE"),
+        );
+        expect(stamped.length, "nothing carried a --metadata flag").toBeGreaterThan(0);
+        for (const call of stamped) {
+          const index = call.args.indexOf("--metadata");
+          expect(call.args[index + 1]).toMatch(/^markdown-tokens=\d+$/);
+        }
+      });
+
+      it("counts each document separately rather than stamping one number on all", () => {
+        runDeploy();
+        const counts = callsTo("aws")
+          .filter((i) => i.args.includes("--metadata"))
+          .map((i) => i.args[i.args.indexOf("--metadata") + 1]);
+        // Two fixtures of different lengths must not receive the same count.
+        expect(new Set(counts).size).toBeGreaterThan(1);
+      });
+
+      it("still declares the charset on the markdown it stamps", () => {
+        runDeploy();
+        for (const call of callsTo("aws").filter((i) => i.args.includes("--metadata"))) {
+          const index = call.args.indexOf("--content-type");
+          expect(call.args[index + 1]).toBe("text/markdown; charset=utf-8");
+        }
       });
 
       it("restamps before the cache is invalidated", () => {

@@ -67,13 +67,27 @@ aws s3 sync ./dist "s3://${BUCKET}/" --delete
 # --delete is deliberately absent here: on a filtered pass every excluded file
 # looks absent from the source, and the bucket would be emptied.
 echo "Declaring UTF-8 on text formats..."
-for spec in "txt:text/plain" "md:text/markdown" "vtt:text/vtt"; do
+for spec in "txt:text/plain" "vtt:text/vtt"; do
   ext="${spec%%:*}"
   type="${spec#*:}"
   aws s3 cp "s3://${BUCKET}/" "s3://${BUCKET}/" \
     --recursive \
     --exclude "*" --include "*.${ext}" \
     --content-type "${type}; charset=utf-8" \
+    --metadata-directive REPLACE
+done
+
+# Markdown is stamped one object at a time, because each also carries its own
+# token count. An agent can then size a document from a HEAD request instead of
+# downloading it to find out. The count cannot come from a response headers
+# policy, which sets one fixed value for every response, nor from a function at
+# the edge, which cannot see the body.
+echo "Stamping Markdown with its charset and token count..."
+node "$(dirname "${BASH_SOURCE[0]}")/markdown-tokens.mjs" | while IFS=$'\t' read -r key tokens; do
+  [ -n "$key" ] || continue
+  aws s3 cp "s3://${BUCKET}/${key}" "s3://${BUCKET}/${key}" \
+    --content-type "text/markdown; charset=utf-8" \
+    --metadata "markdown-tokens=${tokens}" \
     --metadata-directive REPLACE
 done
 
