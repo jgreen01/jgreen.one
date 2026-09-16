@@ -16,6 +16,12 @@ export interface SeoProps {
    * resolved here: it describes the page's meaning, not its presentation.
    */
   jsonLd?: unknown;
+  /**
+   * Whether this page has a Markdown twin to advertise. Every page does except
+   * the error page, which is served by CloudFront's error response rather than
+   * reached by a rewrite, so it must not claim one.
+   */
+  markdown?: boolean;
 }
 
 export interface SeoMeta {
@@ -25,6 +31,8 @@ export interface SeoMeta {
   image: string;
   type: "website" | "article";
   site: string;
+  /** Absolute URL of the Markdown twin, or undefined when there is none. */
+  markdownUrl?: string;
 }
 
 export const SEO_DEFAULTS = {
@@ -58,13 +66,21 @@ function joinUrl(base: string, path: string): string {
  */
 export function seoMeta(props: SeoProps = {}): SeoMeta {
   const site = props.site ?? SEO_DEFAULTS.site;
+  const url = new URL(props.url ?? "/", site).toString();
 
   return {
     site,
     title: props.title ?? SEO_DEFAULTS.title,
     description: props.description ?? SEO_DEFAULTS.description,
-    url: new URL(props.url ?? "/", site).toString(),
+    url,
     image: joinUrl(site, props.image ?? SEO_DEFAULTS.image),
     type: props.type ?? SEO_DEFAULTS.type,
+    // Derived from the canonical rather than passed in, so the advertised twin
+    // is always the twin of this page. The edge rewrite uses the same rule,
+    // and a build assertion proves every page has one.
+    markdownUrl:
+      props.markdown === false
+        ? undefined
+        : `${url.endsWith("/") ? url : `${url}/`}index.md`,
   };
 }

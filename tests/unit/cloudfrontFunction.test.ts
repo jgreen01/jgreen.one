@@ -122,22 +122,53 @@ describe("content negotiation on Accept", () => {
     );
   });
 
-  describe("never negotiates outside /entries/", () => {
-    it.each(["/", "/about", "/blog/", "/tags/astro/", "/projects/"])(
-      "%s stays HTML even when markdown is requested",
+  // BEHAVIOUR CHANGE: negotiation used to be limited to /entries/<slug>,
+  // because only entries had a Markdown twin. Every page has one now, so the
+  // rule is blanket. That is deliberate: a prefix list in this file would have
+  // to be kept in step with the routes by hand, in ES5.1, in the one place
+  // where a mistake returns 503 for every request on the site.
+  describe("every page negotiates, because every page has a twin", () => {
+    it.each([
+      ["/", "/index.md"],
+      ["/about/", "/about/index.md"],
+      ["/about", "/about/index.md"],
+      ["/blog/", "/blog/index.md"],
+      ["/projects/", "/projects/index.md"],
+      ["/contact/", "/contact/index.md"],
+      ["/entries/", "/entries/index.md"],
+      ["/tags/", "/tags/index.md"],
+      ["/tags/astro/", "/tags/astro/index.md"],
+      ["/entries/how-this-site-was-made/", "/entries/how-this-site-was-made/index.md"],
+      ["/entries/x/transcript/", "/entries/x/transcript/index.md"],
+    ])("%s asking for markdown becomes %s", (uri, expected) => {
+      expect(requestFor(uri, MD_ACCEPT).uri).toBe(expected);
+    });
+
+    it.each(["/", "/about/", "/blog/", "/tags/astro/"])(
+      "%s still serves HTML to a browser",
       (uri) => {
-        expect(requestFor(uri, MD_ACCEPT).uri).toMatch(/index\.html$/);
+        expect(requestFor(uri, HTML_ACCEPT).uri).toMatch(/index\.html$/);
       },
     );
   });
 
-  it("does not rewrite a request that already names a file", () => {
-    expect(requestFor("/media/hero.png", MD_ACCEPT).uri).toBe("/media/hero.png");
-  });
-
-  it("does not rewrite the entries index itself", () => {
-    // /entries/ is a listing page; there is no markdown copy of it.
-    expect(requestFor("/entries/", MD_ACCEPT).uri).toBe("/entries/index.html");
+  // The rewrite must never point at a twin that does not exist: the origin
+  // would 404, and since 403 and 404 are remapped to the error page, a URL
+  // with perfectly good HTML would answer 404 to any agent asking for
+  // Markdown. Anything already naming a file is left alone.
+  describe("never rewrites something that is not a page", () => {
+    it.each([
+      "/media/hero.png",
+      "/llms.txt",
+      "/robots.txt",
+      "/sitemap-index.xml",
+      "/entries/x/index.md",
+      "/entries/x/captions.vtt",
+      "/favicon.ico",
+      "/_astro/Base.abc123.css",
+    ])("%s is passed through untouched", (uri) => {
+      expect(requestFor(uri, MD_ACCEPT).uri).toBe(uri);
+    });
   });
 
   it("matches the media type case-insensitively", () => {

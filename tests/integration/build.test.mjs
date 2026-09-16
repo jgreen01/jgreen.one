@@ -793,6 +793,142 @@ editedNote: "Fixture note."
  * backwards. These assertions lock the policy so an edit cannot quietly
  * reverse it, and so the explicit per-agent groups stay.
  */
+// The edge function rewrites <path> to <path>index.md for any page when the
+// client asks for Markdown. That blanket rule is only safe while every page
+// actually has a twin: a rewrite pointing at a file that is not there would
+// 404 a URL with perfectly good HTML, and only for agents, so nobody browsing
+// would ever see it. This is the invariant that keeps it true.
+describe("every page has a Markdown twin", () => {
+  let result;
+
+  before(() => {
+    result = build();
+  });
+
+  // The error page is deliberately excluded: a twin has no reader, and it is
+  // served by CloudFront's error response rather than reached by a rewrite.
+  const EXEMPT = new Set(["404.html"]);
+
+  const twinFor = (page) =>
+    page.endsWith("index.html") ? `${page.slice(0, -"index.html".length)}index.md` : null;
+
+  test("the build succeeded", () => {
+    assert.equal(result.status, 0, result.stderr);
+  });
+
+  test("no HTML route is missing its twin", () => {
+    const pages = htmlFiles()
+      .map((file) => relative(DIST, file).split(sep).join("/"))
+      .filter((page) => !EXEMPT.has(page));
+
+    assert.ok(pages.length > 10, `expected many pages, found ${pages.length}`);
+
+    const missing = pages.filter((page) => {
+      const twin = twinFor(page);
+      return !twin || !exists(twin);
+    });
+
+    assert.deepEqual(missing, [], `pages with no Markdown twin: ${missing.join(", ")}`);
+  });
+
+  test("every twin is non-empty and is Markdown, not HTML", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      const twin = twinFor(page);
+      const body = read(twin).trim();
+      assert.ok(body.length > 0, `${twin} is empty`);
+      assert.ok(!/^<!doctype html/i.test(body), `${twin} is HTML, not Markdown`);
+      assert.match(body, /^# \S/m, `${twin} has no heading`);
+    }
+  });
+
+  test("every twin names its own source URL, so it can be cited", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      const twin = twinFor(page);
+      assert.match(read(twin), /https:\/\/jgreen\.one\//, `${twin} carries no absolute URL`);
+    }
+  });
+
+  test("every twin carries the contact footer", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      assert.match(read(twinFor(page)), /hello@jgreen\.one/, `${twinFor(page)} has no contact`);
+    }
+  });
+
+  test("no twin leaks a literal undefined", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      assert.ok(!read(twinFor(page)).includes("undefined"), `'undefined' in ${twinFor(page)}`);
+    }
+  });
+
+  test("every page advertises its twin with rel=alternate", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      const html = readFileSync(file, "utf-8");
+      const link = html.match(
+        /<link rel="alternate" type="text\/markdown" href="([^"]+)"/,
+      );
+
+      if (EXEMPT.has(page)) {
+        assert.equal(link, null, `${page} has no twin and must not advertise one`);
+        continue;
+      }
+
+      assert.ok(link, `${page} does not advertise its Markdown twin`);
+      assert.match(link[1], /^https:\/\//, `${page} advertises a relative twin`);
+    }
+  });
+
+  // Advertising a twin that is not there is worse than advertising none: an
+  // agent follows the link and gets a 404 from a page that renders fine.
+  test("every advertised twin resolves to a file that was built", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      const href = readFileSync(file, "utf-8").match(
+        /<link rel="alternate" type="text\/markdown" href="([^"]+)"/,
+      )[1];
+      const target = href.replace("https://jgreen.one/", "");
+      assert.ok(exists(target), `${page} advertises ${href}, which was not built`);
+    }
+  });
+
+  // The link and the edge rewrite must agree, or an agent following the link
+  // and an agent sending Accept get different URLs.
+  test("the advertised twin is the one the edge rewrite produces", () => {
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      if (EXEMPT.has(page)) continue;
+      const href = readFileSync(file, "utf-8").match(
+        /<link rel="alternate" type="text\/markdown" href="([^"]+)"/,
+      )[1];
+      const fromRewrite = `https://jgreen.one/${twinFor(page)}`;
+      assert.equal(href, fromRewrite, `${page}: link and rewrite disagree`);
+    }
+  });
+
+  // The listing twin is generated from the same query as the HTML, so a page
+  // showing an entry the twin omits would mean the two had drifted.
+  test("a listing twin names the same entries as its HTML", () => {
+    for (const page of ["blog/index.html", "projects/index.html", "entries/index.html"]) {
+      const html = read(page);
+      const twin = read(`${page.slice(0, -"index.html".length)}index.md`);
+      const slugs = [...new Set([...html.matchAll(/href="\/entries\/([a-z0-9-]+)"/g)].map((m) => m[1]))];
+      assert.ok(slugs.length > 0, `no entries linked on ${page}`);
+      for (const slug of slugs) {
+        assert.ok(twin.includes(slug), `${slug} is on ${page} but not in its twin`);
+      }
+    }
+  });
+});
+
 describe("robots.txt", () => {
   // Lazy: a describe body executes at collection time, before the build that
   // produces dist/, so reading here would assert against stale output.
@@ -820,6 +956,120 @@ describe("robots.txt", () => {
       const group = new RegExp(`^User-agent:\\s*${agent}\\s*\\nAllow:\\s*/\\s*$`, "m");
       assert.match(robots(), group, `${agent} has no explicit Allow group`);
     }
+  });
+
+  // robots.txt says who may fetch. Content-Usage says what they may do with
+  // what they fetched. The directive is scoped to the group it sits in, so
+  // stating it once at the top of a file with fourteen groups would cover only
+  // the first — which is the easy thing to get wrong here.
+  describe("AI usage preferences", () => {
+    // A blank line ends a group. Parsing without that rule would credit a
+    // group with a directive written below the blank line, where it is
+    // orphaned and means nothing — which is exactly the mistake this caught.
+    const groups = () => {
+      const found = [];
+      let current = null;
+      for (const line of robots().split(/\r?\n/)) {
+        if (/^\s*$/.test(line)) {
+          current = null;
+          continue;
+        }
+        if (/^\s*#/.test(line)) continue;
+
+        const agent = line.match(/^\s*user-agent:\s*(\S.*?)\s*$/i);
+        if (agent) {
+          if (!current || current.directives.length > 0) {
+            current = { agents: [agent[1]], directives: [] };
+            found.push(current);
+          } else {
+            current.agents.push(agent[1]);
+          }
+          continue;
+        }
+
+        const directive = line.match(/^\s*([a-z-]+)\s*:\s*(\S.*?)\s*$/i);
+        if (!directive) continue;
+        if (/^sitemap$/i.test(directive[1])) continue;
+        assert.ok(
+          current,
+          `"${line.trim()}" sits outside any group — a blank line above it ended the group`,
+        );
+        current.directives.push({ name: directive[1].toLowerCase(), value: directive[2] });
+      }
+      return found;
+    };
+
+    test("every group states its usage preferences", () => {
+      const all = groups();
+      assert.ok(all.length > 1, "expected several user-agent groups");
+      for (const group of all) {
+        const usage = group.directives.filter((d) => d.name === "content-usage");
+        assert.ok(
+          usage.length > 0,
+          `no Content-Usage in the group for ${group.agents.join(", ")}`,
+        );
+      }
+    });
+
+    test("the vocabulary is the one the drafts define", () => {
+      // draft-ietf-aipref-vocab: three categories, values y or n. Not
+      // Cloudflare's ai-train/ai-input with yes/no, which is a different
+      // directive resting on an expired draft.
+      for (const group of groups()) {
+        for (const directive of group.directives.filter((d) => d.name === "content-usage")) {
+          for (const pair of directive.value.split(",")) {
+            assert.match(
+              pair.trim(),
+              /^(train-ai|ai-use|search)=(y|n)$/,
+              `unrecognised preference "${pair.trim()}" for ${group.agents.join(", ")}`,
+            );
+          }
+        }
+      }
+    });
+
+    test("all three categories are stated, since an omitted one means unknown", () => {
+      for (const group of groups()) {
+        const stated = group.directives
+          .filter((d) => d.name === "content-usage")
+          .flatMap((d) => d.value.split(",").map((p) => p.trim().split("=")[0]));
+        for (const category of ["train-ai", "ai-use", "search"]) {
+          assert.ok(
+            stated.includes(category),
+            `${category} unstated for ${group.agents.join(", ")}`,
+          );
+        }
+      }
+    });
+
+    test("every preference is permissive, matching the prose in the file", () => {
+      for (const group of groups()) {
+        for (const directive of group.directives.filter((d) => d.name === "content-usage")) {
+          assert.ok(
+            !/=n\b/.test(directive.value),
+            `a preference is withheld for ${group.agents.join(", ")}: ${directive.value}`,
+          );
+        }
+      }
+    });
+
+    // The Cloudflare spelling rests on an expired individual draft that never
+    // defined any syntax. Asserting its absence records the choice.
+    test("does not use the vendor Content-Signal spelling", () => {
+      assert.ok(!/^\s*content-signal\s*:/im.test(robots()));
+    });
+
+    test("an unrecognised directive does not disturb exclusion parsing", () => {
+      const parsed = robotsParser("https://jgreen.one/robots.txt", robots());
+      for (const agent of ["GPTBot", "ClaudeBot", "Google-Extended", "Googlebot", "SomeOtherBot"]) {
+        assert.notEqual(
+          parsed.isAllowed("https://jgreen.one/entries/this-site/", agent),
+          false,
+          `${agent} became disallowed`,
+        );
+      }
+      assert.equal(parsed.getSitemaps().length, 1, "the sitemap was lost");
+    });
   });
 
   test("points at the sitemap", () => {

@@ -1,12 +1,13 @@
 ---
 import Base from './Base.astro';
-const { title, description, image, jsonLd } = Astro.props;
+const { title, description, image, jsonLd, markdown } = Astro.props;
 ---
 <Base
   title={title}
   description={description}
   image={image}
   jsonLd={jsonLd}
+  markdown={markdown}
   type="website"
 >
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full max-w-2xl">

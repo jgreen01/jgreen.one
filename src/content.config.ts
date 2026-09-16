@@ -2,6 +2,7 @@ import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { entrySchema } from "./content/schema";
 import { transcriptSchema } from "./content/transcriptSchema";
+import { pageSchema } from "./content/pageSchema";
 
 /**
  * entries: single feed for both projects & blog posts.
@@ -30,4 +31,16 @@ const transcripts = defineCollection({
   schema: transcriptSchema,
 });
 
-export const collections = { entries, transcripts };
+/**
+ * pages: standing prose that is not an entry, such as the about page.
+ *
+ * Kept as content rather than markup inside a `.astro` file so the HTML and
+ * the Markdown twin render from the same source. Prose written as HTML can
+ * only have a twin by being copied, and a copy drifts.
+ */
+const pages = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/pages" }),
+  schema: pageSchema,
+});
+
+export const collections = { entries, transcripts, pages };

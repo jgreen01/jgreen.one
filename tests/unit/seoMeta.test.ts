@@ -129,3 +129,36 @@ describe("seoMeta", () => {
     });
   });
 });
+
+describe("the Markdown twin link", () => {
+  // The llms.txt specification recommends advertising a Markdown version three
+  // ways: a URL convention, a rel="alternate" link element, and a Link header.
+  // The convention has always held here; this is the second.
+  it("derives the twin from the canonical URL", () => {
+    expect(seoMeta({ url: "/entries/this-site/" }).markdownUrl).toBe(
+      "https://jgreen.one/entries/this-site/index.md",
+    );
+  });
+
+  it("handles a path with no trailing slash", () => {
+    expect(seoMeta({ url: "/about" }).markdownUrl).toBe("https://jgreen.one/about/index.md");
+  });
+
+  it("handles the site root", () => {
+    expect(seoMeta({ url: "/" }).markdownUrl).toBe("https://jgreen.one/index.md");
+  });
+
+  it("is absolute, like every other URL here", () => {
+    expect(seoMeta({ url: "/blog/" }).markdownUrl).toMatch(/^https:\/\//);
+  });
+
+  // The error page has no twin — it is served by CloudFront's error response
+  // rather than reached by a rewrite — so it must not advertise one.
+  it("is absent when a page opts out", () => {
+    expect(seoMeta({ url: "/404/", markdown: false }).markdownUrl).toBeUndefined();
+  });
+
+  it("is present by default", () => {
+    expect(seoMeta({ url: "/blog/" }).markdownUrl).toBeTruthy();
+  });
+});
