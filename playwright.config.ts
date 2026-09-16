@@ -1,7 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4321;
-const baseURL = `http://localhost:${PORT}`;
+
+/**
+ * Where the suite points.
+ *
+ * Defaults to a locally built preview. Set `E2E_BASE_URL` to run the same
+ * assertions against a deployed site — the point of which is that a local
+ * build cannot catch what only the CDN does: status codes, redirects,
+ * response headers and the edge function.
+ */
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
+
+/** A remote target is already serving; building and starting one would be wrong. */
+const isRemote = !/^https?:\/\/(localhost|127\.0\.0\.1)/.test(baseURL);
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -22,8 +34,12 @@ export default defineConfig({
   // away, which Playwright treats as the server having "exited early". Global
   // setup builds the site, starts the daemon and waits for it to answer;
   // teardown stops it. See tests/e2e/global-setup.ts.
-  globalSetup: "./tests/e2e/global-setup.ts",
-  globalTeardown: "./tests/e2e/global-teardown.ts",
+  ...(isRemote
+    ? {}
+    : {
+        globalSetup: "./tests/e2e/global-setup.ts",
+        globalTeardown: "./tests/e2e/global-teardown.ts",
+      }),
 
   projects: [
     {
