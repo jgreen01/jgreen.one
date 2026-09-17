@@ -13,14 +13,26 @@
 # A blank line ends a group, so the directive sits directly under the Allow it
 # belongs to rather than being written once at the top.
 #
-# Cloudflare's Content-Signal spelling is deliberately absent: it is a vendor
-# convention resting on an expired individual draft that never defined a
-# syntax, and following it only to satisfy a third-party readiness score is not
-# a good enough reason.
+# The same permissions are stated twice, in two vocabularies:
+#
+#   Content-Usage   the IETF AIPREF rule, standards track, not yet read by
+#                   anything in the wild
+#   Content-Signal  Cloudflare's spelling, which their network and the
+#                   readiness scanners do read today
+#
+# They map one to one — train-ai/ai-train, ai-use/ai-input, search/search — and
+# both treat an omitted category as neither granted nor refused. Separate
+# directive names, and RFC 9309 requires a parser to ignore records it does not
+# recognise, so the two coexist without interfering.
+#
+# Stating a thing twice is only safe while both copies agree, so a build test
+# asserts they do, per group. If one vocabulary changes and the other does not,
+# that test fails rather than the file quietly saying two different things.
 
 User-agent: *
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 # Named explicitly so the permission is unambiguous to anything that looks for
 # a specific token rather than parsing the wildcard group above.
@@ -28,54 +40,67 @@ Content-Usage: train-ai=y, ai-use=y, search=y
 User-agent: Google-Extended
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: GoogleOther
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: GPTBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: OAI-SearchBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: ChatGPT-User
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: ClaudeBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: Claude-SearchBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: Claude-User
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: anthropic-ai
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: PerplexityBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: Perplexity-User
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: Applebot-Extended
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: CCBot
 Allow: /
 Content-Usage: train-ai=y, ai-use=y, search=y
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 Sitemap: https://jgreen.one/sitemap-index.xml
 
