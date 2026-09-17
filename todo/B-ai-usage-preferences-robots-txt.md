@@ -96,9 +96,27 @@ syntax. The `Content-Signal:` line is Cloudflare's own invention.
    directives they do not recognise, so they can coexist. Costs two lines and
    some explaining.
 
-Recommendation: **`Content-Usage`**, with `Content-Signal` added only if
-matching the scanner is worth it. Following an expired vendor draft to satisfy
-a third-party score is the same trap as the API-discovery checks in task D.
+**Chosen: both.** They are separate directive names with a clean one-to-one
+mapping, and RFC 9309 requires a parser to ignore records it does not
+recognise, so they coexist without interfering. `Content-Usage` is the
+standards-track rule that nothing reads yet; `Content-Signal` is the spelling
+Cloudflare's network and the readiness scanners read today. Stating both costs
+one line per group and reaches both audiences.
+
+The mapping, which is exact:
+
+| `Content-Usage` | `Content-Signal` | meaning |
+|---|---|---|
+| `train-ai=y` | `ai-train=yes` | training or fine-tuning a model |
+| `ai-use=y` | `ai-input=yes` | RAG, grounding, real-time model input |
+| `search=y` | `search=yes` | indexing and linking back |
+
+Both also treat an omitted category the same way: neither granted nor refused.
+
+The risk of saying a thing twice is that the copies drift and the file quietly
+states two different positions. A build test asserts they agree, per group, via
+that mapping — verified to fail with a clear message when one is changed and
+the other is not.
 
 ## Acceptance Criteria
 
@@ -154,3 +172,19 @@ Control. The scan's other findings are tasks C and D.
   VERIFIED LOCALLY: `robots-parser` reads the file with all seven sampled
   agents allowed and the sitemap intact, so the unrecognised directive does not
   disturb exclusion parsing.
+- 2026-09-16 Reopened and widened to both vocabularies, at Jon's request, to
+  cover whichever is read. Research corrected one thing from the earlier pass:
+  Cloudflare's own documentation summary mentions a fourth `use=` signal taking
+  immediate/reference/full, but the canonical spec at contentsignals.org
+  defines three — `search`, `ai-input`, `ai-train`, all yes/no — which map one
+  to one onto the IETF categories. There was no fourth signal to decide.
+
+  The safeguard that makes stating both defensible is a build test asserting
+  the two say the same thing in every group. Verified it has teeth: flipping a
+  single `ai-train=yes` to `no` fails with the group and both directive names
+  in the message.
+
+  Note for whoever removes one later: Lighthouse already scores the robots.txt
+  audit 0 for "Unknown directive", which is why `scripts/lib/audit.mjs` carries
+  a documented exemption. Adding the second vocabulary does not change that
+  score — it was already 0 — but it does add fourteen more unrecognised lines.
