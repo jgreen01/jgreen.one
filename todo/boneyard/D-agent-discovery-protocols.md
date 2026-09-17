@@ -1,9 +1,58 @@
 # Decide on the agent-discovery protocols
 
 **Priority**: LOW
-**Status**: DECIDED — recorded below; awaiting Jon's confirmation before filing
+**Status**: ABANDONED
 **Created**: 2026-09-15
-**Updated**: 2026-09-15
+**Updated**: 2026-09-16
+
+## Abandoned — 2026-09-16
+
+**Why.** The deliverable was a decision, and the decision was to do none of it.
+Filing the task keeps the reasoning without leaving an open item nobody intends
+to act on.
+
+The eight checks split two ways, and the split is the part worth keeping:
+
+- **Five cannot be made true** — OAuth/OIDC discovery, OAuth Protected
+  Resource, Auth.md, the MCP Server Card and DNS-AID all describe auth or
+  transport infrastructure that does not exist. Publishing them advertises
+  endpoints that return 404, which costs an agent more than no endpoint at all:
+  it follows the link, retries, and concludes something wrong about the site.
+- **Three could be made genuinely true** — a read-only JSON API served as
+  static files is a real API, an ARD catalogue could honestly list `/llms.txt`
+  and the Markdown twins today, and `type: "skill-md"` is a single static
+  Markdown file. These were declined on cost and on fit, not on honesty, and
+  that distinction is the reason this file is worth keeping.
+
+WebMCP could not be assessed at all: its documentation is behind Chrome's
+early-preview signup.
+
+**What would change the decision.**
+
+- The site grows a runtime — an API needing auth, or a running MCP server
+  (task E). That turns the MCP Server Card from a false claim into a true one,
+  and gives DNS-AID something real to point at.
+- ARD gains a registry that actually consumes it. This is the cheapest item to
+  revive: one static file, honest today, listing things that already exist. It
+  is the first to reconsider, and the reason it was declined is weak — doubt
+  about the benefit rather than any real cost.
+- The site's purpose shifts toward teaching technique rather than showing work.
+  That answers Agent Skills, which is a content question rather than a
+  technical one. The candidates are real and already written up in `guides/`:
+  the transcript pipeline with corrections-as-data, the media-manifest
+  three-way reconciliation, the Markdown-twin setup.
+
+**What was built instead.** Nothing here, which was the correct outcome. The
+same audit produced tasks B and C, both shipped: the AI usage preferences in
+robots.txt, and a Markdown twin for every page. Those make true statements
+about things that exist, which is the line this decision draws.
+
+**Worth keeping regardless of this task's fate.** Two corrections recorded
+below that a future reader would otherwise have to rediscover: the scan's
+`cf-ray` headers are the scanner's own infrastructure and not this site's,
+which is on CloudFront and has no Cloudflare anywhere; and the scan's
+"does not support Markdown for Agents" finding was measured against a URL that
+had no twin at the time, not a real absence.
 
 ## Description
 
@@ -230,3 +279,8 @@ rather than filed to the boneyard because filing happens only when Jon asks.
   decision before a technical one; the JSON API is better served by task E if
   that goes ahead. Nothing was implemented, which is the correct outcome for a
   task whose deliverable was a decision.
+- 2026-09-16 Filed to the boneyard as-is. The decision stands and nothing was
+  built. Kept rather than deleted because the useful part is the reasoning: a
+  future scan will report the same 0/8 and the question would otherwise be
+  re-researched from scratch. Revival triggers are recorded at the top of the
+  file.
