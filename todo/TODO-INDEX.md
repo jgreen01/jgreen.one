@@ -11,7 +11,7 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## MEDIUM Priority
 
-- [A add-json-ld-structured-data](A-json-ld-structured-data.md) — IN_PROGRESS: shipped and live; only validation with Google's Rich Results Test remains.
+- [A add-json-ld-structured-data](A-json-ld-structured-data.md) — BLOCKED: shipped, live, and validated clean against schema.org two ways. The last check is Google's Rich Results Test, which needs a signed-in account — two minutes in a browser.
 
 ## LOW Priority
 
