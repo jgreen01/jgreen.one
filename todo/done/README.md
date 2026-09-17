@@ -29,3 +29,5 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
 - [6 image-asset-management](6-image-asset-management.md) — Filed 2026-08-31. `public/media/` git-ignored, S3 durable copy, `media-manifest.json`, `media-check`/`media-push`. Step 13 history purge done 2026-08-31: `.git` 6.6M → 708K.
 - [7 copyright-year-auto](7-copyright-year-auto.md) — Filed 2026-08-30. Footer `© 2025–<year>` via `src/utils/copyright.ts` + inline client bump.
 - [8 package-updates](8-package-updates.md) — Filed 2026-08-30. Astro 5→7 + all deps current; `remark-gfm` removed; `npm audit` 25→5.
+- [B ai-usage-preferences-robots-txt](B-ai-usage-preferences-robots-txt.md) — Filed 2026-09-16. `Content-Usage` and `Content-Signal` in all 14 groups, permissive, with a build test asserting the two vocabularies agree.
+- [C advertise-the-markdown-twin](C-advertise-the-markdown-twin.md) — Filed 2026-09-16. Every page has a Markdown twin, advertised by URL convention, `rel=alternate` and a `Link` header, with a per-document `x-markdown-tokens` count.

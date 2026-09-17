@@ -1,9 +1,9 @@
 # Advertise the Markdown twin to agents
 
 **Priority**: MEDIUM
-**Status**: IN_PROGRESS — built and tested locally, not deployed
+**Status**: DONE
 **Created**: 2026-09-15
-**Updated**: 2026-09-15
+**Updated**: 2026-09-16
 
 ## Description
 
@@ -219,3 +219,8 @@ one.
   every page advertising its twin in HTML, the header adds little. Also not
   done: listing the new page twins in `/llms.txt`, which is worth considering
   separately.
+- 2026-09-16 DONE. Full coverage deployed. Every page serves a twin under
+  `Accept: text/markdown`, advertises it with rel=alternate and a Link
+  header, and carries a per-document x-markdown-tokens count. Verified
+  live across the homepage, listings, tag pages and entries; the same URLs
+  still return HTML to a browser.
