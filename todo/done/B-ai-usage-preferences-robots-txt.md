@@ -1,9 +1,9 @@
 # Declare AI usage preferences in robots.txt
 
 **Priority**: LOW
-**Status**: IN_PROGRESS — implemented and tested locally, not deployed
+**Status**: DONE
 **Created**: 2026-09-15
-**Updated**: 2026-09-15
+**Updated**: 2026-09-16
 
 ## Description
 
@@ -188,3 +188,7 @@ Control. The scan's other findings are tasks C and D.
   audit 0 for "Unknown directive", which is why `scripts/lib/audit.mjs` carries
   a documented exemption. Adding the second vocabulary does not change that
   score — it was already 0 — but it does add fourteen more unrecognised lines.
+- 2026-09-16 DONE. Both vocabularies deployed and verified on the live
+  file: 14 Content-Usage and 14 Content-Signal lines, robots-parser reads
+  it with 15/15 agents allowed and the sitemap intact, and the crawler
+  check passes 150/150 against production.
