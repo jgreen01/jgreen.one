@@ -126,11 +126,28 @@ class TestNoStaleProviderRecords:
         spf = [v for v in txt_values(zone_records, APEX) if v.lower().startswith("v=spf1")]
         assert not any("tuta" in v.lower() for v in spf), spf
 
+    def test_search_console_verification_is_present(self, zone_records):
+        # These TXT records are maintained by hand rather than by Terraform, so
+        # nothing else would notice one being dropped. Losing this token
+        # silently unverifies the Search Console property, and the first
+        # symptom is a report nobody can open rather than an error.
+        tokens = [
+            value
+            for value in txt_values(zone_records, APEX)
+            if value.startswith("google-site-verification=")
+        ]
+        assert len(tokens) == 1, f"expected exactly one Search Console token, found {tokens}"
+        assert len(tokens[0].split("=", 1)[1]) > 20, "verification token looks truncated"
+
     def test_no_orphaned_verification_tokens(self, zone_records):
         # A verification token is only needed while a provider is being set up.
         # Anything still here from a provider no longer in the MX is dead weight
         # and a small information leak about past infrastructure.
-        known_current = ("protonmail-verification",)
+        # Tokens for services actually in use. ProtonMail is the mail provider;
+        # google-site-verification proves ownership of the Search Console
+        # property, which is where the robots.txt report and URL Inspection
+        # live. Remove a token here only when the service behind it goes.
+        known_current = ("protonmail-verification", "google-site-verification")
         stale = [
             value
             for value in txt_values(zone_records, APEX)
