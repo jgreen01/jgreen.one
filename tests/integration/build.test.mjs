@@ -1053,10 +1053,63 @@ describe("robots.txt", () => {
       }
     });
 
-    // The Cloudflare spelling rests on an expired individual draft that never
-    // defined any syntax. Asserting its absence records the choice.
-    test("does not use the vendor Content-Signal spelling", () => {
-      assert.ok(!/^\s*content-signal\s*:/im.test(robots()));
+    // Both vocabularies are stated. Content-Usage is the standards-track rule;
+    // Content-Signal is the spelling Cloudflare's network and the readiness
+    // scanners actually read today. They are separate directive names, and
+    // RFC 9309 requires a parser to ignore records it does not recognise, so
+    // stating both costs a line and reaches both audiences.
+    test("every group also states the Content-Signal spelling", () => {
+      for (const group of groups()) {
+        assert.ok(
+          group.directives.some((d) => d.name === "content-signal"),
+          `no Content-Signal in the group for ${group.agents.join(", ")}`,
+        );
+      }
+    });
+
+    test("Content-Signal uses its own vocabulary, not the IETF one", () => {
+      for (const group of groups()) {
+        for (const directive of group.directives.filter((d) => d.name === "content-signal")) {
+          for (const pair of directive.value.split(",")) {
+            assert.match(
+              pair.trim(),
+              /^(ai-train|ai-input|search)=(yes|no)$/,
+              `unrecognised signal "${pair.trim()}" for ${group.agents.join(", ")}`,
+            );
+          }
+        }
+      }
+    });
+
+    // Saying the same thing twice is only safe while both copies agree. This
+    // is the check that makes stating both defensible rather than a second
+    // thing to forget to update.
+    test("the two vocabularies say the same thing in every group", () => {
+      // Content-Usage category -> the Content-Signal name for the same use.
+      const EQUIVALENT = { "train-ai": "ai-train", "ai-use": "ai-input", search: "search" };
+      const asBool = (value) => value === "y" || value === "yes";
+
+      for (const group of groups()) {
+        const read = (name) =>
+          Object.fromEntries(
+            group.directives
+              .filter((d) => d.name === name)
+              .flatMap((d) => d.value.split(",").map((p) => p.trim().split("=")))
+              .map(([key, value]) => [key, asBool(value)]),
+          );
+
+        const usage = read("content-usage");
+        const signal = read("content-signal");
+
+        for (const [category, equivalent] of Object.entries(EQUIVALENT)) {
+          assert.equal(
+            signal[equivalent],
+            usage[category],
+            `${group.agents.join(", ")}: Content-Usage ${category} and ` +
+              `Content-Signal ${equivalent} disagree`,
+          );
+        }
+      }
     });
 
     test("an unrecognised directive does not disturb exclusion parsing", () => {
