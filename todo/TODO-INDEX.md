@@ -1,4 +1,4 @@
-# TODO Index: 3 open
+# TODO Index: 2 open
 *Last updated: 2026-09-16*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
@@ -16,7 +16,6 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 ## LOW Priority
 
 - [E mcp-server](E-mcp-server.md) — serve the site's content as MCP tools. The one item from the audit that can be made real, and the only one needing a runtime.
-- [D agent-discovery-protocols](D-agent-discovery-protocols.md) — decision: four of the eight can be made genuinely true with static files, five would describe auth or transport that does not exist, one cannot be assessed yet.
 
 ---
 
@@ -28,4 +27,5 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## Boneyard (Abandoned Tasks)
 
+- [D agent-discovery-protocols](boneyard/D-agent-discovery-protocols.md) — Abandoned 2026-09-16. Five of the eight would advertise auth or transport that does not exist; three could be true but were declined on cost and fit. Revive if the site grows a runtime, or for ARD if a registry ever consumes it.
 - [9 github-oidc-ci-role](boneyard/9-github-oidc-ci-role.md) — Abandoned 2026-08-31. A standing GitHub→AWS trust relationship is more surface area than it buys on a solo site where `pytest tests/infra` takes five seconds. See `todo/boneyard/README.md`.

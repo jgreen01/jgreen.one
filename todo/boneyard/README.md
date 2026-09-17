@@ -54,6 +54,12 @@ IDs are permanent. A revived task keeps the number it had.
 
 ## Contents
 
+- [D agent-discovery-protocols](D-agent-discovery-protocols.md) — Abandoned 2026-09-16.
+  Eight API, auth, MCP and skill discovery protocols flagged by a readiness scan. Five
+  describe infrastructure the site does not have, and publishing them would advertise
+  endpoints that 404 — worse for an agent than advertising nothing. Three could be made
+  genuinely true and were declined on cost and fit rather than honesty. Revive if the
+  site grows a runtime (task E), or for ARD alone if a registry ever consumes it.
 - [9 github-oidc-ci-role](9-github-oidc-ci-role.md) — Abandoned 2026-08-31. Would have
   Terraformed a GitHub→AWS OIDC trust so CI could run the infra tests unattended. Not
   worth a standing cross-cloud trust relationship on a solo personal site when
