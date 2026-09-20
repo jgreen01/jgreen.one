@@ -22,7 +22,11 @@ from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
 
 # Resources defined in infra/live/. Overridable so the suite can be pointed at a
 # non-production stack without editing the tests.
-EXPECTED_ACCOUNT_ID = os.environ.get("JGREEN_AWS_ACCOUNT_ID", "<account-id>")
+# Deliberately has no default. An account ID is an identifier we keep out of a
+# public repository, so the guard that refuses to assert against the wrong
+# account is opt-in: export JGREEN_AWS_ACCOUNT_ID to enable it. Without it that
+# one assertion skips and the rest of the suite runs unchanged.
+EXPECTED_ACCOUNT_ID = os.environ.get("JGREEN_AWS_ACCOUNT_ID")
 SITE_DOMAIN = os.environ.get("JGREEN_SITE_DOMAIN", "jgreen.one")
 SITE_BUCKET = os.environ.get("JGREEN_SITE_BUCKET", "jgreen-one-site")
 WAF_NAME = os.environ.get("JGREEN_WAF_NAME", "jgreen-one-waf")

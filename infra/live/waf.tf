@@ -98,7 +98,7 @@ resource "aws_cloudwatch_log_resource_policy" "waf_logs" {
       Action    = ["logs:CreateLogStream", "logs:PutLogEvents"]
       Resource  = "${aws_cloudwatch_log_group.waf_logs.arn}:*"
       Condition = {
-        StringEquals = { "aws:SourceAccount" = "<account-id>" }
+        StringEquals = { "aws:SourceAccount" = data.aws_caller_identity.current.account_id }
       }
     }]
   })

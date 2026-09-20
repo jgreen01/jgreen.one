@@ -20,7 +20,8 @@ Day-to-day, you only need the "Deploy a change" section.
 ## Prerequisites
 
 - Node (CI uses Node 20) and `npm`.
-- AWS CLI authenticated against account **<account-id>** with deploy
+- AWS CLI authenticated against the site's AWS account (confirm with
+  `aws sts get-caller-identity`) with deploy
   permissions (`aws sts get-caller-identity` should succeed).
 - Terraform (only needed for infra changes).
 

@@ -21,6 +21,11 @@ from conftest import (
 
 class TestAccount:
     def test_running_against_the_expected_account(self, account_id):
+        if not EXPECTED_ACCOUNT_ID:
+            pytest.skip(
+                "set JGREEN_AWS_ACCOUNT_ID to assert the suite runs against the "
+                "intended account; the ID is kept out of this public repository"
+            )
         assert account_id == EXPECTED_ACCOUNT_ID, (
             f"Connected to account {account_id}, expected {EXPECTED_ACCOUNT_ID}. "
             "Refusing to assert against the wrong account."

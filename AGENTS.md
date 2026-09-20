@@ -117,7 +117,8 @@ cd infra/live && terraform apply    # apply infra changes
 
 ## Environment & Secrets
 
-- AWS account: <account-id>. The CLI/credentials must be working before any `terraform`/`aws`/`deploy.sh` command.
+- AWS account: not recorded here — run `aws sts get-caller-identity` to confirm
+  which account the CLI is pointed at. The CLI/credentials must be working before any `terraform`/`aws`/`deploy.sh` command.
 - Never commit secrets or write real secret values into Terraform; use placeholders (e.g. the billing-alert email) and let the user fill them in.
 - `*.tfstate`, `.terraform/`, and `.env*` are gitignored — keep it that way.
 - Redact any secret that must appear in notes or output: `sk_live_…` → `sk_live_****last4`.

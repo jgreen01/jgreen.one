@@ -8,6 +8,11 @@ Completed tasks live here permanently once Jon explicitly asks to move them.
   "move the billing alarms task to done" or "file the done tasks." Marking
   a task DONE in the index is not permission to move it here.
 - Files here are read-only history. Never edit or delete them.
+  - **One exception, exercised 2026-09-20:** removing a credential or an
+    account identifier. Leaving one in an archived file would make the repo
+    permanently fail `npm run check:secrets`, so redaction wins over the
+    read-only rule. Redact in place (`<account-id>`), never delete the file,
+    and note it here.
 - The task file stays in `todo/` (marked DONE) until Jon asks to file it.
   That way it remains visible in the index during review.
 

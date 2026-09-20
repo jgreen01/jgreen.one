@@ -62,7 +62,7 @@ behind it:
    a second role, or one more statement on the same role.
 
 Verified 2026-08-30: **no OIDC provider and no GitHub-related IAM role exist yet** in
-account <account-id> (`aws iam list-open-id-connect-providers` returns an empty list).
+the site's AWS account (`aws iam list-open-id-connect-providers` returns an empty list).
 This is greenfield.
 
 ## Why OIDC rather than an access key
@@ -273,6 +273,6 @@ self-hosting).
 - 2026-08-30 Created. Surfaced while planning task order: the `infra` CI job added in
   task 4 is inert without an OIDC role, and task 6's step 0 needs the same thing for
   `media-check --pull`. Confirmed greenfield — `aws iam list-open-id-connect-providers`
-  returns an empty list and no GitHub-related IAM role exists in account <account-id>.
+  returns an empty list and no GitHub-related IAM role exists in the site's AWS account.
   Scoped deliberately to **read-only**, with the permission list derived from the actual
   boto3 calls in `tests/infra/` plus what tasks 5 and 6 will need. Not started.

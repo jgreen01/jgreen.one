@@ -146,7 +146,7 @@ photo-heavy post makes a history rewrite painful.
    imported through `src/assets/` at build time. `/media/` images are served
    unoptimized. Accept that for now; a future `media-push` step could generate webp +
    widths. Out of scope for this task.
-5. Solo maintainer, AWS account already in use (<account-id>), site + state buckets
+5. Solo maintainer, AWS account already in use, site + state buckets
    already private w/ OAC + versioning. No second cloud vendor, no heavy toolchain.
 
 ## Options researched (kept for reference — Option A chosen)
