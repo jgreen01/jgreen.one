@@ -282,6 +282,69 @@ test.describe("tags", () => {
     // `filterByTag` unit tests.
     await expect(page.locator("a[href^='/entries/']").first()).toBeVisible();
   });
+
+  // Tags were <span> for a long time: 22 tag pages existed that nothing linked
+  // to. These cover the journey that was impossible before.
+  test("a card's tag pill opens that tag's page", async ({ page }) => {
+    await gotoClean(page, "/entries/");
+    const pill = page.locator("a[href^='/tags/']").first();
+    await expect(pill).toBeVisible();
+    const label = (await pill.textContent())?.trim().replace(/^#/, "");
+    await pill.click();
+    await expect(page).toHaveURL(new RegExp(`/tags/${encodeURIComponent(label!)}/$`));
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(`Tag: ${label}`);
+  });
+
+  test("an entry page links its own tags", async ({ page }) => {
+    await gotoClean(page, ENTRY_WITH_HERO);
+    const pills = page.locator("a[href^='/tags/']");
+    expect(await pills.count()).toBeGreaterThan(0);
+    await expect(pills.first()).toBeVisible();
+  });
+
+  // The round trip. An article page used to be a dead end; the reader most
+  // wants more on a subject at the moment they finish reading about it.
+  test("a tag on an entry page reaches a listing containing that entry", async ({ page }) => {
+    await page.goto(ENTRY_WITH_HERO);
+    const title = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+    await page.locator("a[href^='/tags/']").first().click();
+    await expect(page).toHaveURL(/\/tags\/[^/]+\/$/);
+    await expect(page.getByRole("link", { name: title! })).toBeVisible();
+  });
+
+  test("a tag page shows its own tag as text, not as a link back to itself", async ({ page }) => {
+    await gotoClean(page, "/tags/astro/");
+    expect(await page.locator("a[href='/tags/astro/']").count()).toBe(0);
+    await expect(page.getByText("#astro").first()).toBeVisible();
+  });
+});
+
+// The trail exists so the BreadcrumbList markup has something visible to
+// describe — markup may only claim what the reader can see.
+test.describe("breadcrumbs", () => {
+  test("an entry page shows a trail that reaches the entries index", async ({ page }) => {
+    await gotoClean(page, ENTRY_WITH_HERO);
+    const nav = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(nav).toBeVisible();
+    await nav.getByRole("link", { name: "Entries" }).click();
+    await expect(page).toHaveURL(/\/entries\/$/);
+  });
+
+  test("the current page is marked and is not a link", async ({ page }) => {
+    await gotoClean(page, ENTRY_WITH_HERO);
+    const nav = page.getByRole("navigation", { name: "Breadcrumb" });
+    const current = nav.locator('[aria-current="page"]');
+    await expect(current).toBeVisible();
+    expect(await current.evaluate((el) => el.tagName)).not.toBe("A");
+  });
+
+  test("a tag page shows a trail back to the tags index", async ({ page }) => {
+    await gotoClean(page, "/tags/astro/");
+    const nav = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(nav).toBeVisible();
+    await nav.getByRole("link", { name: "Tags" }).click();
+    await expect(page).toHaveURL(/\/tags\/$/);
+  });
 });
 
 test.describe("static pages", () => {

@@ -17,6 +17,7 @@ import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import robotsParser from "robots-parser";
+import { parse as parseHtml } from "node-html-parser";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const DIST = join(ROOT, "dist");
@@ -502,6 +503,19 @@ describe("structured data", () => {
       .map((file) => relative(DIST, file).split(sep).join("/"))
       .filter((path) => /^entries\/[^/]+\/index\.html$/.test(path));
 
+  /**
+   * The node of a given @type, whether the page emits a single node or an
+   * @graph. Entry pages now carry both an article and a breadcrumb trail, so
+   * reading @type off the top level no longer finds the article.
+   */
+  const typedNode = (relativePath, ...types) => {
+    const { json } = nodeIn(relativePath);
+    if (!json) return null;
+    const nodes = "@graph" in json ? json["@graph"] : [json];
+    return nodes.find((node) => types.includes(node["@type"])) ?? null;
+  };
+  const articleIn = (relativePath) => typedNode(relativePath, "Article", "BlogPosting");
+
   test("the build succeeded", () => {
     assert.equal(result.status, 0, result.stderr);
   });
@@ -523,7 +537,7 @@ describe("structured data", () => {
       const source = readFileSync(join(ROOT, "src/content/entries", `${slug}.md`), "utf-8");
       const kind = source.match(/^kind:\s*"?(\w+)"?/m)?.[1] ?? "blog";
       const expected = kind === "project" ? "Article" : "BlogPosting";
-      assert.equal(nodeIn(page).json["@type"], expected, `${page} is typed wrong for kind ${kind}`);
+      assert.equal(articleIn(page)["@type"], expected, `${page} is typed wrong for kind ${kind}`);
     }
   });
 
@@ -534,7 +548,7 @@ describe("structured data", () => {
       const slug = page.split("/")[1];
       const source = readFileSync(join(ROOT, "src/content/entries", `${slug}.md`), "utf-8");
       const day = source.match(/^pubDate:\s*"?(\d{4}-\d{2}-\d{2})/m)[1];
-      const published = nodeIn(page).json.datePublished;
+      const published = articleIn(page).datePublished;
       assert.ok(published.startsWith(day), `${page}: ${published} does not start with ${day}`);
       assert.match(published, /(Z|[+-]\d{2}:\d{2})$/, `${page}: ${published} has no timezone`);
     }
@@ -542,7 +556,7 @@ describe("structured data", () => {
 
   test("the author is named, with the role kept out of the name", () => {
     for (const page of entryPages()) {
-      const author = nodeIn(page).json.author;
+      const author = articleIn(page).author;
       assert.equal(author["@type"], "Person", `${page} author is not a Person`);
       assert.equal(author.name, "Jon Green", `${page} author name is wrong`);
       assert.ok(author.sameAs.length > 0, `${page} has an empty sameAs`);
@@ -557,7 +571,7 @@ describe("structured data", () => {
     for (const page of entryPages()) {
       const html = read(page);
       const article = html.slice(html.indexOf("<article"), html.indexOf("</article>"));
-      assert.match(article, new RegExp(nodeIn(page).json.author.name), `author not visible on ${page}`);
+      assert.match(article, new RegExp(articleIn(page).author.name), `author not visible on ${page}`);
     }
   });
 
@@ -580,7 +594,7 @@ describe("structured data", () => {
 
   // One identity across pages, rather than two people who share a name.
   test("the author @id is the same on an entry and on the about page", () => {
-    const onEntry = nodeIn(entryPages()[0]).json.author["@id"];
+    const onEntry = articleIn(entryPages()[0]).author["@id"];
     assert.equal(onEntry, nodeIn("about/index.html").json.mainEntity["@id"]);
   });
 
@@ -593,9 +607,84 @@ describe("structured data", () => {
     );
   });
 
+  // A listing page may describe itself — it is a CollectionPage — but it must
+  // never claim to BE one of the articles it lists. The assertion is on the
+  // type, not on the absence of markup, so adding CollectionPage was allowed
+  // and adding Article still is not.
   test("listing pages carry no article markup", () => {
-    for (const page of ["blog/index.html", "projects/index.html", "tags/index.html"]) {
-      assert.equal(nodeIn(page).count, 0, `${page} should not describe itself as an article`);
+    for (const page of ["blog/index.html", "projects/index.html", "entries/index.html"]) {
+      const { json } = nodeIn(page);
+      if (!json) continue;
+      const types = ("@graph" in json ? json["@graph"] : [json]).map((n) => n["@type"]);
+      for (const type of types) {
+        assert.ok(
+          !["Article", "BlogPosting"].includes(type),
+          `${page} describes itself as ${type}`,
+        );
+      }
+    }
+  });
+
+  test("listing pages describe themselves as a CollectionPage of what they show", () => {
+    for (const [page, listing] of [
+      ["blog/index.html", "blog"],
+      ["projects/index.html", "projects"],
+      ["entries/index.html", "entries"],
+    ]) {
+      const { json } = nodeIn(page);
+      assert.ok(json, `${page} carries no JSON-LD`);
+      assert.equal(json["@type"], "CollectionPage", `${page} is not a CollectionPage`);
+      const items = json.mainEntity.itemListElement;
+      assert.ok(Array.isArray(items), `${page} has no ItemList`);
+
+      // The markup must list exactly what the page renders, in order.
+      const html = read(page);
+      const rendered = [
+        ...new Set(
+          [...html.matchAll(/href="(\/entries\/[^"/]+)"/g)].map((m) => m[1]),
+        ),
+      ];
+      assert.equal(
+        items.length,
+        rendered.length,
+        `${listing}: ItemList has ${items.length} items but the page renders ${rendered.length} cards`,
+      );
+      assert.deepEqual(
+        items.map((i) => i.position),
+        items.map((_, index) => index + 1),
+        `${page} positions are not 1-based and contiguous`,
+      );
+    }
+  });
+
+  test("entry pages carry both their article node and a breadcrumb trail", () => {
+    for (const page of entryPages()) {
+      const { json } = nodeIn(page);
+      const nodes = "@graph" in json ? json["@graph"] : [json];
+      const types = nodes.map((n) => n["@type"]);
+      assert.ok(
+        types.includes("Article") || types.includes("BlogPosting"),
+        `${page} lost its article node`,
+      );
+      assert.ok(types.includes("BreadcrumbList"), `${page} has no breadcrumb trail`);
+    }
+  });
+
+  // Google requires at least two ListItems, and markup may only claim what the
+  // reader can see — so a page with a trail in its markup must show one.
+  test("every breadcrumb trail has at least two crumbs and is visible on the page", () => {
+    for (const page of htmlFiles().map((f) => relative(DIST, f).split(sep).join("/"))) {
+      const html = read(page);
+      const { json } = nodeIn(page);
+      if (!json) continue;
+      const nodes = "@graph" in json ? json["@graph"] : [json];
+      const crumbs = nodes.find((n) => n["@type"] === "BreadcrumbList");
+      if (!crumbs) continue;
+      assert.ok(
+        crumbs.itemListElement.length >= 2,
+        `${page} emits a trail of ${crumbs.itemListElement.length}`,
+      );
+      assert.match(html, /aria-label="Breadcrumb"/, `${page} has trail markup but no visible trail`);
     }
   });
 });
@@ -1172,5 +1261,113 @@ describe("robots.txt", () => {
     // The prose that caused the misread. Explaining the policy is fine; doing
     // it beside a list of crawler names is what reads as a block list.
     assert.ok(!/Blocking/.test(robots()), "the word 'Blocking' is back in robots.txt");
+  });
+});
+
+/**
+ * Tag links.
+ *
+ * 22 tag pages existed for a long time with nothing linking to them: tags
+ * rendered as <span>, and article pages showed none at all. Orphaned pages are
+ * a weak quality signal and they spend crawl budget that the articles need.
+ *
+ * The first test here is the load-bearing one. It is what makes the "which
+ * tags get a page?" decision safe to change later: cull the routes without
+ * culling the links and this fails rather than shipping 404s.
+ */
+describe("tag links", () => {
+  let result;
+
+  before(() => {
+    result = build();
+  });
+
+  /** Every internal href pointing into /tags/, deduplicated. */
+  const tagHrefs = (html) => [
+    ...new Set([...html.matchAll(/href="(\/tags\/[^"#?]*)"/g)].map((m) => m[1])),
+  ];
+
+  const allTagHrefs = () => {
+    const found = new Map(); // href -> the page that links it
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      for (const href of tagHrefs(readFileSync(file, "utf-8"))) {
+        if (!found.has(href)) found.set(href, page);
+      }
+    }
+    return found;
+  };
+
+  const entryPages = () =>
+    htmlFiles()
+      .map((file) => relative(DIST, file).split(sep).join("/"))
+      .filter((path) => /^entries\/[^/]+\/index\.html$/.test(path));
+
+  test("the build succeeded", () => {
+    assert.equal(result.status, 0, result.stderr);
+  });
+
+  // EntryCard renders an <li>, so every page that uses it has to supply the
+  // list. A bare <li> is invalid HTML and the browser draws a stray marker for
+  // it — which is exactly how this was found, on the tag pages.
+  test("no card renders as a list item outside a list", () => {
+    const LISTS = new Set(["ul", "ol", "menu"]);
+    const orphans = [];
+    for (const file of htmlFiles()) {
+      const page = relative(DIST, file).split(sep).join("/");
+      for (const li of parseHtml(readFileSync(file, "utf-8")).querySelectorAll("li")) {
+        const parent = (li.parentNode?.rawTagName ?? "none").toLowerCase();
+        if (!LISTS.has(parent)) orphans.push(`${page}: <li> inside <${parent}>`);
+      }
+    }
+    assert.deepEqual(orphans, [], `list items outside a list:\n${orphans.join("\n")}`);
+  });
+
+  // THE HARD GATE. A linked tag with no page is strictly worse than the plain
+  // text it replaced.
+  test("every tag link resolves to a generated page", () => {
+    const links = allTagHrefs();
+    assert.ok(links.size > 0, "no tag links were emitted at all");
+
+    const broken = [];
+    for (const [href, linkedFrom] of links) {
+      const target = `${href.replace(/^\//, "").replace(/\/$/, "")}/index.html`;
+      if (!exists(target)) broken.push(`${href} (linked from ${linkedFrom}) -> ${target} missing`);
+    }
+    assert.deepEqual(broken, [], `broken tag links:\n${broken.join("\n")}`);
+  });
+
+  // Tags must carry a trailing slash: the unslashed form serves a 200 whose
+  // canonical points at the slashed URL, so linking it asks a crawler to fetch
+  // a duplicate shape for nothing.
+  test("every tag link ends in a slash", () => {
+    const offenders = [...allTagHrefs().keys()].filter((href) => !href.endsWith("/"));
+    assert.deepEqual(offenders, [], `tag links missing a trailing slash: ${offenders.join(", ")}`);
+  });
+
+  test("entry cards link their tags rather than printing them as plain text", () => {
+    // Listing pages are where EntryCard renders. Each shows entries that carry
+    // tags, so each must emit tag links.
+    for (const page of ["blog/index.html", "projects/index.html", "entries/index.html"]) {
+      const links = tagHrefs(read(page));
+      assert.ok(links.length > 0, `${page} renders cards but links no tags`);
+    }
+  });
+
+  test("entry detail pages link their tags", () => {
+    const pages = entryPages();
+    assert.ok(pages.length > 0, "no entry pages were built");
+    for (const page of pages) {
+      const links = tagHrefs(read(page));
+      assert.ok(links.length > 0, `${page} links none of its tags`);
+    }
+  });
+
+  // The tag a page is *for* should still be discoverable from it, but a page
+  // linking to itself is noise. Whichever way this lands, it must be deliberate.
+  test("a tag page does not link to itself from its own cards", () => {
+    const html = read("tags/astro/index.html");
+    const selfLinks = [...html.matchAll(/href="\/tags\/astro\/"/g)].length;
+    assert.equal(selfLinks, 0, "the astro tag page links back to itself");
   });
 });
