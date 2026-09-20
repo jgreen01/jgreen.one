@@ -1,5 +1,5 @@
 # TODO Index: 3 open
-*Last updated: 2026-09-19*
+*Last updated: 2026-09-20*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
@@ -22,8 +22,7 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## Recently Resolved
 
-- [G link-the-tag-pages](G-link-the-tag-pages.md) — DONE 2026-09-19. All 22 tag pages are now linked from entry cards and article pages; no tag page is orphaned. The cull decision on the 13 single-entry tags is left open for Jon, and the build gate makes adopting it safe.
-- [H json-ld-breadcrumbs-and-listings](H-json-ld-breadcrumbs-and-listings.md) — DONE 2026-09-19. `BreadcrumbList` with a real visible trail, `CollectionPage`/`ItemList` on the listings. Validated against schema.org. **Contains the only visible UI change — worth a look.**
+(nothing pending — see `todo/done/`)
 
 ---
 
