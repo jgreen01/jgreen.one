@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Blocks a commit that stages a credential.
+#
+# Scans the STAGED content, not the working tree — a secret can be staged and
+# then edited out of the file, and the commit would still carry it.
+#
+# Enabled by `git config core.hooksPath .githooks` (see AGENTS.md). Lives in the
+# repository rather than .git/hooks so it is version-controlled and shared.
+#
+# To bypass — rare, and think first:  git commit --no-verify
+set -e
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node not found; cannot run the secret check." >&2
+  echo "Install node, or bypass deliberately with: git commit --no-verify" >&2
+  exit 1
+fi
+
+node "$(git rev-parse --show-toplevel)/scripts/check-secrets.mjs" --staged
