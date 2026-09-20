@@ -2,7 +2,9 @@
 import Base from './Base.astro';
 import { heroImagePath } from '../utils/heroImagePath';
 import { formatDate } from '../utils/formatDate';
-const { frontmatter, jsonLd } = Astro.props;
+import { tagHref } from '../utils/tags';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+const { frontmatter, jsonLd, crumbs = [] } = Astro.props;
 // One resolved path for both the OG tag and the visible <img>.
 const heroImage = heroImagePath(frontmatter.heroImage);
 ---
@@ -15,6 +17,7 @@ const heroImage = heroImagePath(frontmatter.heroImage);
 >
   <main class="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
     <article class="prose dark:prose-invert md:prose-lg prose-pre:overflow-x-auto prose-pre:max-w-[85vw] md:prose-pre:max-w-none">
+      <Breadcrumbs crumbs={crumbs} />
       <h1 class="text-4xl font-bold mb-4">{frontmatter.title}</h1>
       {/*
         The byline is rendered, not merely implied by the footer. A reader
@@ -28,6 +31,27 @@ const heroImage = heroImagePath(frontmatter.heroImage);
       </p>
       {heroImage && <img src={heroImage} alt="" class="w-full h-auto rounded-lg" />}
       <slot />
+      {/*
+        Tags close the article rather than heading it. An article page was a
+        dead end before this: the only way onward was the site nav, and the
+        moment a reader most wants more on the same subject is the moment they
+        finish. `not-prose` keeps the surrounding prose styles off the pills.
+      */}
+      {frontmatter.tags?.length > 0 && (
+        <footer class="not-prose mt-12 pt-6 border-t border-muted">
+          <h2 class="sr-only">Tags</h2>
+          <ul class="flex flex-wrap gap-2 list-none p-0 m-0">
+            {frontmatter.tags.map((tag: string) => (
+              <li>
+                <a
+                  href={tagHref(tag)}
+                  class="inline-block text-xs font-semibold text-accent dark:text-accentDark bg-accent/10 dark:bg-accentDark/10 px-2 py-1 rounded-full hover:bg-accent/20 dark:hover:bg-accentDark/20 transition-colors"
+                >#{tag}</a>
+              </li>
+            ))}
+          </ul>
+        </footer>
+      )}
     </article>
   </main>
 </Base>

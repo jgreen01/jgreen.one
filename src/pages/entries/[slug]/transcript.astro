@@ -3,6 +3,8 @@ import { getCollection, render } from "astro:content";
 import PageLayout from "../../../layouts/PageLayout.astro";
 import { pairTranscriptsWithEntries, formatDuration } from "../../../utils/transcript";
 import { formatLongDate, isoDate } from "../../../utils/formatDate";
+import { breadcrumbJsonLd } from "../../../utils/structuredData";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 
 /**
  * A talk transcript, at `/entries/<slug>/transcript`.
@@ -29,6 +31,13 @@ const { Content } = await render(transcript);
 const data = transcript.data;
 
 const articleUrl = `/entries/${entry.id}`;
+// One array drives the visible trail and the markup, so they cannot disagree.
+const crumbs = [
+  { name: "Entries", url: "/entries/" },
+  { name: entry.data.title, url: articleUrl },
+  { name: "Transcript" },
+];
+
 const recordedDate = isoDate(data.recordedDate);
 const recordedLabel = formatLongDate(data.recordedDate);
 
@@ -44,12 +53,10 @@ const links = [
 const captionsUrl = `${articleUrl}/captions.vtt`;
 ---
 
-<PageLayout title={`${data.title} — transcript`} description={data.description}>
+<PageLayout title={`${data.title} — transcript`} description={data.description} jsonLd={breadcrumbJsonLd(crumbs)}>
   <article>
     <header class="mb-8">
-      <p class="text-sm opacity-70">
-        <a href={articleUrl} class="underline">&larr; Back to the article</a>
-      </p>
+      <Breadcrumbs crumbs={crumbs} />
 
       <h1 class="text-3xl font-bold mt-3">{data.title}</h1>
       <p class="text-lg opacity-80 mt-1">Transcript</p>

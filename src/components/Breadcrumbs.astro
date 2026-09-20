@@ -1,0 +1,37 @@
+---
+/**
+ * A breadcrumb trail.
+ *
+ * Exists so the BreadcrumbList structured data has something visible to
+ * describe. Google's rule — and the one written at the top of
+ * `src/utils/structuredData.ts` — is that markup may only claim what the reader
+ * can see, so emitting a trail with no trail on the page would be exactly the
+ * mismatch that rule prevents.
+ *
+ * Renders nothing below two crumbs, matching `breadcrumbJsonLd`, so the visible
+ * trail and the markup appear and disappear together.
+ */
+import type { Crumb } from "../utils/structuredData";
+
+interface Props {
+  crumbs: Crumb[];
+}
+const { crumbs } = Astro.props;
+const last = crumbs.length - 1;
+---
+{crumbs.length >= 2 && (
+  <nav aria-label="Breadcrumb" class="not-prose mb-6 text-sm text-muted-foreground">
+    <ol class="flex flex-wrap items-center gap-2 list-none p-0 m-0">
+      {crumbs.map((crumb, index) => (
+        <li class="flex items-center gap-2">
+          {index > 0 && <span aria-hidden="true" class="opacity-60">/</span>}
+          {crumb.url && index < last ? (
+            <a href={crumb.url} class="hover:underline text-accent dark:text-accentDark">{crumb.name}</a>
+          ) : (
+            <span aria-current="page">{crumb.name}</span>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}

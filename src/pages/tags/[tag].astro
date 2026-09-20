@@ -3,6 +3,9 @@ import PageLayout from "../../layouts/PageLayout.astro";
 import EntryCard from "../../components/EntryCard.astro";
 import { getCollection } from "astro:content";
 import { filterByTag, filterDrafts, sortByDate, uniqueTags } from "../../utils/entries";
+import { breadcrumbJsonLd, collectionPageJsonLd, graphJsonLd } from "../../utils/structuredData";
+import { tagHref } from "../../utils/tags";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 
 export async function getStaticPaths() {
   const published = filterDrafts(await getCollection("entries"));
@@ -12,13 +15,28 @@ export async function getStaticPaths() {
 const { tag } = Astro.params;
 const published = filterDrafts(await getCollection("entries"));
 const matches = sortByDate(filterByTag(published, String(tag)));
+
+const crumbs = [{ name: "Tags", url: "/tags/" }, { name: String(tag) }];
+// Items come from the same array the template maps over, so the markup lists
+// exactly what the page shows, in the order it shows it.
+const jsonLd = graphJsonLd([
+  collectionPageJsonLd({
+    name: `Tag: ${tag}`,
+    url: tagHref(String(tag)),
+    items: matches.map((entry) => ({ name: entry.data.title, url: `/entries/${entry.id}/` })),
+  }),
+  breadcrumbJsonLd(crumbs),
+]);
 ---
-<PageLayout title={`Tag: ${tag}`}>
+<PageLayout title={`Tag: ${tag}`} jsonLd={jsonLd}>
+  <Breadcrumbs crumbs={crumbs} />
   <h1 class="text-4xl font-bold mb-4">Tag: {tag}</h1>
   {matches.length === 0
     ? <p>No entries found for this tag.</p>
-    : matches.map((entry) => (
-        <EntryCard entry={entry} />
-      ))
+    : <ul class="list-none mt-8">
+        {matches.map((entry) => (
+          <EntryCard entry={entry} currentTag={String(tag)} />
+        ))}
+      </ul>
   }
 </PageLayout>
