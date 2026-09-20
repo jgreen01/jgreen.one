@@ -14,6 +14,61 @@ function handler(event) {
     var request = event.request;
     var uri = request.uri;
 
+    // www -> apex, before anything else rewrites the URI.
+    //
+    // Both hostnames served identical content and Google indexed both, which
+    // splits crawl budget on a site still fighting to get crawled. The canonical
+    // already stated a preference; a 301 leaves exactly one hostname.
+    //
+    // Safe to answer from viewer-request: CloudFront returns a response
+    // generated here straight to the viewer and never caches it. Moving this to
+    // origin-request would cache it, which is how a redirect becomes an outage.
+    var hostHeader = request.headers && request.headers['host'];
+    var host = hostHeader && hostHeader.value ? hostHeader.value.toLowerCase() : '';
+
+    // indexOf(...) === 0, never indexOf('www') !== -1: the apex must not match,
+    // or every request redirects to itself until the browser gives up. A host
+    // that merely contains "www" must not match either.
+    if (host.indexOf('www.') === 0) {
+        var target = 'https://jgreen.one' + uri;
+
+        // querystring is an object here, so it has to be rebuilt. Dropping it
+        // would silently break any inbound link carrying campaign parameters.
+        // A repeated key arrives as multiValue, with value holding the first;
+        // emitting only value would quietly discard the rest.
+        var query = request.querystring;
+        var pairs = [];
+        if (query) {
+            for (var key in query) {
+                if (Object.prototype.hasOwnProperty.call(query, key)) {
+                    var entry = query[key];
+                    var encodedKey = encodeURIComponent(key);
+                    if (entry && entry.multiValue && entry.multiValue.length) {
+                        for (var i = 0; i < entry.multiValue.length; i++) {
+                            pairs.push(encodedKey + '=' + encodeURIComponent(entry.multiValue[i].value));
+                        }
+                    } else {
+                        pairs.push(encodedKey + '=' + encodeURIComponent(entry && entry.value ? entry.value : ''));
+                    }
+                }
+            }
+        }
+        if (pairs.length > 0) {
+            target = target + '?' + pairs.join('&');
+        }
+
+        return {
+            statusCode: 301,
+            statusDescription: 'Moved Permanently',
+            headers: {
+                'location': { value: target },
+                // An hour, not a year: the rule is stable but this is the one
+                // response we would want to change quickly if it were ever wrong.
+                'cache-control': { value: 'max-age=3600' }
+            }
+        };
+    }
+
     // Content negotiation: an agent asking for Markdown gets the Markdown copy
     // of the page. Note this branches on what the client ASKED FOR, never on who
     // it claims to be — a search engine and a person always receive identical

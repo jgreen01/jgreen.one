@@ -210,3 +210,126 @@ describe("CloudFront Functions runtime constraints", () => {
     expect(SOURCE).toMatch(/function handler\s*\(/);
   });
 });
+
+/**
+ * www → apex redirect.
+ *
+ * Two hostnames served identical content, and Google was indexing both, which
+ * splits crawl budget on a site still fighting to get crawled. A canonical only
+ * states a preference; a 301 leaves one hostname.
+ *
+ * The loop guard is the load-bearing assertion here. This function runs on every
+ * request, so a host check that also matches the apex would redirect every
+ * request to itself until the browser gives up — a total outage.
+ */
+describe("www redirects to the apex", () => {
+  const withHost = (
+    uri: string,
+    host: string | null,
+    querystring: Record<string, { value: string; multiValue?: { value: string }[] }> = {},
+    accept?: string,
+  ) => {
+    const headers: Record<string, { value: string }> = {};
+    if (host !== null) headers.host = { value: host };
+    if (accept) headers.accept = { value: accept };
+    return handler({
+      version: "1.0",
+      context: { eventType: "viewer-request" },
+      viewer: { ip: "203.0.113.1" },
+      request: { method: "GET", uri, headers, cookies: {}, querystring },
+    }) as never as {
+      statusCode?: number;
+      statusDescription?: string;
+      uri?: string;
+      headers: Record<string, { value: string }>;
+    };
+  };
+
+  it("answers a www request with a 301", () => {
+    const out = withHost("/about", "www.jgreen.one");
+    expect(out.statusCode).toBe(301);
+    expect(out.statusDescription).toBe("Moved Permanently");
+  });
+
+  it("points Location at the apex, absolute, keeping the path", () => {
+    expect(withHost("/entries/this-site/", "www.jgreen.one").headers.location.value).toBe(
+      "https://jgreen.one/entries/this-site/",
+    );
+  });
+
+  // THE LOOP GUARD. If the apex ever matches, every request redirects to itself.
+  it("leaves an apex request alone", () => {
+    const out = withHost("/about", "jgreen.one");
+    expect(out.statusCode).toBeUndefined();
+    expect(out.uri).toBe("/about/index.html");
+  });
+
+  it("does not match a host that merely contains 'www'", () => {
+    expect(withHost("/about", "wwwx.jgreen.one").statusCode).toBeUndefined();
+    expect(withHost("/wwwroot", "jgreen.one").statusCode).toBeUndefined();
+  });
+
+  it("matches an uppercase Host header", () => {
+    expect(withHost("/about", "WWW.JGREEN.ONE").statusCode).toBe(301);
+  });
+
+  it("does not throw when the Host header is absent or empty", () => {
+    expect(() => withHost("/about", null)).not.toThrow();
+    expect(withHost("/about", null).statusCode).toBeUndefined();
+    expect(withHost("/about", "").statusCode).toBeUndefined();
+  });
+
+  describe("query strings survive", () => {
+    it("adds none when there are none", () => {
+      expect(withHost("/blog/", "www.jgreen.one").headers.location.value).toBe(
+        "https://jgreen.one/blog/",
+      );
+    });
+
+    it("keeps a single parameter", () => {
+      const out = withHost("/blog/", "www.jgreen.one", { utm_source: { value: "x" } });
+      expect(out.headers.location.value).toBe("https://jgreen.one/blog/?utm_source=x");
+    });
+
+    it("keeps several parameters", () => {
+      const out = withHost("/blog/", "www.jgreen.one", {
+        a: { value: "1" },
+        b: { value: "2" },
+      });
+      expect(out.headers.location.value).toMatch(/^https:\/\/jgreen\.one\/blog\/\?/);
+      expect(out.headers.location.value).toContain("a=1");
+      expect(out.headers.location.value).toContain("b=2");
+    });
+
+    it("percent-encodes keys and values", () => {
+      const out = withHost("/blog/", "www.jgreen.one", { "a b": { value: "c&d" } });
+      expect(out.headers.location.value).toBe("https://jgreen.one/blog/?a%20b=c%26d");
+    });
+
+    it("keeps every value of a repeated parameter", () => {
+      const out = withHost("/blog/", "www.jgreen.one", {
+        tag: { value: "a", multiValue: [{ value: "a" }, { value: "b" }] },
+      });
+      expect(out.headers.location.value).toContain("tag=a");
+      expect(out.headers.location.value).toContain("tag=b");
+    });
+  });
+
+  // Ordering matters: an agent asking a www URL for Markdown must be sent to the
+  // apex, not served the twin from the wrong hostname.
+  it("redirects before negotiating Markdown", () => {
+    const out = withHost("/entries/x/", "www.jgreen.one", {}, "text/markdown");
+    expect(out.statusCode).toBe(301);
+    expect(out.headers.location.value).toBe("https://jgreen.one/entries/x/");
+  });
+
+  it("redirects the unrewritten URI, not the clean-URL rewrite", () => {
+    expect(withHost("/about", "www.jgreen.one").headers.location.value).toBe(
+      "https://jgreen.one/about",
+    );
+  });
+
+  it("tells caches the redirect is reusable but not permanent", () => {
+    expect(withHost("/", "www.jgreen.one").headers["cache-control"].value).toMatch(/max-age/);
+  });
+});
