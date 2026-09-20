@@ -48,41 +48,56 @@ aws cloudfront create-function \
 ETAG=$(aws cloudfront describe-function --name "$PROBE" --stage DEVELOPMENT \
   --query 'ETag' --output text)
 
-# name | uri | accept | expected uri
+# name | uri | accept | host | expected
+#
+# `expected` is the rewritten URI for a normal pass-through, or "301 <location>"
+# when the function answers the request itself. An empty host means no Host
+# header at all, which must never redirect.
 CASES=$(cat <<'EOF'
-root|/||/index.html
-extensionless page|/about||/about/index.html
-trailing slash|/blog/||/blog/index.html
-static asset untouched|/favicon.svg||/favicon.svg
-media asset untouched|/media/hero.png||/media/hero.png
-entry as html|/entries/how-this-site-was-made/|text/html,*/*|/entries/how-this-site-was-made/index.html
-entry with no accept|/entries/how-this-site-was-made/||/entries/how-this-site-was-made/index.html
-entry as markdown|/entries/how-this-site-was-made/|text/markdown, text/html|/entries/how-this-site-was-made/index.md
-entry as markdown, no slash|/entries/how-this-site-was-made|text/markdown|/entries/how-this-site-was-made/index.md
-markdown uppercase|/entries/x/|TEXT/MARKDOWN|/entries/x/index.md
-entries index negotiates|/entries/|text/markdown|/entries/index.md
-homepage negotiates|/|text/markdown|/index.md
-about negotiates|/about|text/markdown|/about/index.md
-tag page negotiates|/tags/astro/|text/markdown|/tags/astro/index.md
-transcript negotiates|/entries/x/transcript/|text/markdown|/entries/x/transcript/index.md
-asset not negotiated|/media/hero.png|text/markdown|/media/hero.png
-llms.txt not negotiated|/llms.txt|text/markdown|/llms.txt
-sitemap not negotiated|/sitemap-index.xml|text/markdown|/sitemap-index.xml
-already markdown untouched|/entries/x/index.md|text/markdown|/entries/x/index.md
+root|/|||/index.html
+extensionless page|/about|||/about/index.html
+trailing slash|/blog/|||/blog/index.html
+static asset untouched|/favicon.svg|||/favicon.svg
+media asset untouched|/media/hero.png|||/media/hero.png
+entry as html|/entries/how-this-site-was-made/|text/html,*/*||/entries/how-this-site-was-made/index.html
+entry with no accept|/entries/how-this-site-was-made/|||/entries/how-this-site-was-made/index.html
+entry as markdown|/entries/how-this-site-was-made/|text/markdown, text/html||/entries/how-this-site-was-made/index.md
+entry as markdown, no slash|/entries/how-this-site-was-made|text/markdown||/entries/how-this-site-was-made/index.md
+markdown uppercase|/entries/x/|TEXT/MARKDOWN||/entries/x/index.md
+entries index negotiates|/entries/|text/markdown||/entries/index.md
+homepage negotiates|/|text/markdown||/index.md
+about negotiates|/about|text/markdown||/about/index.md
+tag page negotiates|/tags/astro/|text/markdown||/tags/astro/index.md
+transcript negotiates|/entries/x/transcript/|text/markdown||/entries/x/transcript/index.md
+asset not negotiated|/media/hero.png|text/markdown||/media/hero.png
+llms.txt not negotiated|/llms.txt|text/markdown||/llms.txt
+sitemap not negotiated|/sitemap-index.xml|text/markdown||/sitemap-index.xml
+already markdown untouched|/entries/x/index.md|text/markdown||/entries/x/index.md
+www root redirects|/||www.jgreen.one|301 https://jgreen.one/
+www page redirects|/about||www.jgreen.one|301 https://jgreen.one/about
+www keeps the path|/entries/this-site/||www.jgreen.one|301 https://jgreen.one/entries/this-site/
+www uppercase redirects|/about||WWW.JGREEN.ONE|301 https://jgreen.one/about
+www redirects before markdown|/entries/x/|text/markdown|www.jgreen.one|301 https://jgreen.one/entries/x/
+apex is not redirected|/about||jgreen.one|/about/index.html
+apex markdown still negotiates|/entries/x/|text/markdown|jgreen.one|/entries/x/index.md
+host merely containing www|/about||wwwx.jgreen.one|/about/index.html
+no host header at all|/about|||/about/index.html
 EOF
 )
 
 failures=0
 passed=0
 
-while IFS='|' read -r name uri accept expected; do
+while IFS='|' read -r name uri accept host expected; do
   [ -z "$name" ] && continue
 
-  if [ -n "$accept" ]; then
-    headers="{\"accept\":{\"value\":\"${accept}\"}}"
-  else
-    headers="{}"
+  hdrs=""
+  [ -n "$accept" ] && hdrs="\"accept\":{\"value\":\"${accept}\"}"
+  if [ -n "$host" ]; then
+    [ -n "$hdrs" ] && hdrs="${hdrs},"
+    hdrs="${hdrs}\"host\":{\"value\":\"${host}\"}"
   fi
+  headers="{${hdrs}}"
 
   event=$(printf '{"version":"1.0","context":{"eventType":"viewer-request"},"viewer":{"ip":"203.0.113.1"},"request":{"method":"GET","uri":"%s","headers":%s,"cookies":{},"querystring":{}}}' "$uri" "$headers")
   echo "$event" > /tmp/cf-test-event.json
@@ -99,7 +114,18 @@ while IFS='|' read -r name uri accept expected; do
     continue
   fi
 
-  actual=$(echo "$result" | python3 -c 'import json,sys; print(json.loads(json.load(sys.stdin)["out"])["request"]["uri"])')
+  # The function either passes a request through (rewritten uri) or answers it
+  # itself (a response). Report whichever shape came back.
+  actual=$(echo "$result" | python3 -c '
+import json, sys
+out = json.loads(json.load(sys.stdin)["out"])
+if "response" in out:
+    r = out["response"]
+    loc = r.get("headers", {}).get("location", {}).get("value", "")
+    print(str(r.get("statusCode", "")) + " " + loc)
+else:
+    print(out["request"]["uri"])
+')
 
   if [ "$actual" = "$expected" ]; then
     printf '  \033[32m✓\033[0m %-32s %s\n' "$name" "$actual"
