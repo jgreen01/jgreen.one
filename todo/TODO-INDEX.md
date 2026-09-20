@@ -1,5 +1,5 @@
-# TODO Index: 2 open
-*Last updated: 2026-09-16*
+# TODO Index: 3 open
+*Last updated: 2026-09-19*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
@@ -12,6 +12,7 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 ## MEDIUM Priority
 
 - [A add-json-ld-structured-data](A-json-ld-structured-data.md) — BLOCKED: shipped, live, and validated clean against schema.org two ways. The last check is Google's Rich Results Test, which needs a signed-in account — two minutes in a browser.
+- [F search-engine-submission](F-search-engine-submission.md) — get the site into Google and Bing. Reachability for Gemini and ChatGPT is an indexing problem, not a serving one. Covers every channel, including the ones to skip.
 
 ## LOW Priority
 
@@ -21,7 +22,8 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## Recently Resolved
 
-(nothing pending — see `todo/done/`)
+- [G link-the-tag-pages](G-link-the-tag-pages.md) — DONE 2026-09-19. All 22 tag pages are now linked from entry cards and article pages; no tag page is orphaned. The cull decision on the 13 single-entry tags is left open for Jon, and the build gate makes adopting it safe.
+- [H json-ld-breadcrumbs-and-listings](H-json-ld-breadcrumbs-and-listings.md) — DONE 2026-09-19. `BreadcrumbList` with a real visible trail, `CollectionPage`/`ItemList` on the listings. Validated against schema.org. **Contains the only visible UI change — worth a look.**
 
 ---
 
