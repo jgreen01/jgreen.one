@@ -1,4 +1,4 @@
-# TODO Index: 4 open
+# TODO Index: 3 open
 *Last updated: 2026-09-20*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
@@ -16,14 +16,13 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## LOW Priority
 
-- [I redirect-www-to-apex](I-redirect-www-to-apex.md) — `www.jgreen.one` serves 200 with no redirect, so Google crawls the site under two hostnames. An optimisation, not a fix — but it edits the one file where a bug is a full outage.
 - [E mcp-server](E-mcp-server.md) — serve the site's content as MCP tools. The one item from the audit that can be made real, and the only one needing a runtime.
 
 ---
 
 ## Recently Resolved
 
-(nothing pending — see `todo/done/`)
+- [I redirect-www-to-apex](I-redirect-www-to-apex.md) — DONE 2026-09-20. `www` now 301s to the apex at the edge; one hostname, one crawl per URL. Loop guard asserted three ways. Follow-up: re-check Search Console in a few weeks.
 
 ---
 

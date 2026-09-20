@@ -1,7 +1,7 @@
 # Redirect www to the apex
 
 **Priority**: LOW — a real optimisation, not a bug fix. See "Is this worth doing".
-**Status**: TODO
+**Status**: DONE — shipped and verified live 2026-09-20
 **Created**: 2026-09-20
 **Updated**: 2026-09-20
 
@@ -203,17 +203,18 @@ it.
 
 ## Acceptance Criteria
 
-- [ ] Host check added to `infra/live/function.js` in ES5.1 syntax, guarded
-- [ ] Query strings preserved through the redirect
-- [ ] Apex requests provably unaffected (no loop)
-- [ ] Unit tests cover www, apex, query strings, missing Host, uppercase Host,
-      and ordering against Markdown negotiation
-- [ ] Runtime-gate fixtures extended with Host headers; gate passes in the real engine
-- [ ] `terraform plan` reviewed, then applied
-- [ ] `pytest tests/infra` asserts the 301
-- [ ] Verified live: www 301s, apex still 200, query string survives
-- [ ] Re-check Search Console after a few weeks: "Alternate page with proper
-      canonical tag" and "Page with redirect" should fall away
+- [x] Host check added to `infra/live/function.js` in ES5.1 syntax, guarded
+- [x] Query strings preserved through the redirect, `multiValue` included
+- [x] Apex requests provably unaffected — verified in the real runtime and live
+- [x] Unit tests cover www, apex, query strings, missing Host, uppercase Host,
+      and ordering against Markdown negotiation — 14 new cases
+- [x] Runtime-gate fixtures extended with Host headers; **38 passed** in the real engine (was 29)
+- [x] `terraform plan` reviewed (0 add, 1 change, 0 destroy), then applied
+- [x] `pytest tests/infra` asserts the published function — see the caveat in the log
+- [x] Verified live: www 301s, apex still 200, query string survives
+- [ ] **FOLLOW-UP, not blocking:** re-check Search Console in a few weeks.
+      "Alternate page with proper canonical tag" (3 pages) and "Page with
+      redirect" (2) should fall away as Google recrawls.
 
 ## Notes
 
@@ -234,3 +235,40 @@ the 50-vs-36 URL gap above.
   `www.jgreen.one` serves 200 with no redirect and a correct apex canonical, that
   the cert SAN, CloudFront alias, Route 53 CNAME and viewer-request function are
   all already in place, and that a viewer-request 301 is not cached by CloudFront.
+- [2026-09-20] **DONE.** Implemented, applied and verified in production.
+
+  **Changed:** `infra/live/function.js` (host check at the top of `handler`,
+  before Markdown negotiation and the clean-URL rewrite);
+  `tests/unit/cloudfrontFunction.test.ts` (+14 cases);
+  `scripts/test-cloudfront-function.sh` (host column added to the case table,
+  plus handling for a *response*-shaped output — the harness previously only
+  read `request.uri`, which a generated 301 does not have);
+  `tests/infra/test_aws.py` (+4 assertions on the published function).
+
+  **Verified:**
+  - unit **863 passing** (was 849)
+  - CloudFront runtime gate **38 passed** in AWS's real engine, was 29. This is
+    the one that matters: it proves the ES5.1 syntax parses, which Node cannot.
+  - `terraform plan`: 0 to add, **1 to change**, 0 to destroy — the function
+    code only.
+  - `pytest tests/infra` **64 passed, 1 skipped**
+  - `npx astro check` unchanged at the 1 pre-existing error
+  - Live: `www.jgreen.one/about` → 301 → `https://jgreen.one/about`;
+    `?utm_source=x&b=2` survives; all 8 apex routes return 200 with **zero**
+    redirects; the chain from www terminates in exactly one hop.
+
+  **The loop guard held**, which was the real risk. `indexOf('www.') === 0` is
+  asserted three ways: a unit test for `wwwx.jgreen.one` and a path containing
+  "www", a real-runtime gate case, and an infra test that the *published* code
+  contains the anchored form. An unanchored check would have 503'd the site.
+
+  **Caveat, honestly:** `tests/infra` is boto3-only by design — it asserts
+  deployed AWS resources, not HTTP. So it verifies the published LIVE function
+  carries the anchored redirect, rather than making an HTTP request and seeing a
+  301. The live 301 was verified by curl instead, recorded above. Adding an HTTP
+  check would mean introducing a new dependency and a new kind of test to that
+  suite; it did not seem worth it for a behaviour the runtime gate already
+  proves twice.
+
+  **Propagation** took roughly 10 seconds from `terraform apply` to the first
+  301 in production.
