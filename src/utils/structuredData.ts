@@ -203,3 +203,130 @@ export function serializeJsonLd(node: unknown): string {
     .replace(/>/g, "\\u003e")
     .replace(/&/g, "\\u0026");
 }
+
+/** One entry in a BreadcrumbList or an ItemList. */
+export interface ListItemNode {
+  "@type": "ListItem";
+  position: number;
+  name: string;
+  /** BreadcrumbList spelling. Omitted on the last crumb. */
+  item?: string;
+  /** ItemList spelling. */
+  url?: string;
+}
+
+export interface BreadcrumbNode {
+  "@context": string;
+  "@type": "BreadcrumbList";
+  itemListElement: ListItemNode[];
+}
+
+/** A step in a breadcrumb trail. The last one needs no URL — it is this page. */
+export interface Crumb {
+  name: string;
+  url?: string;
+}
+
+/**
+ * A breadcrumb trail.
+ *
+ * Returns null below two crumbs: Google requires "at least two ListItem
+ * objects", so a single crumb would produce an invalid trail rather than a
+ * short one. Callers pass what the page has and let this decide.
+ *
+ * The last crumb deliberately omits `item` — "If item isn't included for the
+ * last item, Google uses the URL of the containing page", which keeps the trail
+ * correct across every page sharing a template.
+ */
+export function breadcrumbJsonLd(crumbs: readonly Crumb[]): BreadcrumbNode | null {
+  if (crumbs.length < 2) return null;
+  const last = crumbs.length - 1;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: crumbs.map((crumb, index) => {
+      // Built by assignment rather than through `present()`: the key must be
+      // absent, not undefined, and an interface without an index signature does
+      // not satisfy that helper's constraint.
+      const item: ListItemNode = {
+        "@type": "ListItem",
+        position: index + 1,
+        name: crumb.name,
+      };
+      if (index !== last && crumb.url) item.item = absolute(crumb.url);
+      return item;
+    }),
+  };
+}
+
+export interface ItemListNode {
+  "@type": "ItemList";
+  itemListElement: ListItemNode[];
+}
+
+export interface CollectionPageNode {
+  "@context": string;
+  "@type": "CollectionPage";
+  name: string;
+  url: string;
+  mainEntity: ItemListNode;
+}
+
+/**
+ * A listing page, as the collection of entries it actually shows.
+ *
+ * `mainEntity` rather than a bare ItemList: it states that listing these items
+ * *is* the page's purpose, instead of leaving the list as an unattached aside.
+ *
+ * Positions must match the order rendered, so callers pass the same array the
+ * template maps over — deriving a second ordering here is how markup and page
+ * drift apart.
+ *
+ * Note this buys semantic clarity, not a rich result: Google renders no
+ * carousel for a personal blog index.
+ */
+export function collectionPageJsonLd(options: {
+  name: string;
+  url: string;
+  items: readonly { name: string; url: string }[];
+}): CollectionPageNode {
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: options.name,
+    url: absolute(options.url),
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: options.items.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: absolute(item.url),
+        name: item.name,
+      })),
+    },
+  };
+}
+
+/**
+ * Combines several nodes into one JSON-LD document.
+ *
+ * A lone node is returned unwrapped. Pages that carry exactly one node are
+ * asserted on by their top-level `@type`, and wrapping every page to serve the
+ * few that need two would break that for nothing.
+ *
+ * Nulls are dropped, so a caller can pass a builder's result straight in —
+ * `entryJsonLd` returns null for a draft and `breadcrumbJsonLd` for a trail too
+ * short, and neither should force a conditional at the call site.
+ */
+export function graphJsonLd(nodes: readonly unknown[]): unknown {
+  const real = nodes.filter((node) => node !== null && node !== undefined);
+  if (real.length === 0) return null;
+  if (real.length === 1) return real[0];
+  return {
+    "@context": "https://schema.org",
+    "@graph": real.map((node) => {
+      const { "@context": _context, ...rest } = node as Record<string, unknown>;
+      return rest;
+    }),
+  };
+}

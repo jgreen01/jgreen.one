@@ -11,6 +11,9 @@ import {
   profilePageJsonLd,
   websiteJsonLd,
   serializeJsonLd,
+  breadcrumbJsonLd,
+  collectionPageJsonLd,
+  graphJsonLd,
 } from "../../src/utils/structuredData";
 import { CONTACT } from "../../src/utils/contact";
 
@@ -272,5 +275,132 @@ describe("serializeJsonLd", () => {
   it("escapes an ampersand entity sequence", () => {
     const out = serializeJsonLd({ name: "Tom & Jerry" });
     expect(JSON.parse(out).name).toBe("Tom & Jerry");
+  });
+});
+
+describe("breadcrumbJsonLd", () => {
+  const trail = [
+    { name: "Entries", url: "/entries/" },
+    { name: "The Site as a Workbench" },
+  ];
+
+  it("is a BreadcrumbList in the schema.org context", () => {
+    const node = breadcrumbJsonLd(trail)!;
+    expect(node["@type"]).toBe("BreadcrumbList");
+    expect(node["@context"]).toBe("https://schema.org");
+  });
+
+  // Google: "at least two ListItem objects". One crumb is not a trail, and
+  // emitting it produces an invalid result rather than a small one.
+  it("returns null below two crumbs, rather than an invalid trail", () => {
+    expect(breadcrumbJsonLd([{ name: "Blog", url: "/blog/" }])).toBeNull();
+    expect(breadcrumbJsonLd([])).toBeNull();
+  });
+
+  it("numbers positions from 1, contiguously", () => {
+    const node = breadcrumbJsonLd([
+      { name: "Entries", url: "/entries/" },
+      { name: "A Talk", url: "/entries/a-talk/" },
+      { name: "Transcript" },
+    ])!;
+    expect(node.itemListElement.map((i) => i.position)).toEqual([1, 2, 3]);
+  });
+
+  // Google: "If item isn't included for the last item, Google uses the URL of
+  // the containing page." Omitting it is how the trail stays correct on every
+  // page that shares a template.
+  it("omits item on the last crumb and sets it on the rest", () => {
+    const node = breadcrumbJsonLd(trail)!;
+    expect(node.itemListElement[0].item).toBe("https://jgreen.one/entries/");
+    expect("item" in node.itemListElement[1]).toBe(false);
+  });
+
+  it("makes every item URL absolute", () => {
+    const node = breadcrumbJsonLd(trail)!;
+    for (const item of node.itemListElement) {
+      if (item.item) expect(item.item.startsWith("https://jgreen.one")).toBe(true);
+    }
+  });
+
+  it("names every crumb", () => {
+    const node = breadcrumbJsonLd(trail)!;
+    for (const item of node.itemListElement) {
+      expect(item.name.length).toBeGreaterThan(0);
+      expect(item["@type"]).toBe("ListItem");
+    }
+  });
+
+  it("never emits undefined", () => {
+    expect(JSON.stringify(breadcrumbJsonLd(trail))).not.toContain("undefined");
+  });
+});
+
+describe("collectionPageJsonLd", () => {
+  const page = {
+    name: "Blog",
+    url: "/blog/",
+    items: [
+      { name: "First", url: "/entries/first/" },
+      { name: "Second", url: "/entries/second/" },
+    ],
+  };
+
+  it("is a CollectionPage whose mainEntity is an ItemList", () => {
+    const node = collectionPageJsonLd(page);
+    expect(node["@type"]).toBe("CollectionPage");
+    expect(node.mainEntity["@type"]).toBe("ItemList");
+  });
+
+  it("lists every item in the order given", () => {
+    const node = collectionPageJsonLd(page);
+    expect(node.mainEntity.itemListElement.map((i) => i.name)).toEqual(["First", "Second"]);
+    expect(node.mainEntity.itemListElement.map((i) => i.position)).toEqual([1, 2]);
+  });
+
+  it("makes the page URL and every item URL absolute", () => {
+    const node = collectionPageJsonLd(page);
+    expect(node.url).toBe("https://jgreen.one/blog/");
+    for (const item of node.mainEntity.itemListElement) {
+      expect(item.url!.startsWith("https://jgreen.one")).toBe(true);
+    }
+  });
+
+  // An empty listing is still a real page; it just lists nothing.
+  it("survives an empty listing", () => {
+    const node = collectionPageJsonLd({ ...page, items: [] });
+    expect(node.mainEntity.itemListElement).toEqual([]);
+  });
+
+  it("never emits undefined", () => {
+    expect(JSON.stringify(collectionPageJsonLd(page))).not.toContain("undefined");
+  });
+});
+
+describe("graphJsonLd", () => {
+  const a = { "@context": "https://schema.org", "@type": "WebSite", name: "x" };
+  const b = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [] };
+
+  // A page that needs one node must keep emitting exactly that node: entry
+  // pages are asserted on by @type at the top level, and wrapping every page
+  // would break that for no gain.
+  it("returns a lone node unwrapped", () => {
+    expect(graphJsonLd([a])).toEqual(a);
+  });
+
+  it("wraps several nodes in one @graph under a single @context", () => {
+    const node = graphJsonLd([a, b]) as Record<string, any>;
+    expect(node["@context"]).toBe("https://schema.org");
+    expect(node["@graph"]).toHaveLength(2);
+  });
+
+  it("strips the per-node @context so it is stated once", () => {
+    const node = graphJsonLd([a, b]) as Record<string, any>;
+    for (const child of node["@graph"]) expect("@context" in child).toBe(false);
+  });
+
+  it("drops nulls, so a builder returning null costs the caller nothing", () => {
+    expect(graphJsonLd([a, null])).toEqual(a);
+    expect(graphJsonLd([null, null])).toBeNull();
+    expect(graphJsonLd([])).toBeNull();
   });
 });
