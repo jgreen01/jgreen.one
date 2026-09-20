@@ -30,7 +30,9 @@ let workdir: string;
  * every external binary is mocked and the script never touches the network.
  */
 const FAKE_ENV = {
-  AWS_ACCESS_KEY_ID: "AKIAFAKEFAKEFAKEFAKE",
+  // Synthetic. The point of this suite is proving these never reach a command
+  // line or the built output.
+  AWS_ACCESS_KEY_ID: "AKIAFAKEFAKEFAKEFAKE", // check-secrets: ignore
   AWS_SECRET_ACCESS_KEY: "fake-secret-value-must-never-be-echoed",
   AWS_SESSION_TOKEN: "fake-session-token-must-never-be-echoed",
 };

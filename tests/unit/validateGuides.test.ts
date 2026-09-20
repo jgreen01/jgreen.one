@@ -109,7 +109,7 @@ describe("validate_guides.mjs", () => {
 
     it("does not flag a real-looking credential that avoids the keywords", () => {
       // The scanner is keyword-based only; it has no entropy or pattern rules.
-      writeGuide("token.md", "AKIAIOSFODNN7EXAMPLE\n");
+      writeGuide("token.md", "AKIAIOSFODNN7EXAMPLE\n"); // check-secrets: ignore
       expect(runValidator().status).toBe(0);
     });
   });
