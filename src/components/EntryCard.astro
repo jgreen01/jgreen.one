@@ -6,13 +6,23 @@
 import { type CollectionEntry } from "astro:content";
 import { heroImagePath } from "../utils/heroImagePath";
 import { formatDate } from "../utils/formatDate";
+import { tagHref } from "../utils/tags";
 interface Props {
   entry: CollectionEntry<"entries">;
+  /**
+   * The tag whose page this card is being rendered on, if any. That one tag
+   * renders as plain text instead of a link: a page linking to itself is noise,
+   * and it is the one destination the reader is already at.
+   */
+  currentTag?: string;
 }
-const { entry } = Astro.props;
+const { entry, currentTag } = Astro.props;
 const { data, collection } = entry;
 const heroImage = heroImagePath(data.heroImage);
 const href = `/${collection}/${entry.id}`;
+
+const PILL =
+  "text-xs font-semibold text-accent dark:text-accentDark bg-accent/10 dark:bg-accentDark/10 px-2 py-1 rounded-full";
 ---
 
 <li class="mb-6">
@@ -49,7 +59,16 @@ const href = `/${collection}/${entry.id}`;
       </p>
       {data.description && <p class="text-foreground/80 dark:text-foregroundDark/80 mt-1">{data.description}</p>}
       <div class="flex flex-wrap gap-2 mt-2">
-        {data.tags.map((tag) => <span class="text-xs font-semibold text-accent dark:text-accentDark bg-accent/10 dark:bg-accentDark/10 px-2 py-1 rounded-full">#{tag}</span>)}
+        {data.tags.map((tag) =>
+          tag === currentTag ? (
+            <span class={PILL}>#{tag}</span>
+          ) : (
+            <a
+              href={tagHref(tag)}
+              class={`${PILL} hover:bg-accent/20 dark:hover:bg-accentDark/20 transition-colors`}
+            >#{tag}</a>
+          ),
+        )}
       </div>
     </div>
   </div>
