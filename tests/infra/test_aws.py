@@ -270,3 +270,54 @@ class TestBudget:
             AccountId=account_id, BudgetName=BUDGET_NAME
         )["Notifications"]
         assert notifications, "Budget has no notifications — it will alert nobody"
+
+
+class TestViewerRequestFunction:
+    """The edge function that runs on every request to the site.
+
+    An unhandled exception in it returns HTTP 503 for every request, so these
+    assert the *published* code, not the source on disk: a function can be
+    edited locally and never applied, and the distribution serves whatever was
+    last published to LIVE.
+    """
+
+    @staticmethod
+    def _live_code(cloudfront) -> str:
+        return (
+            cloudfront.get_function(Name="subdirectory-index-rewrite", Stage="LIVE")["FunctionCode"]
+            .read()
+            .decode("utf-8")
+        )
+
+    def test_the_function_is_attached_to_the_distribution(self, distribution):
+        behaviour = distribution["DistributionConfig"]["DefaultCacheBehavior"]
+        associations = behaviour["FunctionAssociations"]
+        events = {
+            item["EventType"]: item["FunctionARN"] for item in associations.get("Items", [])
+        }
+        assert "viewer-request" in events, "no viewer-request function is attached"
+        assert events["viewer-request"].endswith(":function/subdirectory-index-rewrite")
+
+    def test_published_code_redirects_www_to_the_apex(self, cloudfront):
+        code = self._live_code(cloudfront)
+        assert "www." in code, "the published function has no www check"
+        assert "301" in code, "the published function issues no redirect"
+        assert "https://jgreen.one" in code, "no absolute apex target in the published function"
+
+    def test_published_code_anchors_the_www_check_at_the_start(self, cloudfront):
+        """A containment test would match the apex and loop every request."""
+        code = self._live_code(cloudfront)
+        assert "indexOf('www.') === 0" in code, (
+            "the www check is not anchored; a host merely containing 'www' would "
+            "match, and an unanchored check risks redirecting the apex to itself"
+        )
+
+    def test_published_code_is_es5(self, cloudfront):
+        """cloudfront-js-1.0 is ES5.1. Modern syntax fails at parse time, which
+        returns 503 for every request rather than failing at publish."""
+        code = self._live_code(cloudfront)
+        body = "\n".join(
+            line for line in code.splitlines() if not line.strip().startswith("//")
+        )
+        for token in ("const ", "let ", "=>", "`"):
+            assert token not in body, f"{token!r} is not valid in cloudfront-js-1.0"
