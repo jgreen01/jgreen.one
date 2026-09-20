@@ -73,6 +73,47 @@ Task IDs use bare base36 (no padding, no prefix): `1`, `2`… `9`, `A`, `B`… `
 
 Update each task's **Status** and **Log** as work progresses. When done, mark it `DONE` and move it to "Recently Resolved" in the index — the file stays in `todo/`. If abandoned, move the file to `boneyard/` with a reason.
 
+**Secret check — run this every time.** After adding or updating any task file,
+run `npm run check:secrets`. It scans the **whole repository — source code
+included** for secret-shaped *values*: AWS keys, GitHub and Anthropic tokens,
+PEM blocks, JWTs, credentials in URLs, AWS account IDs. It exits non-zero on a
+find and reports every match redacted, never echoing the value into the
+terminal or a CI log.
+
+A **pre-commit hook blocks any commit that stages a credential.** It is in
+`.githooks/pre-commit` so it is version-controlled; enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks     # required after a fresh clone
+npm run check:secrets                   # whole repo
+npm run check:secrets:staged            # just what is about to be committed
+```
+
+The hook scans the **staged blob**, not the working tree — a secret can be
+staged and then edited out of the file, and the commit would still carry it.
+Bypass with `git commit --no-verify` only when you are certain, and say why.
+
+**Suppressing a false positive.** Fixtures sometimes need credential-shaped
+values. Mark them, never disable the scanner:
+
+```js
+AWS_ACCESS_KEY_ID: "AKIAFAKEFAKEFAKEFAKE", // check-secrets: ignore
+```
+
+`check-secrets: ignore` covers that line and the next one only.
+`check-secrets: ignore-file` in the first 20 lines exempts a whole file — use
+it only where every value is synthetic, as in `tests/unit/secrets.test.ts`.
+
+It detects by shape, not by a stored list, so it catches identifiers it has
+never been told about. AWS account IDs are treated as **errors**: AWS says they
+are not secret, but this repository is public and there is no reason to publish
+one. Use `<account-id>` in prose and `data.aws_caller_identity.current.account_id`
+in Terraform. Distribution and zone IDs are reported as information only.
+
+Note the older `scripts/validate_guides.mjs` greps for the *words* "secret" and
+"password", so it fires on prose about handling secrets and misses real keys
+entirely. `check-secrets` is the one to trust.
+
 **Done folder rule:** Never move a task to `todo/done/` unless Jon explicitly asks (e.g. "move task 1 to done"). Completing a task is not permission to file it. Tasks remain in `todo/` marked DONE until Jon says to file them. See `todo/done/README.md` for the exact steps.
 
 ## Commands
