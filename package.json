@@ -22,7 +22,9 @@
     "smoke": "node scripts/smoke.mjs",
     "crawlers": "node scripts/crawler-check.mjs",
     "crawlers:update": "node scripts/update-ai-crawlers.mjs",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "check:secrets:staged": "node scripts/check-secrets.mjs --staged"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
