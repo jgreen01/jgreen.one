@@ -143,6 +143,17 @@ The property is verified. Remaining:
       on tag pages. (The Search Console *API* allows 2,000 inspections/day, but
       inspection is not submission — it does not queue a URL for indexing.)
 - [ ] Record the robots.txt report's *last fetched* timestamp
+- [ ] **Run Google's [Rich Results Test](https://search.google.com/test/rich-results)**
+      on `/entries/this-site/` and `/about/`. Inherited from task A, whose
+      implementation is complete and validated two other ways — this is the one
+      check that needs a signed-in Google account, so it belongs with the rest of
+      the browser work rather than blocking a finished task.
+
+      Worth knowing it now covers more than when task A was written: task H added
+      `BreadcrumbList`, so an entry page carries **both** `Article` and the
+      breadcrumb trail in one `@graph`. One test validates both. Listing pages
+      carry `CollectionPage`, which Google parses but renders no rich result for
+      — an empty result there is expected, not a failure.
 - [ ] Check **Page indexing** and note the exact reason string per URL
 
 The reason string matters — these mean different things:
