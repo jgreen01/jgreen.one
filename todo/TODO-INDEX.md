@@ -1,4 +1,4 @@
-# TODO Index: 3 open
+# TODO Index: 2 open
 *Last updated: 2026-09-20*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
@@ -11,7 +11,6 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## MEDIUM Priority
 
-- [A add-json-ld-structured-data](A-json-ld-structured-data.md) — BLOCKED: shipped, live, and validated clean against schema.org two ways. The last check is Google's Rich Results Test, which needs a signed-in account — two minutes in a browser.
 - [F search-engine-submission](F-search-engine-submission.md) — get the site into Google and Bing. Reachability for Gemini and ChatGPT is an indexing problem, not a serving one. Covers every channel, including the ones to skip.
 
 ## LOW Priority
@@ -22,7 +21,7 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
 ## Recently Resolved
 
-- [I redirect-www-to-apex](I-redirect-www-to-apex.md) — DONE 2026-09-20. `www` now 301s to the apex at the edge; one hostname, one crawl per URL. Loop guard asserted three ways. Follow-up: re-check Search Console in a few weeks.
+(nothing pending — see `todo/done/`)
 
 ---
 

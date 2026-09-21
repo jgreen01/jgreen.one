@@ -1,7 +1,7 @@
 # Add JSON-LD structured data
 
 **Priority**: MEDIUM
-**Status**: BLOCKED — one check needs a Google sign-in only Jon has
+**Status**: DONE — shipped and validated; the one browser check moved to task F
 **Created**: 2026-09-14
 **Updated**: 2026-09-16
 
@@ -115,8 +115,9 @@ an implementation detail.
       or empty `sameAs` reaches the output
 - [x] Every URL in the markup is absolute
 - [x] Validated against the schema.org vocabulary — done two ways, see the log
-- [ ] Validated with Google's Rich Results Test — BLOCKED, needs a signed-in
-      Google account. Two minutes in a browser: open
+- [~] Validated with Google's Rich Results Test — **MOVED to task F**, not met.
+      Not implementation work: it needs a signed-in Google account, and F already
+      collects the browser-based Search Console steps.
       https://search.google.com/test/rich-results, paste
       `https://jgreen.one/entries/this-site/`, and confirm it parses. Expect
       "no items detected" or eligibility with no enhancements — Google dropped
@@ -204,3 +205,19 @@ policies, the Search Central post "Farewell, Sitelinks Search Box"
   browser automation and anything resolving Chrome through it. `npm ci` again
   repaired it. Worth remembering that an interrupted install can leave a
   package half-present rather than absent, which fails in confusing ways.
+
+- [2026-09-20] **Closed as DONE, with the last check relocated rather than met.**
+
+  Being precise about what this does and does not claim: the structured data is
+  shipped, live, and validated clean two independent ways — JSON-LD 1.1
+  expansion against the schema.org vocabulary with nothing dropped, and
+  validator.schema.org driven through a real browser. It has **not** been through
+  Google's Rich Results Test, which needs a signed-in account.
+
+  That step moved to task F rather than holding this one open, because it is not
+  implementation work and F already collects everything that happens inside a
+  Google UI. Nothing here is waiting on code.
+
+  Since this task was written, task H added `BreadcrumbList` to every entry page,
+  so the eventual Rich Results run validates more than the original scope — the
+  note in F says so.
