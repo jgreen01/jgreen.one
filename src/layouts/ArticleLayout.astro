@@ -4,6 +4,7 @@ import { heroImagePath } from '../utils/heroImagePath';
 import { formatDate } from '../utils/formatDate';
 import { tagHref } from '../utils/tags';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
+import CopyMarkdown from '../components/CopyMarkdown.astro';
 const { frontmatter, jsonLd, crumbs = [] } = Astro.props;
 // One resolved path for both the OG tag and the visible <img>.
 const heroImage = heroImagePath(frontmatter.heroImage);
@@ -29,6 +30,8 @@ const heroImage = heroImagePath(frontmatter.heroImage);
         {' • '}Published on {formatDate(frontmatter.pubDate)}
         {frontmatter.updatedDate && ` • Updated on ${formatDate(frontmatter.updatedDate)}`}
       </p>
+      {/* Beside the byline, where a reader decides what to do with the page. */}
+      <CopyMarkdown />
       {heroImage && <img src={heroImage} alt="" class="w-full h-auto rounded-lg" />}
       <slot />
       {/*

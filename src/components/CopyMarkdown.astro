@@ -1,0 +1,94 @@
+---
+/**
+ * A link to the page's Markdown twin, upgraded to a copy control.
+ *
+ * Every page has had a Markdown twin for a while, advertised by URL
+ * convention, by `<link rel="alternate">` and by a `Link` header — all three
+ * machine-readable, none of them reachable by a person. This is that
+ * capability handed to the reader.
+ *
+ * Rendered as a real anchor, not a button. Without JavaScript it is a working
+ * link to the Markdown; with it, a click copies. That ordering is also what
+ * makes the twin discoverable at all: a crawler and a screen reader can both
+ * see an anchor, where a JS-only button is invisible to each.
+ */
+import { markdownTwinUrl } from "../utils/seoMeta";
+
+interface Props {
+  /** Defaults to the page being rendered. */
+  path?: string;
+}
+const { path = Astro.url.pathname } = Astro.props;
+const twin = markdownTwinUrl(path);
+---
+
+<p class="not-prose text-sm mb-8 -mt-4">
+  <a
+    href={twin}
+    data-copy-markdown
+    class="inline-flex items-center gap-1.5 underline decoration-dotted underline-offset-4 hover:decoration-solid"
+  >
+    <span data-copy-label>Copy as Markdown</span>
+  </a>
+  {/* Announced rather than only shown, so the confirmation is not sighted-only. */}
+  <span data-copy-status role="status" aria-live="polite" class="sr-only"></span>
+</p>
+
+<script>
+  import { copyText, formatTokenCount } from "../utils/copyMarkdown";
+
+  const RESET_AFTER_MS = 2000;
+
+  for (const link of document.querySelectorAll<HTMLAnchorElement>("[data-copy-markdown]")) {
+    const label = link.querySelector<HTMLElement>("[data-copy-label]");
+    const status = link.parentElement?.querySelector<HTMLElement>("[data-copy-status]");
+    if (!label) continue;
+
+    const resting = label.textContent ?? "Copy as Markdown";
+    let busy = false;
+
+    const say = (text: string) => {
+      label.textContent = text;
+      if (status) status.textContent = text;
+    };
+
+    link.addEventListener("click", async (event) => {
+      // A modified click is the reader asking for a new tab. Leave it alone.
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+
+      try {
+        const response = await fetch(link.href, { headers: { Accept: "text/markdown" } });
+        if (!response.ok) throw new Error(String(response.status));
+
+        // Free from the viewer-response function, and genuinely useful to
+        // someone deciding whether to spend the context.
+        const tokens = formatTokenCount(Number(response.headers.get("x-markdown-tokens")));
+        const text = await response.text();
+
+        const copied = await copyText(text, {
+          clipboard: navigator.clipboard,
+          execCommand: document.execCommand?.bind(document),
+        });
+
+        if (copied) {
+          say(tokens ? `Copied — ${tokens}` : "Copied");
+          window.setTimeout(() => {
+            say(resting);
+            busy = false;
+          }, RESET_AFTER_MS);
+          return;
+        }
+        throw new Error("clipboard unavailable");
+      } catch {
+        // Never a silent no-op. Say so, and stand down so the next click
+        // follows the link and the reader gets the file anyway.
+        say("Couldn’t copy — open the Markdown");
+        link.removeAttribute("data-copy-markdown");
+        busy = false;
+      }
+    });
+  }
+</script>
