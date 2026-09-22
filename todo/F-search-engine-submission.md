@@ -58,14 +58,17 @@ sitemap coverage, which will never reach 100%.
 
 ---
 
-## Group 0 — Fix before judging the indexing results ✅ COMPLETE
+## Site fixes — ✅ COMPLETE
+
+Done before judging any indexing result, so the pages Google recrawls are the
+improved ones. All four are settled; kept for the record.
 
 Three real findings from the audit. None is catastrophic, and none explains
 "not indexed yet" on its own — a new domain simply takes time. But the second
 materially reinforces the thin-content signal on exactly the pages already at
 risk, so fix it before concluding anything from Search Console.
 
-### 0a. 27 of 36 pages share one meta description ⚠️ *the one that matters*
+### Descriptions — 27 of 36 pages share one meta description ⚠️ *the one that matters*
 
 Every tag page, every listing page (`/blog/`, `/projects/`, `/entries/`,
 `/tags/`) and the homepage all emit the site-wide default:
@@ -85,7 +88,7 @@ themselves identically look like near-duplicates of one another.
 - [x] Per the TDD rule, this belongs in a `src/utils/` helper with unit tests,
       not in `.astro` frontmatter
 
-### 0b. No `Vary: Accept` on content-negotiated responses
+### Vary: Accept — No `Vary: Accept` on content-negotiated responses
 
 The same URL returns HTML or Markdown depending on the `Accept` request header,
 but **no response declares `Vary: Accept`**.
@@ -108,7 +111,7 @@ so it always receives HTML. This is a correctness fix, not an indexing rescue.
 - [x] Add `Vary: Accept` in `infra/live/response-function.js`
 - [x] Runtime-gate it with `aws cloudfront test-function` — gate 38 → 42 passing
 
-### 0c. Markdown twins are directly fetchable and indexable
+### noindex on the twins — Markdown twins are directly fetchable and indexable
 
 `https://jgreen.one/entries/this-site/index.md` returns **200 text/markdown**
 directly, and `robots.txt` allows everything.
@@ -123,7 +126,7 @@ AI crawlers keep full access and the site's thesis is untouched.
 - [x] Consider `X-Robots-Tag: noindex` on `.md` responses in the viewer-response
       function — or consciously decide the risk is too small to bother
 
-### 0d. ✅ CLOSED — no action, the current behaviour is correct
+### lastmod — ✅ CLOSED — no action, the current behaviour is correct
 
 `/about/` and `/contact/` are the only sitemap URLs with no `lastmod`, because
 they carry no date. **This is right, not merely harmless.** Google's sitemap
@@ -147,13 +150,42 @@ deleting a test written to prevent exactly that.
 
 ---
 
-## Group 1 — Recommended
+## The engines, ordered by usage
 
-### 1a. Google Search Console (in progress)
+Share is worldwide across all devices, [StatCounter](https://gs.statcounter.com/search-engine-market-share),
+2026. Ordered by how many people actually use them, which is not the same as the
+order to work through — see below.
+
+| # | Engine | Share | Status |
+|---|---|---:|---|
+| 1 | Google | **91.1%** | ✅ sitemap submitted |
+| 2 | **Bing** | 4.5% | ⬅ **the highest-value item left** |
+| 3 | Yahoo | 1.23% | covered by Bing — nothing to do |
+| 4 | Yandex | 0.99% | regional; decide |
+| 5 | DuckDuckGo | 0.89% | covered by Bing — nothing to submit |
+| 6 | Baidu | 0.62% | no |
+
+### Why the ranking understates Bing
+
+**Yahoo, DuckDuckGo, Ecosia and AOL all draw their web results from Bing's
+index.** One Bing submission therefore reaches roughly **7% of all search**
+rather than 4.5% — and the same index is what **ChatGPT Search** and **Microsoft
+Copilot** read, and a major source for **Perplexity**.
+
+So after Google, Bing is not merely next on the list; it is next by a wide
+margin over everything below it, and it costs one click from Search Console.
+Nothing else remaining in this task approaches that ratio of effort to reach.
+
+---
+
+## 1. Google — 91.1%
+
+
 
 The property is verified. Remaining:
 
-- [ ] Submit `https://jgreen.one/sitemap-index.xml` under **Sitemaps**
+- [x] Submit `https://jgreen.one/sitemap-index.xml` under **Sitemaps** —
+      done 2026-09-21: **Success, 36 pages discovered**
 - [ ] **URL Inspection → Request indexing** on `/` and 2–3 articles.
       Quota is **10–12 URLs/day per property**, unpublished by Google and
       varying with account history and site size. Spend it on articles, never
@@ -184,7 +216,11 @@ The reason string matters — these mean different things:
 If the third appears, the fix already shipped; it needs a re-crawl and a
 validation request, not a code change.
 
-### 1b. Bing Webmaster Tools — the highest value-per-minute item
+---
+
+## 2. Bing — 4.5% direct, ~7% effective
+
+
 
 **Why it matters more than its search share suggests:** Bing's index powers
 **ChatGPT Search** and **Microsoft Copilot**, and is a major source for
@@ -214,9 +250,77 @@ need the new prefix added.
 
 ---
 
-## Group 2 — Optional, decide on merit
+## 3. Yahoo — 1.23%
 
-### 2a. IndexNow
+Bing-powered, with no index or submission of its own. **Section 2 covers it
+entirely.** Recorded so it is not re-investigated.
+
+---
+
+## 4. Yandex — 0.99%
+
+
+
+Independent index, supports IndexNow. Real value only for Russian-language
+traffic, which is not this audience. Listed for completeness.
+
+- [ ] Decide — recommend no
+
+---
+
+## 5. DuckDuckGo — 0.89%
+
+
+
+No submission process exists. Its main index is Bing's, so **1b covers it
+entirely**. Nothing to do — and nothing *can* be done directly.
+
+Confirmed still true in 2026: DuckDuckGo uses **Bing as the primary source** for
+standard web results, supplemented by its own `DuckDuckBot` for instant answers,
+link-health checks and structured data, plus several hundred specialist sources.
+
+Verified 2026-09-21 that `DuckDuckBot` fetches the site successfully (200), and
+`robots.txt` carries no `Disallow` for it or anyone else. **Doing Bing is doing
+DuckDuckGo** — that is the only lever that exists.
+
+---
+
+## 6. Baidu — 0.62%
+
+
+
+Effectively requires Chinese hosting and an ICP licence. The site is on
+CloudFront PriceClass_100 and the audience is not in China. **No.**
+
+---
+
+## Below the measurement threshold, but cheap and well-aimed
+
+
+
+❗ The original draft of this task called these "no submission process, skip."
+**That was wrong for two of them.** Verified 2026-09-19:
+
+| Engine | Submission | Verdict |
+|---|---|---|
+| **Brave Search** | Public form: <https://search.brave.com/submit-url> | **Do it** — two minutes, independent index, powers Brave + feeds Kagi |
+| **Marginalia** | PR adding the domain to `sites.txt` in [MarginaliaSearch/submit-site-to-marginalia-search](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search), or email `contact@marginalia-search.com` | **Do it** — a hand-built site on an obscure domain is precisely its editorial target |
+| **Mojeek** | Unclear. Only guidance is a 2015 blog post; its own community forum has open threads from 2025 asking whether any current method exists. | Low value — try the forum or skip |
+| **Kagi** | No direct submission. Aggregates Brave, Mojeek and Yandex plus its own Teclis index. | Nothing to do — **Brave submission reaches it indirectly** |
+
+These will not move traffic. Brave and Marginalia are worth the four combined
+minutes because they are genuinely independent indexes, and Brave propagates
+into Kagi.
+
+- [ ] Submit to Brave
+- [ ] Submit to Marginalia (PR or email)
+- [ ] Check the Mojeek forum, or decide to skip
+
+---
+
+## Push protocols, not engines
+
+
 
 A push protocol: ping once, and participating engines share the submission
 between them. **Google has publicly declined to join** and still does not
@@ -263,48 +367,11 @@ Notes if this is built:
 - [ ] Decide yes/no
 - [ ] If yes: generate key, add key file, add deploy step + tests
 
-### 2b. Yandex Webmaster
-
-Independent index, supports IndexNow. Real value only for Russian-language
-traffic, which is not this audience. Listed for completeness.
-
-- [ ] Decide — recommend no
-
 ---
 
-## Group 3 — Low value, with reasons recorded
+## The AI crawlers
 
-### 3a. Baidu
 
-Effectively requires Chinese hosting and an ICP licence. The site is on
-CloudFront PriceClass_100 and the audience is not in China. **No.**
-
-### 3b. DuckDuckGo
-
-No submission process exists. Its main index is Bing's, so **1b covers it
-entirely**. Nothing to do — and nothing *can* be done directly.
-
-### 3c. Brave Search, Marginalia, Mojeek, Kagi — **partly reclassified**
-
-❗ The original draft of this task called these "no submission process, skip."
-**That was wrong for two of them.** Verified 2026-09-19:
-
-| Engine | Submission | Verdict |
-|---|---|---|
-| **Brave Search** | Public form: <https://search.brave.com/submit-url> | **Do it** — two minutes, independent index, powers Brave + feeds Kagi |
-| **Marginalia** | PR adding the domain to `sites.txt` in [MarginaliaSearch/submit-site-to-marginalia-search](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search), or email `contact@marginalia-search.com` | **Do it** — a hand-built site on an obscure domain is precisely its editorial target |
-| **Mojeek** | Unclear. Only guidance is a 2015 blog post; its own community forum has open threads from 2025 asking whether any current method exists. | Low value — try the forum or skip |
-| **Kagi** | No direct submission. Aggregates Brave, Mojeek and Yandex plus its own Teclis index. | Nothing to do — **Brave submission reaches it indirectly** |
-
-These will not move traffic. Brave and Marginalia are worth the four combined
-minutes because they are genuinely independent indexes, and Brave propagates
-into Kagi.
-
-- [ ] Submit to Brave
-- [ ] Submit to Marginalia (PR or email)
-- [ ] Check the Mojeek forum, or decide to skip
-
-### 3d. The AI crawlers themselves
 
 ClaudeBot, GPTBot, PerplexityBot, Amazonbot and the rest have **no index and no
 submission process**. They fetch live, on demand. The crawler harness already
@@ -317,7 +384,7 @@ re-investigated.
 
 ## Acceptance Criteria
 
-**Group 0 — site fixes**
+**Site fixes — complete**
 - [x] Tag and listing pages emit their own meta descriptions — 27 duplicates → 0, live
 - [x] `Vary: Accept` added to the viewer-response function and runtime-gated — live
 - [x] `X-Robots-Tag: noindex` on `.md` twins — done, shipped with task J.
@@ -325,7 +392,7 @@ re-investigated.
       Markdown response is served at the page's URL, and marking that would tell
       a crawler not to index the article itself. **Committed, not yet deployed.**
 
-**Group 1 — the ones that matter**
+**Google and Bing — where 95% of search actually is**
 - [ ] Sitemap submitted in Google Search Console
 - [ ] Indexing requested for `/` and the articles
 - [ ] Page-indexing reason strings recorded per URL
@@ -333,7 +400,7 @@ re-investigated.
 - [ ] Bing fallback verification in `infra/live/dns.tf` + `test_dns.py` updated,
       **or** an explicit decision not to
 
-**Groups 2–3 — decisions recorded**
+**Everything else — decisions recorded**
 - [ ] IndexNow decided yes/no, reasoning written here
 - [ ] Yandex, Baidu, DuckDuckGo decisions recorded
 - [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped
@@ -393,3 +460,15 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
   Jon submitted `sitemap-index.xml` to Search Console: **Success, 36 pages**.
 
   What is left in this task is browser work and decisions, not code.
+- [2026-09-21] Reordered by actual usage rather than by recommendation, at
+  Jon's request, with StatCounter 2026 shares.
+
+  The reordering makes one thing explicit that the old grouping buried: **Bing's
+  4.5% understates its reach badly.** Yahoo, DuckDuckGo, Ecosia and AOL all read
+  Bing's index, so one submission covers roughly 7% of search — and the same
+  index is what ChatGPT Search and Copilot read. After Google it is not merely
+  next, it is next by a wide margin, for one click.
+
+  DuckDuckGo gained its own section rather than a footnote. Verified 2026-09-21
+  that `DuckDuckBot` fetches the site (200) and that `robots.txt` blocks nobody.
+  There is still no submission form: doing Bing is doing DuckDuckGo.
