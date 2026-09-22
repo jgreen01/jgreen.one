@@ -58,7 +58,7 @@ sitemap coverage, which will never reach 100%.
 
 ---
 
-## Group 0 — Fix before judging the indexing results
+## Group 0 — Fix before judging the indexing results ✅ COMPLETE
 
 Three real findings from the audit. None is catastrophic, and none explains
 "not indexed yet" on its own — a new domain simply takes time. But the second
@@ -79,10 +79,10 @@ factor, so this is **not** fatal on its own. It matters here because it stacks
 on top of the thin-tag-page problem: 22 near-empty pages that also describe
 themselves identically look like near-duplicates of one another.
 
-- [ ] Give tag pages a generated description, e.g.
+- [x] Give tag pages a generated description, e.g.
       "Entries tagged *astro* — N posts on jgreen.one."
-- [ ] Give each listing page its own
-- [ ] Per the TDD rule, this belongs in a `src/utils/` helper with unit tests,
+- [x] Give each listing page its own
+- [x] Per the TDD rule, this belongs in a `src/utils/` helper with unit tests,
       not in `.astro` frontmatter
 
 ### 0b. No `Vary: Accept` on content-negotiated responses
@@ -105,8 +105,8 @@ method and target.
 **Googlebot risk: low.** Googlebot's `Accept` does not contain `text/markdown`,
 so it always receives HTML. This is a correctness fix, not an indexing rescue.
 
-- [ ] Add `Vary: Accept` in `infra/live/response-function.js`
-- [ ] Runtime-gate it with `aws cloudfront test-function` like the other edge changes
+- [x] Add `Vary: Accept` in `infra/live/response-function.js`
+- [x] Runtime-gate it with `aws cloudfront test-function` — gate 38 → 42 passing
 
 ### 0c. Markdown twins are directly fetchable and indexable
 
@@ -120,13 +120,30 @@ does find them, they are duplicate content competing with the HTML.
 🟡 Low probability, cheap insurance. `noindex` does **not** block fetching, so
 AI crawlers keep full access and the site's thesis is untouched.
 
-- [ ] Consider `X-Robots-Tag: noindex` on `.md` responses in the viewer-response
+- [x] Consider `X-Robots-Tag: noindex` on `.md` responses in the viewer-response
       function — or consciously decide the risk is too small to bother
 
-### 0d. Minor
+### 0d. ✅ CLOSED — no action, the current behaviour is correct
 
-- [ ] `/about/` and `/contact/` are the only sitemap URLs with no `lastmod`
-      (static pages, no date in frontmatter). Harmless; `lastmod` is only a hint.
+`/about/` and `/contact/` are the only sitemap URLs with no `lastmod`, because
+they carry no date. **This is right, not merely harmless.** Google's sitemap
+documentation:
+
+> "If you're not sure whether your metadata is accurate (for example, you don't
+> know when a particular URL was last modified), it's better to omit that tag
+> for that particular URL than to just make up a value which may be inaccurate."
+
+Google uses `lastmod` only "if it's consistently and verifiably accurate".
+Stamping build time on the two undated pages would make every page look freshly
+modified on every deploy, and cost the signal on the other 34 to gain nothing on
+these two.
+
+The repository already holds this position deliberately:
+`tests/integration/build.test.mjs:469` — *"pages that cannot be honestly dated
+carry no lastmod"* — asserts both URLs have none. Changing this would mean
+deleting a test written to prevent exactly that.
+
+- [x] Verified 2026-09-21 and closed. No change required.
 
 ---
 
@@ -301,9 +318,12 @@ re-investigated.
 ## Acceptance Criteria
 
 **Group 0 — site fixes**
-- [ ] Tag and listing pages emit their own meta descriptions (helper + unit tests)
-- [ ] `Vary: Accept` added to the viewer-response function and runtime-gated
-- [ ] `X-Robots-Tag: noindex` on `.md` twins, **or** a recorded decision to skip
+- [x] Tag and listing pages emit their own meta descriptions — 27 duplicates → 0, live
+- [x] `Vary: Accept` added to the viewer-response function and runtime-gated — live
+- [x] `X-Robots-Tag: noindex` on `.md` twins — done, shipped with task J.
+      Applies only to a direct request for the twin's own URL: a *negotiated*
+      Markdown response is served at the page's URL, and marking that would tell
+      a crawler not to index the article itself. **Committed, not yet deployed.**
 
 **Group 1 — the ones that matter**
 - [ ] Sitemap submitted in Google Search Console
@@ -365,3 +385,11 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
   downstream gap real); `.md` twins fetchable and indexable; repo `homepage`
   field empty. **Confirmed clean:** 36/36 URLs return 200, 36/36 titles unique,
   no `noindex`, canonicals correct, no-slash duplicates properly canonicalised.
+- [2026-09-21] **Group 0 complete.** 0a (descriptions) and 0b (`Vary: Accept`)
+  are live; 0c (`noindex`) is committed with task J and awaits deploy; 0d closed
+  as by-design — Google explicitly prefers an omitted `lastmod` to an invented
+  one, and a build test already enforces it.
+
+  Jon submitted `sitemap-index.xml` to Search Console: **Success, 36 pages**.
+
+  What is left in this task is browser work and decisions, not code.
