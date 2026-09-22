@@ -70,6 +70,26 @@ function handler(event) {
         headers['x-markdown-tokens'] = { value: count.value };
     }
 
+    // X-Robots-Tag: noindex on the twin's OWN url.
+    //
+    // The twins are linked from every article now, so they are genuinely
+    // discoverable — which is exactly when Google needs telling to index the
+    // HTML rather than a near-duplicate of it. noindex does not prevent
+    // fetching; the crawler has to fetch the response to read the header. The
+    // copy button, content negotiation and every AI crawler are unaffected.
+    //
+    // The distinction that matters: a NEGOTIATED Markdown response is served at
+    // the *page* URL, and marking that noindex would tell a crawler not to
+    // index the article itself. Both cases arrive here with the same rewritten
+    // URI, so they are told apart by whether the request asked for Markdown.
+    var acceptHeader = request.headers && request.headers['accept'];
+    var accept = acceptHeader && acceptHeader.value ? acceptHeader.value.toLowerCase() : '';
+    var negotiated = accept.indexOf('text/markdown') !== -1;
+
+    if (isMarkdown && !negotiated && !headers['x-robots-tag']) {
+        headers['x-robots-tag'] = { value: 'noindex' };
+    }
+
     // Vary: Accept on the two representations the Accept header selects between.
     //
     // CloudFront's own cache is already safe — the viewer-request function

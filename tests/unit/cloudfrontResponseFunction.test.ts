@@ -224,3 +224,57 @@ describe("Vary: Accept on the negotiated representations", () => {
     expect(() => handler({ request: { uri: "/about/index.html" }, response: {} })).not.toThrow();
   });
 });
+
+/**
+ * `X-Robots-Tag: noindex` on the twin's own URL.
+ *
+ * The twins are now linked from every article, so they are genuinely
+ * discoverable — which is exactly when Google needs telling to index the HTML
+ * rather than 37 near-duplicates of it.
+ *
+ * noindex does not prevent fetching; it cannot, since the crawler has to fetch
+ * the response to read the header. Content negotiation, ClaudeBot, GPTBot and
+ * the copy button are all unaffected.
+ *
+ * The subtlety: a NEGOTIATED Markdown response is served at the *page* URL, and
+ * marking that noindex would tell a crawler not to index the article itself.
+ * The two cases arrive with the same rewritten URI, so they are told apart by
+ * whether the request asked for Markdown.
+ */
+describe("X-Robots-Tag on the Markdown twin", () => {
+  const robotsFor = (uri: string, accept: string | null, contentType: string) =>
+    handler({
+      request: { uri, headers: accept === null ? {} : { accept: { value: accept } } },
+      response: { statusCode: 200, headers: { "content-type": { value: contentType } } },
+    }).headers["x-robots-tag"]?.value;
+
+  const MD = "text/markdown; charset=utf-8";
+
+  it("marks a direct request for the twin's own URL", () => {
+    expect(robotsFor("/entries/x/index.md", null, MD)).toBe("noindex");
+  });
+
+  it("marks it for a browser-shaped Accept too", () => {
+    expect(robotsFor("/entries/x/index.md", "text/html,*/*", MD)).toBe("noindex");
+  });
+
+  // The page's own URL must never be told not to index itself.
+  it("leaves a negotiated Markdown response unmarked", () => {
+    expect(robotsFor("/entries/x/index.md", "text/markdown, */*", MD)).toBeUndefined();
+  });
+
+  it("is case-insensitive about the negotiated Accept", () => {
+    expect(robotsFor("/entries/x/index.md", "TEXT/MARKDOWN", MD)).toBeUndefined();
+  });
+
+  it("never marks an HTML page", () => {
+    expect(robotsFor("/entries/x/index.html", "text/html", "text/html")).toBeUndefined();
+  });
+
+  it.each([
+    ["/media/hero.webp", "image/webp"],
+    ["/llms.txt", "text/plain; charset=utf-8"],
+  ])("never marks %s", (uri, ctype) => {
+    expect(robotsFor(uri, null, ctype)).toBeUndefined();
+  });
+});
