@@ -64,6 +64,17 @@ function joinUrl(base: string, path: string): string {
  * Crawlers treat a relative `og:image` or `canonical` as invalid, so both are
  * always returned fully qualified.
  */
+/**
+ * The Markdown twin of a page, from its URL or its path.
+ *
+ * One rule, exported, because three things need it: the `<link rel=alternate>`
+ * here, the visible copy control, and the edge function that serves the twin.
+ * A second copy of "append index.md" is a second chance to disagree.
+ */
+export function markdownTwinUrl(urlOrPath: string): string {
+  return `${urlOrPath.endsWith("/") ? urlOrPath : `${urlOrPath}/`}index.md`;
+}
+
 export function seoMeta(props: SeoProps = {}): SeoMeta {
   const site = props.site ?? SEO_DEFAULTS.site;
   const url = new URL(props.url ?? "/", site).toString();
@@ -78,9 +89,6 @@ export function seoMeta(props: SeoProps = {}): SeoMeta {
     // Derived from the canonical rather than passed in, so the advertised twin
     // is always the twin of this page. The edge rewrite uses the same rule,
     // and a build assertion proves every page has one.
-    markdownUrl:
-      props.markdown === false
-        ? undefined
-        : `${url.endsWith("/") ? url : `${url}/`}index.md`,
+    markdownUrl: props.markdown === false ? undefined : markdownTwinUrl(url),
   };
 }

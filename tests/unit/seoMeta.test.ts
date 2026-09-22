@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { seoMeta, SEO_DEFAULTS } from "../../src/utils/seoMeta";
+import { seoMeta, SEO_DEFAULTS, markdownTwinUrl } from "../../src/utils/seoMeta";
 
 describe("seoMeta", () => {
   describe("defaults", () => {
@@ -160,5 +160,34 @@ describe("the Markdown twin link", () => {
 
   it("is present by default", () => {
     expect(seoMeta({ url: "/blog/" }).markdownUrl).toBeTruthy();
+  });
+});
+
+describe("markdownTwinUrl", () => {
+  // One rule shared by the <link rel=alternate>, the visible copy control and
+  // the edge function. A second copy is a second chance to disagree.
+  it("appends index.md to a directory-style URL", () => {
+    expect(markdownTwinUrl("https://jgreen.one/about/")).toBe(
+      "https://jgreen.one/about/index.md",
+    );
+  });
+
+  it("adds the missing slash first", () => {
+    expect(markdownTwinUrl("https://jgreen.one/about")).toBe(
+      "https://jgreen.one/about/index.md",
+    );
+  });
+
+  it("works on a bare path, which is what a component has", () => {
+    expect(markdownTwinUrl("/entries/this-site/")).toBe("/entries/this-site/index.md");
+    expect(markdownTwinUrl("/entries/this-site")).toBe("/entries/this-site/index.md");
+  });
+
+  it("handles the root", () => {
+    expect(markdownTwinUrl("/")).toBe("/index.md");
+  });
+
+  it("never doubles the slash", () => {
+    expect(markdownTwinUrl("/about/")).not.toContain("//index.md");
   });
 });
