@@ -67,6 +67,12 @@ const exists = (relativePath) => {
 
 const read = (relativePath) => readFileSync(join(DIST, relativePath), "utf-8");
 
+/** Every path listed in the generated sitemap. */
+const sitemapPaths = () =>
+  [...read("sitemap-0.xml").matchAll(/<loc>https:\/\/jgreen\.one([^<]*)<\/loc>/g)].map(
+    (m) => m[1],
+  );
+
 describe("astro build output", () => {
   let result;
 
@@ -147,6 +153,34 @@ describe("astro build output", () => {
     if (rel === "404.html") return "/404/";
     return `/${rel.replace(/index\.html$/, "")}`;
   };
+
+  // 27 of 36 pages once fell back to the site-wide default description. Thin tag
+  // pages that also describe themselves identically read as near-duplicates,
+  // which is what keeps them out of an index. The homepage is the one page for
+  // which the site description IS the right description.
+  test("no two indexable pages share a meta description", () => {
+    const seen = new Map();
+    for (const path of sitemapPaths()) {
+      const file = `${path.replace(/^\//, "").replace(/\/$/, "")}/index.html`.replace(
+        /^index\.html$/,
+        "index.html",
+      );
+      const target = path === "/" ? "index.html" : file;
+      if (!exists(target)) continue;
+      const description = read(target).match(
+        /<meta name="description" content="([^"]*)"/,
+      )?.[1];
+      assert.ok(description, `${target} has no meta description`);
+      const other = seen.get(description);
+      assert.equal(
+        other,
+        undefined,
+        `${target} and ${other} share a description: ${description.slice(0, 60)}…`,
+      );
+      seen.set(description, target);
+    }
+    assert.ok(seen.size > 30, `only ${seen.size} pages checked`);
+  });
 
   test("every page's canonical URL points at that page", () => {
     for (const file of htmlFiles()) {
