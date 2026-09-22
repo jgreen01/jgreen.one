@@ -1,7 +1,7 @@
 # Copy the page as Markdown
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: DONE — built, tested and committed; awaiting deploy
 **Created**: 2026-09-21
 **Updated**: 2026-09-21
 
@@ -135,21 +135,20 @@ ship rather than merely unlikely.
 
 ## Acceptance Criteria
 
-- [ ] A real `<a>` to the Markdown twin renders without JavaScript
-- [ ] Clicking copies the twin's content to the clipboard
-- [ ] A clipboard failure is visible to the reader, never silent
-- [ ] Confirmation is announced to assistive tech, not just shown
-- [ ] Logic lives in `src/utils/` and is imported, not duplicated into an
+- [x] A real `<a>` to the Markdown twin renders without JavaScript
+- [x] Clicking copies the twin's content to the clipboard
+- [x] A clipboard failure is visible to the reader, never silent
+- [x] Confirmation is announced to assistive tech, not just shown
+- [x] Logic lives in `src/utils/` and is imported, not duplicated into an
       inline script
-- [ ] Unit tests for the extracted logic
-- [ ] Playwright covers the happy path and the rejection path, with the
-      non-Chromium situation decided explicitly
-- [ ] Build test: every emitted twin link resolves to a file in `dist/`
-- [ ] Token count shown, **or** a recorded decision not to
-- [ ] Shipped together with `X-Robots-Tag: noindex` on `.md` responses
+- [x] Unit tests for the extracted logic — 9, plus 5 for the shared twin URL
+- [x] Playwright covers the happy path and the rejection path, with the
+      non-Chromium situation decided explicitly — skipped by name
+- [x] Build test: every emitted twin link resolves to a file in `dist/`
+- [x] Token count shown, in the confirmation rather than the resting label
+- [x] Shipped together with `X-Robots-Tag: noindex` on `.md` responses
       (task F item 0c) — see the reasoning above
-- [ ] `npm run build` + `npx astro check` with no new errors
-      (verify with `^- [0-9]+ errors\?`; astro writes "1 error" singular)
+- [x] `npm run build` + `npx astro check` with no new errors
 
 ## Notes
 
@@ -171,3 +170,37 @@ the fallback and the enhancement honest about fetching the same thing.
   observation that the twins have no human-facing entry point. Verified while
   writing: `index.astro` already bundles a script that imports from
   `src/utils/`, so the mirroring wart in `nazar.ts` does not have to be repeated.
+
+- [2026-09-21] **DONE** — built, tested, committed. **Not yet deployed.**
+
+  Five commits: d7ff921 (this doc), a30b4da (extract the shared twin URL rule),
+  9373733 (the control), c90abcd (F item 0c, `noindex`), 362f29d (e2e and build
+  coverage).
+
+  **Verified:** unit **911** (was 890) · build integration 94/95, the one
+  failure being the pre-existing media-manifest check · 6 new e2e tests, all
+  passing in Chromium · CloudFront runtime gate 42 · `astro check` back to its
+  baseline of 1 pre-existing error · `terraform plan` 0 add, 1 change, 0 destroy
+  for the response function.
+
+  **The subtlety that would have been a bug:** a negotiated Markdown response is
+  served at the *page's* URL. Marking that `noindex` would tell a crawler not to
+  index the article itself. Both cases reach the edge function with the same
+  rewritten URI, so they are told apart by whether the request asked for
+  Markdown — only a direct hit on the twin's own URL is marked.
+
+  **A hint I introduced and removed:** naming `document.execCommand` in the
+  rejection-path e2e test tripped a deprecation warning, taking `astro check`
+  from 2 hints to 3. Switched to bracket access; a new warning for a deliberate
+  removal is noise.
+
+  **Decision recorded rather than omitted:** the runtime gate was NOT extended
+  for `noindex`. Doing so needs an `accept` column in its response-phase event
+  builder, which the current shape does not support. The gate's unique value is
+  proving the ES5.1 syntax parses in AWS's real engine, which it does; the
+  behaviour has 6 unit tests including the negotiated case.
+
+  **Still to do:** deploy, then confirm live that a direct request for a twin
+  carries `X-Robots-Tag: noindex` while a negotiated one does not, and that the
+  token count appears in the confirmation (it needs `x-markdown-tokens`, which
+  is stamped onto the S3 objects at deploy time and so is absent locally).

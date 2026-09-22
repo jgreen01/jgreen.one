@@ -1,5 +1,5 @@
-# TODO Index: 3 open
-*Last updated: 2026-09-20*
+# TODO Index: 2 open
+*Last updated: 2026-09-21*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 
@@ -12,7 +12,6 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 ## MEDIUM Priority
 
 - [F search-engine-submission](F-search-engine-submission.md) — get the site into Google and Bing. Reachability for Gemini and ChatGPT is an indexing problem, not a serving one. Covers every channel, including the ones to skip.
-- [J copy-as-markdown-button](J-copy-as-markdown-button.md) — the Markdown twins have no human-facing entry point. Ship with F item 0c: a visible link is exactly when `noindex` starts mattering.
 
 ## LOW Priority
 
