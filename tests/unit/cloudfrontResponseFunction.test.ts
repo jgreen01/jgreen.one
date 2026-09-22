@@ -145,3 +145,82 @@ describe("CloudFront Functions runtime constraints", () => {
     expect(SOURCE).toMatch(/function handler\s*\(/);
   });
 });
+
+/**
+ * `Vary: Accept`.
+ *
+ * The same URL returns HTML or Markdown depending on the request's Accept
+ * header. Without `Vary`, a shared cache is entitled to store one and serve it
+ * for the other — RFC 9110 §12.5.5 says a server SHOULD send Vary when
+ * representation selection depends on anything beyond method and target.
+ *
+ * CloudFront's own cache is already safe, because the viewer-request function
+ * rewrites the URI before the cache lookup and the two variants therefore
+ * occupy different keys. The gap is everything downstream: browsers, corporate
+ * proxies, any intermediary.
+ *
+ * The Markdown response is the more important of the two to mark. A cache
+ * holding Markdown under a page URL and serving it to a browser is the failure
+ * that actually breaks a reader.
+ */
+describe("Vary: Accept on the negotiated representations", () => {
+  const varyOf = (uri: string, headers = {}) => respond(uri, headers).headers.vary?.value;
+
+  it("marks an HTML page", () => {
+    expect(varyOf("/entries/this-site/index.html")).toBe("Accept");
+  });
+
+  it("marks the Markdown twin, which is the same resource by another name", () => {
+    expect(
+      varyOf("/entries/this-site/index.md", {
+        "content-type": { value: "text/markdown; charset=utf-8" },
+      }),
+    ).toBe("Accept");
+  });
+
+  it("marks the homepage", () => {
+    expect(varyOf("/index.html")).toBe("Accept");
+  });
+
+  // An asset is one representation only. Declaring Vary there fragments a
+  // cache across every distinct Accept header for no benefit.
+  it.each([
+    ["/media/hero.webp", { "content-type": { value: "image/webp" } }],
+    ["/_astro/Base.abc123.css", { "content-type": { value: "text/css" } }],
+    ["/llms.txt", { "content-type": { value: "text/plain; charset=utf-8" } }],
+    ["/sitemap-index.xml", { "content-type": { value: "application/xml" } }],
+  ])("leaves %s alone", (uri, headers) => {
+    expect(varyOf(uri, headers)).toBeUndefined();
+  });
+
+  describe("an existing Vary from the origin", () => {
+    it("is appended to, never overwritten", () => {
+      const vary = varyOf("/about/index.html", { vary: { value: "Origin" } });
+      expect(vary).toContain("Origin");
+      expect(vary).toContain("Accept");
+    });
+
+    it("is left alone when it already covers Accept", () => {
+      expect(varyOf("/about/index.html", { vary: { value: "Accept" } })).toBe("Accept");
+    });
+
+    it("recognises Accept whatever its case", () => {
+      expect(varyOf("/about/index.html", { vary: { value: "accept" } })).toBe("accept");
+      expect(varyOf("/about/index.html", { vary: { value: "Origin, ACCEPT" } })).toBe(
+        "Origin, ACCEPT",
+      );
+    });
+
+    // "Accepted-Encoding" contains "accept" but is a different field.
+    it("is not fooled by a header that merely starts with the same letters", () => {
+      // "Accept-Encoding" is a different field; Accept still has to be added.
+      expect(varyOf("/about/index.html", { vary: { value: "Accept-Encoding" } })).toBe(
+        "Accept-Encoding, Accept",
+      );
+    });
+  });
+
+  it("does not throw when the response carries no headers at all", () => {
+    expect(() => handler({ request: { uri: "/about/index.html" }, response: {} })).not.toThrow();
+  });
+});

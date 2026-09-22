@@ -70,5 +70,26 @@ function handler(event) {
         headers['x-markdown-tokens'] = { value: count.value };
     }
 
+    // Vary: Accept on the two representations the Accept header selects between.
+    //
+    // CloudFront's own cache is already safe — the viewer-request function
+    // rewrites the URI before the cache lookup, so HTML and Markdown occupy
+    // different keys. This is for everything downstream: browsers, corporate
+    // proxies, any shared cache that would otherwise be entitled to serve one
+    // representation in place of the other. RFC 9110 section 12.5.5.
+    //
+    // Assets are deliberately excluded. They have one representation, and
+    // declaring Vary on them fragments a cache across every distinct Accept
+    // header for nothing.
+    if (isPage || isMarkdown) {
+        var vary = headers.vary;
+        var existing = vary && vary.value ? vary.value : '';
+        // Whole field name only: "Accept-Encoding" contains "accept" but is a
+        // different field and does not make this response vary by Accept.
+        if (!/(^|,)\s*accept\s*(,|$)/i.test(existing)) {
+            headers.vary = { value: existing ? existing + ', Accept' : 'Accept' };
+        }
+    }
+
     return response;
 }
