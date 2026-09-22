@@ -169,20 +169,24 @@ if [ -f "$RESPONSE_SOURCE" ]; then
 
   # name | uri | content-type | expected link header ("-" for none)
   RESPONSE_CASES=$(cat <<'EOF'
-homepage advertises its twin|/|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"
-homepage as rewritten|/index.html|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"
-about as rewritten|/about/index.html|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
-tag page as rewritten|/tags/astro/index.html|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"
-about advertises its twin|/about/|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
-extensionless advertises its twin|/about|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"
-tag page advertises its twin|/tags/astro/|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"
-asset advertises nothing|/media/hero.png|image/png|-
-llms.txt advertises nothing|/llms.txt|text/plain|-
-the twin itself advertises nothing|/entries/x/index.md|text/markdown|-
+homepage advertises its twin|/|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"|Accept
+homepage as rewritten|/index.html|text/html|<https://jgreen.one/index.md>; rel="alternate"; type="text/markdown"|Accept
+about as rewritten|/about/index.html|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"|Accept
+tag page as rewritten|/tags/astro/index.html|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"|Accept
+about advertises its twin|/about/|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"|Accept
+extensionless advertises its twin|/about|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"|Accept
+tag page advertises its twin|/tags/astro/|text/html|<https://jgreen.one/tags/astro/index.md>; rel="alternate"; type="text/markdown"|Accept
+asset advertises nothing|/media/hero.png|image/png|-|-
+llms.txt advertises nothing|/llms.txt|text/plain|-|-
+the twin itself advertises nothing|/entries/x/index.md|text/markdown|-|Accept
+vary on a page|/about/index.html|text/html|<https://jgreen.one/about/index.md>; rel="alternate"; type="text/markdown"|Accept
+vary on the twin|/entries/x/index.md|text/markdown|-|Accept
+no vary on an asset|/media/hero.png|image/png|-|-
+no vary on llms.txt|/llms.txt|text/plain|-|-
 EOF
 )
 
-  while IFS='|' read -r name uri ctype expected; do
+  while IFS='|' read -r name uri ctype expected expected_vary; do
     [ -z "$name" ] && continue
 
     event=$(printf '{"version":"1.0","context":{"eventType":"viewer-response"},"viewer":{"ip":"203.0.113.1"},"request":{"method":"GET","uri":"%s","headers":{},"cookies":{},"querystring":{}},"response":{"statusCode":200,"statusDescription":"OK","headers":{"content-type":{"value":"%s"}},"cookies":{}}}' "$uri" "$ctype")
@@ -200,18 +204,23 @@ EOF
       continue
     fi
 
-    actual=$(echo "$result" | python3 -c '
+    # Tab-separated so a link value containing spaces survives the split.
+    full=$(echo "$result" | python3 -c '
 import json, sys
 out = json.loads(json.load(sys.stdin)["out"])
-link = out.get("response", {}).get("headers", {}).get("link")
-print(link["value"] if link else "-")
+h = out.get("response", {}).get("headers", {})
+link = h.get("link"); vary = h.get("vary")
+print((link["value"] if link else "-") + "\t" + (vary["value"] if vary else "-"))
 ')
+    actual=${full%%$'\t'*}
+    actual_vary=${full##*$'\t'}
 
-    if [ "$actual" = "$expected" ]; then
+    if [ "$actual" = "$expected" ] && [ "$actual_vary" = "$expected_vary" ]; then
       printf '  \033[32m✓\033[0m %-36s %s\n' "$name" "${actual:0:46}"
       passed=$((passed + 1))
     else
-      printf '  \033[31m✗\033[0m %-36s expected %s, got %s\n' "$name" "$expected" "$actual"
+      printf '  \033[31m✗\033[0m %-36s expected link=%s vary=%s, got link=%s vary=%s\n' \
+        "$name" "$expected" "$expected_vary" "$actual" "$actual_vary"
       failures=$((failures + 1))
     fi
   done <<< "$RESPONSE_CASES"
