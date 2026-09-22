@@ -4,6 +4,7 @@ import EntryCard from "../../components/EntryCard.astro";
 import { getCollection } from "astro:content";
 import { filterDrafts, sortByDate } from "../../utils/entries";
 import { collectionPageJsonLd } from "../../utils/structuredData";
+import { listingDescription } from "../../utils/pageDescription";
 
 const all = sortByDate(filterDrafts(await getCollection("entries")));
 const jsonLd = collectionPageJsonLd({
@@ -12,7 +13,7 @@ const jsonLd = collectionPageJsonLd({
   items: all.map((entry) => ({ name: entry.data.title, url: `/entries/${entry.id}/` })),
 });
 ---
-<PageLayout title="All Entries" jsonLd={jsonLd}>
+<PageLayout title="All Entries" description={listingDescription("entries", all.length)} jsonLd={jsonLd}>
   <h1 class="text-4xl font-bold mb-4">All Entries</h1>
   <ul class="list-none mt-8">
     {all.map((entry) => (

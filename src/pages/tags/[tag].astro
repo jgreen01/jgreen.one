@@ -5,6 +5,7 @@ import { getCollection } from "astro:content";
 import { filterByTag, filterDrafts, sortByDate, uniqueTags } from "../../utils/entries";
 import { breadcrumbJsonLd, collectionPageJsonLd, graphJsonLd } from "../../utils/structuredData";
 import { tagHref } from "../../utils/tags";
+import { tagDescription } from "../../utils/pageDescription";
 import Breadcrumbs from "../../components/Breadcrumbs.astro";
 
 export async function getStaticPaths() {
@@ -28,7 +29,7 @@ const jsonLd = graphJsonLd([
   breadcrumbJsonLd(crumbs),
 ]);
 ---
-<PageLayout title={`Tag: ${tag}`} jsonLd={jsonLd}>
+<PageLayout title={`Tag: ${tag}`} description={tagDescription(String(tag), matches.length)} jsonLd={jsonLd}>
   <Breadcrumbs crumbs={crumbs} />
   <h1 class="text-4xl font-bold mb-4">Tag: {tag}</h1>
   {matches.length === 0
