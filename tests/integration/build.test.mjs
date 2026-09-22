@@ -338,6 +338,27 @@ describe("astro build output", () => {
     }
   });
 
+  // The copy control is a real anchor, so a wrong href is a 404 a reader hits,
+  // not a silent no-op. Same class of guard as the tag-link gate.
+  test("every article links a Markdown twin that exists", () => {
+    const pages = htmlFiles()
+      .map((file) => relative(DIST, file).split(sep).join("/"))
+      .filter((path) => /^entries\/[^/]+\/index\.html$/.test(path));
+    assert.ok(pages.length > 0, "no entry pages were built");
+
+    const broken = [];
+    for (const page of pages) {
+      const href = read(page).match(/<a href="([^"]+)" data-copy-markdown/)?.[1];
+      if (!href) {
+        broken.push(`${page}: no copy-as-Markdown link`);
+        continue;
+      }
+      const target = href.replace(/^\//, "");
+      if (!exists(target)) broken.push(`${page} links ${href}, which is not in dist/`);
+    }
+    assert.deepEqual(broken, [], `broken Markdown links:\n${broken.join("\n")}`);
+  });
+
   test("every published transcript has a Markdown copy", () => {
     // Vacuous while no talk write-up is published; the transcripts suite below
     // proves the same thing against a fixture pair regardless.

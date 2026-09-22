@@ -347,6 +347,87 @@ test.describe("breadcrumbs", () => {
   });
 });
 
+/**
+ * The Markdown twin, handed to a reader.
+ *
+ * Progressive enhancement is the point: the anchor has to work before any
+ * script runs, because that is both the no-JS path and what makes the twin
+ * visible to a crawler and a screen reader.
+ */
+test.describe("copy as Markdown", () => {
+  test("renders a real link to the twin, before any JavaScript", async ({ browser }) => {
+    // JS disabled entirely — if the control only exists after hydration, this
+    // is where that shows up.
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto(ENTRY_WITH_HERO);
+    const link = page.locator("[data-copy-markdown]");
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", /\/index\.md$/);
+    await context.close();
+  });
+
+  test("the link it points at actually serves Markdown", async ({ page, request }) => {
+    await gotoClean(page, ENTRY_WITH_HERO);
+    const href = await page.locator("[data-copy-markdown]").getAttribute("href");
+    const response = await request.get(href!);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("text/markdown");
+  });
+
+  // Clipboard permissions are only reliable in Chromium. Rather than let this
+  // quietly not run elsewhere, it is skipped by name.
+  test("copies the twin's content and confirms", async ({ page, context, browserName }) => {
+    test.skip(browserName !== "chromium", "clipboard permissions are Chromium-only");
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await gotoClean(page, ENTRY_WITH_HERO);
+
+    const link = page.locator("[data-copy-markdown]");
+    await link.click();
+    await expect(page.locator("[data-copy-label]")).toContainText("Copied");
+
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard.length).toBeGreaterThan(200);
+    expect(clipboard).toContain("# ");
+  });
+
+  test("returns to its resting label", async ({ page, context, browserName }) => {
+    test.skip(browserName !== "chromium", "clipboard permissions are Chromium-only");
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await gotoClean(page, ENTRY_WITH_HERO);
+    await page.locator("[data-copy-markdown]").click();
+    await expect(page.locator("[data-copy-label]")).toContainText("Copied");
+    await expect(page.locator("[data-copy-label]")).toContainText("Copy as Markdown", {
+      timeout: 5000,
+    });
+  });
+
+  // The failure this pattern is known for: the clipboard rejects and the button
+  // silently does nothing. It must say something instead.
+  test("says so when the clipboard refuses, rather than failing silently", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: () => Promise.reject(new Error("denied")) },
+      });
+      // Remove the legacy fallback too, so the failure path is genuinely taken.
+      // Bracket access: naming it directly trips the deprecation warning, and a
+      // new warning for a deliberate removal is noise.
+      (document as unknown as Record<string, unknown>)["execCommand"] = undefined;
+    });
+    await page.goto(ENTRY_WITH_HERO);
+    await page.locator("[data-copy-markdown]").click();
+    await expect(page.locator("[data-copy-label]")).toContainText("Couldn’t copy");
+  });
+
+  test("announces the outcome to assistive technology", async ({ page }) => {
+    await gotoClean(page, ENTRY_WITH_HERO);
+    const status = page.locator("[data-copy-status]");
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    await expect(status).toHaveAttribute("role", "status");
+  });
+});
+
 test.describe("static pages", () => {
   test("/about renders cleanly", async ({ page }) => {
     await gotoClean(page, "/about");
