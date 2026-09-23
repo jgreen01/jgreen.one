@@ -7,7 +7,7 @@
 
 ## Description
 
-On 2026-07-05/06, jgreen.one's email was cut over from Tutanota to ProtonMail (MX, DKIM, SPF records replaced; see Route 53 zone Z01752721Z1AXUQEVQZ2D). The existing `_dmarc.jgreen.one` TXT record (`v=DMARC1; p=quarantine; adkim=s`) predates the cutover and was left as-is to first validate basic deliverability. This task covers hardening DMARC once the basic Proton setup is confirmed working.
+On 2026-07-05/06, jgreen.one's email was cut over from Tutanota to ProtonMail (MX, DKIM, SPF records replaced; see the site's Route 53 hosted zone). The existing `_dmarc.jgreen.one` TXT record (`v=DMARC1; p=quarantine; adkim=s`) predates the cutover and was left as-is to first validate basic deliverability. This task covers hardening DMARC once the basic Proton setup is confirmed working.
 
 ## Acceptance Criteria
 
@@ -144,7 +144,7 @@ Both are worth having; a record can be correct in Route 53 and still not resolve
 
 `conftest.py` currently has fixtures for CloudFront, S3, WAFv2, SNS, CloudWatch and
 Budgets — **add a `route53` client fixture and a `zone_records` session fixture** that
-pages `list_resource_record_sets` for zone `Z01752721Z1AXUQEVQZ2D` once and returns
+pages `list_resource_record_sets` for the site's hosted zone once and returns
 records keyed by `(name, type)`.
 
 Assertions to write:

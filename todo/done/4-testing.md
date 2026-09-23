@@ -271,7 +271,7 @@ Mobile tests use `devices['iPhone 13']` (375px viewport).
 
 Run against real AWS; require credentials. Gate behind `workflow_dispatch` in CI.
 
-- [x] CloudFront distribution `E2G3DB3OD7XU6F` status is `Deployed`
+- [x] The site's CloudFront distribution status is `Deployed`
 - [x] CloudFront `WebACLId` matches WAF ARN
 - [x] S3 bucket `jgreen-one-site` has `BlockPublicAcls`, `BlockPublicPolicy`,
   `IgnorePublicAcls`, `RestrictPublicBuckets` all `True`

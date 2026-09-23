@@ -56,7 +56,7 @@ Everything needed is already provisioned. **Nothing new to create.**
 - `certificate.tf:6` — `subject_alternative_names = ["www.${var.domain}"]`
 - `cloudfront.tf:42` — `aliases = [var.domain, "www.${var.domain}"]`
 - `dns.tf:27` — `aws_route53_record.www`, a CNAME to the distribution
-- Distribution `E2G3DB3OD7XU6F` has both aliases live
+- The site's CloudFront distribution has both aliases live
 - A **viewer-request function is already attached**:
   `arn:aws:cloudfront::<account-id>:function/subdirectory-index-rewrite`
   (= `infra/live/function.js`, 48 lines), plus a viewer-response function

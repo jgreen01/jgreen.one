@@ -161,8 +161,8 @@ Derived from the actual boto3 calls in `tests/infra/`:
 | Route 53 | `route53:ListResourceRecordSets`, `route53:GetHostedZone` | task 5's planned `test_dns.py` |
 | S3 (objects) | `s3:ListBucket`, `s3:GetObject` on `jgreen-one-site` + `/media/*` | task 6's `media-check --pull` |
 
-Scope resource ARNs where the service supports it (S3, Route 53 zone
-`Z01752721Z1AXUQEVQZ2D`, the WAF ACL). CloudFront, Budgets and `sts:GetCallerIdentity`
+Scope resource ARNs where the service supports it (S3, the site's Route 53
+hosted zone, the WAF ACL). CloudFront, Budgets and `sts:GetCallerIdentity`
 are effectively account-wide.
 
 **No write actions. No `s3:PutObject`, no `s3:DeleteObject`, no `cloudfront:CreateInvalidation`.**
