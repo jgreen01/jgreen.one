@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Blocks a commit that stages a credential.
+# Blocks a commit that stages a credential or an infrastructure identifier
+# (AWS account, Route 53 hosted zone or CloudFront distribution ID).
 #
 # Scans the STAGED content, not the working tree — a secret can be staged and
 # then edited out of the file, and the commit would still carry it.

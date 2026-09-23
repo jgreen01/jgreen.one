@@ -80,8 +80,9 @@ PEM blocks, JWTs, credentials in URLs, AWS account IDs. It exits non-zero on a
 find and reports every match redacted, never echoing the value into the
 terminal or a CI log.
 
-A **pre-commit hook blocks any commit that stages a credential.** It is in
-`.githooks/pre-commit` so it is version-controlled; enable it once per clone:
+A **pre-commit hook blocks any commit that stages a credential or an
+infrastructure identifier.** It is in `.githooks/pre-commit` so it is
+version-controlled; enable it once per clone:
 
 ```bash
 git config core.hooksPath .githooks     # required after a fresh clone
