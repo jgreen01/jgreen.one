@@ -190,12 +190,18 @@ class TestNoStaleProviderRecords:
         # Tokens for services actually in use. ProtonMail is the mail provider;
         # google-site-verification proves ownership of the Search Console
         # property, which is where the robots.txt report and URL Inspection
-        # live. Remove a token here only when the service behind it goes.
-        known_current = ("protonmail-verification", "google-site-verification")
+        # live; yandex-verification does the same for Yandex Webmaster. Remove a
+        # token here only when the service behind it goes.
+        known_current = (
+            "protonmail-verification",
+            "google-site-verification",
+            "yandex-verification",
+        )
         stale = [
             value
             for value in txt_values(zone_records, APEX)
-            if re.match(r"^[\w-]*(verify|verification)=", value, re.I)
+            # "=" for most providers; Yandex writes "yandex-verification: <code>".
+            if re.match(r"^[\w-]*(verify|verification)\s*[=:]", value, re.I)
             and not value.startswith(known_current)
         ]
         assert not stale, f"stale verification token(s) left in the zone: {stale}"
