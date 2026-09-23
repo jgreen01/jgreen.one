@@ -105,10 +105,24 @@ AWS_ACCESS_KEY_ID: "AKIAFAKEFAKEFAKEFAKE", // check-secrets: ignore
 it only where every value is synthetic, as in `tests/unit/secrets.test.ts`.
 
 It detects by shape, not by a stored list, so it catches identifiers it has
-never been told about. AWS account IDs are treated as **errors**: AWS says they
-are not secret, but this repository is public and there is no reason to publish
-one. Use `<account-id>` in prose and `data.aws_caller_identity.current.account_id`
-in Terraform. Distribution and zone IDs are reported as information only.
+never been told about. It enforces the **infrastructure-identifier rule** (see
+*Environment & Secrets*) only in part:
+
+- **AWS account IDs, Route 53 hosted zone IDs and CloudFront distribution IDs
+  are errors** and block a commit. The report keeps them apart from
+  credentials: an ID has nothing to rotate, it only has to stop being written
+  down.
+- **Other kinds** (certificate, invalidation and WAF IDs, ARNs without an
+  account in them) **aren't recognised at all.**
+
+So the hook is a backstop, not the rule. Check anything infrastructure-related
+by hand before committing. The hook never sees commit messages, so check those
+by hand too.
+
+A test that needs an ID-shaped value uses a synthetic one containing
+`EXAMPLE` behind a suppression marker (see `tests/unit/secrets.test.ts`), or a
+value that is plainly not ID-shaped (`E-FAKE-DISTRIBUTION`) when the code only
+passes it through.
 
 Note the older `scripts/validate_guides.mjs` greps for the *words* "secret" and
 "password", so it fires on prose about handling secrets and misses real keys
@@ -161,6 +175,41 @@ cd infra/live && terraform apply    # apply infra changes
 - AWS account: not recorded here — run `aws sts get-caller-identity` to confirm
   which account the CLI is pointed at. The CLI/credentials must be working before any `terraform`/`aws`/`deploy.sh` command.
 - Never commit secrets or write real secret values into Terraform; use placeholders (e.g. the billing-alert email) and let the user fill them in.
+- **Never hardcode infrastructure identifiers; look them up fresh each time**
+  (decided 2026-09-22). That means the IDs a provider assigns: AWS account IDs,
+  Route 53 hosted zone IDs, CloudFront distribution and invalidation IDs,
+  certificate IDs, ARNs, and resource IDs generally. Their source of truth is
+  Terraform state and the AWS API, not a copy in a file. IDs change when a
+  resource is recreated (a rebuilt CloudFront distribution or hosted zone gets a
+  new one), so a copy written down goes stale, and whatever uses it breaks or
+  points at the wrong resource. Looking them up also keeps the config working
+  unchanged in another account. That holds for a private repo too; this one
+  being public is a second reason, not the main one. The rule covers **every
+  committed file and every commit message**. Instead:
+  - **Terraform:** reference them, e.g. `aws_route53_zone.primary.zone_id`,
+    `aws_cloudfront_distribution.cdn.id`,
+    `data.aws_caller_identity.current.account_id`.
+  - **Shell commands:** look them up with
+    `terraform -chdir=infra/live output -raw <name>` (`hosted_zone_id`,
+    `cloudfront_id`, `cloudfront_domain`, `site_bucket`), or the AWS CLI, e.g.
+    `aws sts get-caller-identity`,
+    `aws route53 list-hosted-zones-by-name --dns-name jgreen.one`.
+  - **Tests:** discover them at runtime or read an environment variable. A
+    fixture that needs an ID-*shaped* value uses a synthetic one, never the real
+    one (`123456789012` for an account).
+  - **Docs, task files, commit messages:** a placeholder (`<zone-id>`,
+    `<distribution-id>`), or name the resource instead.
+
+  **Not covered:** the DNS records Terraform has to manage (verification tokens
+  and SPF, which are public by design); AWS-published constants; names you
+  define yourself in Terraform, such as the bucket name (though
+  `terraform output -raw site_bucket` still beats repeating it); and session
+  notes in `~/.session-notes/`, which live outside the repo and may keep IDs for
+  resuming work.
+
+  The working tree was cleaned of zone and distribution IDs on 2026-09-22; git
+  history was deliberately not rewritten, so older commits still contain them.
+  **Don't copy an ID out of history into anything new.**
 - `*.tfstate`, `.terraform/`, and `.env*` are gitignored — keep it that way.
 - Redact any secret that must appear in notes or output: `sk_live_…` → `sk_live_****last4`.
 - If a secret leaks into git, rotate it immediately and purge it from history.
