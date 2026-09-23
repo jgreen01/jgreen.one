@@ -1,4 +1,4 @@
-# TODO Index: 3 open
+# TODO Index: 2 open
 *Last updated: 2026-09-22*
 
 Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
@@ -12,7 +12,6 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 ## MEDIUM Priority
 
 - [F search-engine-submission](F-search-engine-submission.md) — get the site into Google and Bing. Reachability for Gemini and ChatGPT is an indexing problem, not a serving one. Covers every channel, including the ones to skip.
-- [K dns-records-in-terraform](K-dns-records-in-terraform.md) — **DONE, awaiting Jon: commit, push.** Test email passed SPF/DKIM/DMARC. All eight hand-made records imported, no DNS change (zone identical to the backup); guard test added. ⚠️ Run Terraform only from this working copy until `dns.tf` is pushed.
 
 ## LOW Priority
 
