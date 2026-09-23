@@ -1,7 +1,7 @@
 # Bring the hand-made DNS records into Terraform
 
 **Priority**: MEDIUM — nothing is broken, but these are the records that deliver your email
-**Status**: TODO
+**Status**: DONE — awaiting Jon: commit, push
 **Created**: 2026-09-22
 **Updated**: 2026-09-22
 
@@ -230,10 +230,10 @@ aws route53 list-resource-record-sets --hosted-zone-id "$(terraform output -raw 
 (Drop the trailing `.jgreen.one.` from the result.) It ends up in `dns.tf` as the
 record name, which is fine; see "Is it safe" above.
 
-🟡 **Not yet verified:** Terraform's documentation says an import `id` may be
-"an expression that evaluates to a string" as long as it's "known during the
-plan". A data source read satisfies that, but the docs show no example of it.
-If step 3 rejects the expression, fall back to a variable, which is known at plan
+✅ **Verified 2026-09-22:** an import `id` built from a data source works; all
+eight records imported this way. (Terraform's documentation allows any
+expression "known during the plan" but shows no data-source example.) If it
+ever fails, fall back to a variable, which is known at plan
 time by definition: declare `variable "import_zone_id" {}` in this file, use
 `var.import_zone_id` instead of `local.z`, and pass
 `-var "import_zone_id=$(terraform output -raw hosted_zone_id)"` to each plan and
@@ -249,6 +249,11 @@ This writes the HCL straight from the live records, so no TXT value gets typed
 by hand. Mistyping one is exactly how SPF would get deleted.
 
 ⚠️ This file **will** contain the literal zone ID. Step 4 removes it.
+
+Expect this plan to end in `Error: Missing required argument` about
+`multivalue_answer_routing_policy`. The generated config sets it to `false`
+without a `set_identifier`, a known provider quirk. The file is still written
+in full, and step 4 drops the attribute.
 
 ### 4. Review and tidy the generated file
 
@@ -361,23 +366,29 @@ It catches the mistake in review rather than in production.
 
 ## Acceptance Criteria
 
-- [ ] Fresh zone backup taken outside the repo immediately before starting
-- [ ] Eight record sets imported with import blocks — the apex TXT carrying all
+- [x] Fresh zone backup taken outside the repo immediately before starting —
+      `~/jgreen-one-dns-backup-20260922-210905/`, identical to the 16:55 one
+- [x] Eight record sets imported with import blocks — the apex TXT carrying all
       three values, MX both
-- [ ] Plan before apply: `8 to import, 0 to add, 0 to change, 0 to destroy`
-- [ ] Apply: `8 imported, 0 added, 0 changed, 0 destroyed`
-- [ ] Plan after apply: `No changes`
-- [ ] `prevent_destroy` on every imported record; no `allow_overwrite`, no
+- [x] Plan before apply: `8 to import, 0 to add, 0 to change, 0 to destroy`
+- [x] Apply: `8 imported, 0 added, 0 changed, 0 destroyed`
+- [x] Plan after apply: `No changes` (and again after removing `dns-imports.tf`)
+- [x] `prevent_destroy` on every imported record; no `allow_overwrite`, no
       `ignore_changes`
-- [ ] Zone ID and domain use references, matching the rest of `dns.tf`
-- [ ] **The hosted zone ID appears nowhere in the committed change**
-      (`generated_dns.tf` deleted, step 8 check passes)
-- [ ] `pytest tests/infra` passes
-- [ ] A test email shows SPF, DKIM and DMARC PASS
-- [ ] `npm run check:secrets` clean; push succeeds (watch for GitHub push
-      protection)
-- [ ] Guard test for the Terraform rules, **or** a recorded decision not to
-- [ ] `dns-imports.tf` removed after the apply
+- [x] Zone ID and domain use references, matching the rest of `dns.tf`
+- [x] **The hosted zone ID appears nowhere in the change** — swept the whole
+      working tree, tracked and untracked; `generated_dns.tf` deleted
+- [x] `pytest tests/infra` passes — 67 passed, 1 skipped, before and after
+- [x] A test email shows SPF, DKIM and DMARC PASS — sent by Jon from
+      `jon@jgreen.one` to an outside mailbox (Tutanota), 2026-09-23 05:08 UTC,
+      after the import. `Received-SPF: Pass` (Proton IP, envelope-from aligned);
+      `dkim=pass header.d=jgreen.one header.s=protonmail`, aligned under
+      `adkim=s`; `dmarc=pass (p=reject)`.
+- [ ] `npm run check:secrets` clean ✓; **Jon:** commit and push (watch for
+      GitHub push protection)
+- [x] Guard test for the Terraform rules — `tests/unit/terraformDns.test.ts`
+      with `scripts/lib/terraform-dns.mjs`
+- [x] `dns-imports.tf` removed after the apply
 
 ## Notes
 
@@ -425,3 +436,55 @@ version were checked separately.
   batches and a README for restoring with the AWS CLI alone. Validated: 8
   hand-made record sets, apex TXT with all 3 values, every batch entry in a valid
   Route 53 shape.
+- [2026-09-22] **Imported; nothing in DNS changed.** Done autonomously.
+  - Fresh backup `~/jgreen-one-dns-backup-20260922-210905/`: 15 record sets,
+    identical to the 16:55 backup.
+  - Baseline plan before starting: `No changes`, so any change in the import
+    plan could only come from this task.
+  - **Guard test, written first** (RED on the 8 missing records, then GREEN):
+    `scripts/lib/terraform-dns.mjs` masks comments, strings, templates and
+    heredocs so that brace matching and attribute checks see only code. It
+    flags `allow_overwrite` and `ignore_changes` on any `aws_route53_record`, a
+    protected record without `lifecycle { prevent_destroy = true }` or missing
+    entirely, and any infrastructure-ID literal (reusing
+    `scripts/lib/secrets.mjs`). 20 tests. Mutation-checked against the real
+    `dns.tf`: it catches `prevent_destroy = false`, an added `allow_overwrite`
+    and a deleted record.
+  - Import ids from the data source worked. `-generate-config-out` ended in
+    the `multivalue_answer_routing_policy` error (see step 3); the file was
+    complete regardless.
+  - Tidy-up by script, not by hand. Every `records` list was copied verbatim
+    and checked 8 of 8 before `generated_dns.tf` was deleted. Literals were
+    swapped for `aws_route53_zone.primary.zone_id` and `var.domain`; the apex
+    TXT was split to one value per line (checked equal).
+  - **Gate**, checked from `terraform show -json` rather than by eye:
+    - 8 imports, exactly the task-K addresses;
+    - all 36 managed resources no-op;
+    - every imported record's state equal to its config;
+    - no deferred data reads, no output changes.
+    - `resource_drift` was **not** empty: the CloudFront distribution's
+      `etag`, and `markdown_twin_headers`' `status` (`IN_PROGRESS` →
+      `DEPLOYED`, left over from task J's apply). Both are computed-only,
+      absent from config and cause no action, so the gate was opened for
+      exactly that. The apply recorded the current values in state.
+  - Applied the **saved plan file** that was checked: `8 imported, 0 added,
+    0 changed, 0 destroyed`.
+  - After the apply:
+    - plan `No changes`;
+    - live zone identical record-for-record to the backup;
+    - 8.8.8.8 and 1.1.1.1 both return 3 apex TXT values, SPF included, and
+      both MX;
+    - `pytest tests/infra` 67 passed, 1 skipped;
+    - `npm test` all green.
+  - `dns-imports.tf` removed, then plan `No changes` again. The zone ID is
+    nowhere in the working tree; the Bing token is only in `dns.tf`.
+  - ⚠️ **Until `dns.tf` is committed and pushed, run Terraform only from this
+    working copy.** State now holds the 8 records. A checkout without their
+    config (`origin/main`, say) would plan to **destroy all eight**, and
+    `prevent_destroy` lives in that missing config, so it would not stop
+    it. `deploy.sh` only reads outputs, so it is safe.
+  - **Test email passed** (2026-09-23): SPF, DKIM and DMARC all PASS at an
+    outside receiver, sent after the import.
+  - `data.aws_route53_zone.for_import` is still listed in state. Its config is
+    gone, and Terraform drops an orphaned data source silently on the next
+    apply; plan already ignores it.

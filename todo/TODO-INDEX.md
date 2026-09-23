@@ -12,7 +12,7 @@ Completed tasks in `todo/done/`, abandoned in `todo/boneyard/`.
 ## MEDIUM Priority
 
 - [F search-engine-submission](F-search-engine-submission.md) — get the site into Google and Bing. Reachability for Gemini and ChatGPT is an indexing problem, not a serving one. Covers every channel, including the ones to skip.
-- [K dns-records-in-terraform](K-dns-records-in-terraform.md) — every hand-made DNS record lives outside Terraform, so drift is detected but never restored. Import all eight, Bing included, without changing any; the apex TXT carries SPF and must move whole. Backup taken.
+- [K dns-records-in-terraform](K-dns-records-in-terraform.md) — **DONE, awaiting Jon: commit, push.** Test email passed SPF/DKIM/DMARC. All eight hand-made records imported, no DNS change (zone identical to the backup); guard test added. ⚠️ Run Terraform only from this working copy until `dns.tf` is pushed.
 
 ## LOW Priority
 
