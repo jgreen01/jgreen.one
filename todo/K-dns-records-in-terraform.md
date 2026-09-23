@@ -1,7 +1,7 @@
 # Bring the hand-made DNS records into Terraform
 
 **Priority**: MEDIUM — nothing is broken, but these are the records that deliver your email
-**Status**: DONE — awaiting Jon: commit, push
+**Status**: DONE
 **Created**: 2026-09-22
 **Updated**: 2026-09-22
 
@@ -380,12 +380,13 @@ It catches the mistake in review rather than in production.
       working tree, tracked and untracked; `generated_dns.tf` deleted
 - [x] `pytest tests/infra` passes — 67 passed, 1 skipped, before and after
 - [x] A test email shows SPF, DKIM and DMARC PASS — sent by Jon from
-      `jon@jgreen.one` to an outside mailbox (Tutanota), 2026-09-23 05:08 UTC,
+      `jon@jgreen.one` to an outside mailbox (Tutanota), 2026-09-22 22:08 local
+      (05:08 UTC on the 23rd),
       after the import. `Received-SPF: Pass` (Proton IP, envelope-from aligned);
       `dkim=pass header.d=jgreen.one header.s=protonmail`, aligned under
       `adkim=s`; `dmarc=pass (p=reject)`.
-- [ ] `npm run check:secrets` clean ✓; **Jon:** commit and push (watch for
-      GitHub push protection)
+- [x] `npm run check:secrets` clean; pushed 2026-09-22 (`79b7662`,
+      `ec32e73`, `d2ad345`) — GitHub push protection did not block the tokens
 - [x] Guard test for the Terraform rules — `tests/unit/terraformDns.test.ts`
       with `scripts/lib/terraform-dns.mjs`
 - [x] `dns-imports.tf` removed after the apply
@@ -483,8 +484,10 @@ version were checked separately.
     config (`origin/main`, say) would plan to **destroy all eight**, and
     `prevent_destroy` lives in that missing config, so it would not stop
     it. `deploy.sh` only reads outputs, so it is safe.
-  - **Test email passed** (2026-09-23): SPF, DKIM and DMARC all PASS at an
+  - **Test email passed** (2026-09-22): SPF, DKIM and DMARC all PASS at an
     outside receiver, sent after the import.
+  - **Committed and pushed** (2026-09-22). With `dns.tf` on `origin/main`,
+    the run-Terraform-only-from-this-copy caveat above no longer applies.
   - `data.aws_route53_zone.for_import` is still listed in state. Its config is
     gone, and Terraform drops an orphaned data source silently on the next
     apply; plan already ignores it.
