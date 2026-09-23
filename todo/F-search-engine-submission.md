@@ -392,31 +392,148 @@ Implementation (from <https://www.indexnow.org/documentation>, read 2026-09-19):
   `400` bad format · `403` key invalid/not found · `422` URL/host mismatch ·
   `429` rate limited
 
-Notes if this is built:
-- The key is **not a secret** — it is published at a public URL by design. It
-  still does not belong hardcoded in the repo; read it from the environment or
-  a Terraform output, consistent with existing practice.
-- Natural home is a step in `scripts/deploy.sh`, submitting the URLs whose
-  `lastmod` changed rather than all 36 every deploy.
-- Per the TDD rules: the submitter is a shell-out, so mock it, assert exact
-  arguments, and assert no key is echoed into build output or logs.
+### Decision (2026-09-22): **yes — Jon.** Build it. Work starts 2026-09-23.
 
-**Recommendation (2026-09-22): no, not now.**
+I recommended against it: it speeds up discovery of changes rather than
+getting a new domain indexed, and pasting URLs in by hand covers a handful of
+articles a year. Jon's case is the stronger one for this site. A deploy step
+is never forgotten, and one ping reaches Bing, Yandex, Naver, Seznam and Yep
+together. It also covers pages nobody would resubmit by hand, such as edited
+articles and the tag and listing pages a new post changes. It costs nothing
+to run.
 
-- **It solves a different problem.** IndexNow speeds up *discovery of
-  changes*. It does not get a new domain accepted into an index, which is this
-  site's actual problem, and the sitemap already handles discovery.
-- **The manual route covers this publishing rate for free.** When an article
-  ships, Bing Webmaster Tools' **URL Submission** and Yandex Webmaster's
-  page-reindexing tool each take the URL in seconds.
-- **Building it is not free:** a key file, a network call added to
-  `deploy.sh`, working out which URLs changed, and mocked tests for all of it.
-  All of that is for the engines outside Google.
-- **Revisit** if publishing becomes weekly or more, or if a post's timeliness
-  starts to matter.
+- [x] Decide yes/no — **yes** (Jon, 2026-09-22)
 
-- [ ] Decide yes/no — **Jon's call**; recommendation above
-- [ ] If yes: generate key, add key file, add deploy step + tests
+### Design (agreed 2026-09-22)
+
+**The key is committed** (Jon chose this over a Terraform `random_id`).
+
+- Store it at `public/indexnow-key.txt`: the key alone, 32 lowercase hex, from
+  `openssl rand -hex 16`. It ships as `https://jgreen.one/indexnow-key.txt`.
+- The payload names it with `keyLocation`, so the filename need not equal the
+  key. A root-level file validates every URL on the host.
+- **Why committing is fine.** The identifier rule in AGENTS.md is about IDs a
+  provider assigns, which go stale when a resource is recreated. This is a
+  value we mint and publish ourselves, so it has no other source of truth and
+  cannot go stale.
+- This **supersedes the earlier note** that said to keep the key out of the
+  repo, as does the rest of this design.
+- **No secret-scanner change needed.** Lowercase hex matches none of the
+  detectors, and the assigned-secret detector only looks at `name = "value"`.
+- **Content-Type is already right.** Deploy step 5 already stamps `.txt` as
+  `text/plain; charset=utf-8`. The viewer-request function leaves paths with
+  an extension alone, as it does for `robots.txt` and `llms.txt`.
+
+**Which URLs get pinged: only what changed, read off the sitemap.**
+
+- **Checked 2026-09-22:** 34 of 36 URLs carry `lastmod`. Listing pages, tag
+  pages and `/` carry the newest entry's date. So a new post changes its own
+  URL (new), plus `/`, `/blog/`, `/entries/`, `/projects/` and its tag pages
+  (new `lastmod`).
+- **Submit:** URLs new in the build, URLs whose `lastmod` changed, and URLs
+  that disappeared. IndexNow handles deletions too; engines then see the 404
+  sooner.
+- **Never pinged:** `/about/` and `/contact/`, which have no `lastmod`. That
+  is the same trade-off the sitemap already makes (see "lastmod — CLOSED").
+- **The spec asks for changed URLs only.** Resubmitting unchanged ones risks
+  being deprioritised, so never send all 36 on every deploy.
+- **"Before" is a snapshot of the live sitemap, taken before the sync**
+  overwrites it. Fetch `https://jgreen.one/sitemap-index.xml`, then each
+  `<sitemap><loc>` (today only `sitemap-0.xml`), and store `url → lastmod`.
+  **"After"** is `dist/sitemap-index.xml` and its children.
+- **Missing snapshot** (site unreachable, say): skip the ping and warn. Don't
+  fall back to submitting everything.
+- **First run:** after the first deploy that ships the key file, run
+  `submit --all` by hand, once.
+
+**Endpoint:** `POST https://api.indexnow.org/indexnow`.
+
+- It forwards to every participant.
+- Body: `{ host, key, keyLocation, urlList }` with
+  `Content-Type: application/json; charset=utf-8`.
+- At most 10,000 URLs per request (chunk; this site will never come close).
+- Responses: 200 OK · 202 accepted, key validation pending (normal on the
+  first run) · 400 bad format · 403 key not found or invalid · 422 URL not on
+  host · 429 rate-limited.
+
+**A failed ping never fails a deploy.** By then the site has shipped. The
+command-line wrapper exits 0 on network and HTTP errors and prints a warning,
+and `deploy.sh` also guards with `|| echo "Warning: …" >&2`.
+
+### Files
+
+| File | What |
+|---|---|
+| `public/indexnow-key.txt` | the key, nothing else |
+| `scripts/lib/indexnow.mjs` | **pure, all the logic** (listed below) |
+| `scripts/indexnow.mjs` | thin command-line wrapper: `snapshot --out <file>` and `submit --before <file> [--all] [--dry-run]`. Reads `dist/` and `dist/indexnow-key.txt` (the deployed copy, which proves it is in the build), and uses Node 22's global `fetch` |
+| `scripts/deploy.sh` | snapshot right before step 4 (`aws s3 sync`); submit after step 6 (the invalidation), so pages and key file are live when engines fetch |
+| `tests/unit/indexnow.test.ts` | unit tests for the module |
+| `tests/unit/deployScript.test.ts` | ordering and failure tests (listed below) |
+| `tests/integration/build.test.mjs` | `dist/indexnow-key.txt` exists and holds a valid key. It belongs here, not in a unit test: unit tests must not read `public/` (AGENTS.md) |
+| `tests/fixtures/indexnow_sitemap-index.xml`, `indexnow_sitemap-0.xml` | copied from a real `dist/` build ("recorded fixtures, never arbitrary mocks") |
+
+What `scripts/lib/indexnow.mjs` exports:
+
+- `parseSitemap(xml)` returns a `Map` of url → lastmod, or null when there is
+  none. It decodes `&amp;` and friends.
+- `sitemapLocs(indexXml)` lists the child sitemaps.
+- `changedUrls(before, after)` returns the added, updated and removed URLs.
+- `validateKey(key)`: 8–128 characters, `[a-zA-Z0-9-]`.
+- `buildPayload({ host, key, keyLocation, urls })` throws on a URL from another
+  host, and chunks at 10,000.
+- `describeResponse(status)` maps each status to ok or not, plus a message.
+- `snapshot({ origin, fetch })` and `submit({ …, fetch })` take `fetch` **as a
+  parameter**, so the tests pass a fake and assert the exact request. Nothing
+  hits the network in a test.
+
+### Steps (test-first, per AGENTS.md)
+
+1. `tests/unit/indexnow.test.ts` **RED**, then `scripts/lib/indexnow.mjs`
+   **GREEN**. Cover:
+   - parsing the real fixture: 36 URLs, 34 with `lastmod`;
+   - the diff cases: new, changed, removed, unchanged, no `lastmod` either
+     side;
+   - key validation, the host check, chunking;
+   - each response status;
+   - `submit` sending the exact method, URL, headers and body to the fake
+     `fetch`;
+   - `snapshot` on a fetch failure (a warning result, not a throw).
+2. `scripts/indexnow.mjs` wrapper. Check it by hand with `--dry-run`, which
+   prints the URLs it would send and sends nothing:
+   - `submit --before <fresh snapshot> --dry-run` should find **0** changes
+     against the live site;
+   - `submit --all --dry-run` should list 36.
+3. Deploy tests **RED**:
+   - add a `writeIndexNowStub(log, snapshotExit, submitExit)` to
+     `setupWorkdir`, following the `audit.mjs` stub. Without it, every
+     existing deploy test would run the real script.
+   - Assert: the snapshot runs before `aws s3 sync`; the submit runs after
+     `create-invalidation`; the submit's `--before` is the snapshot's
+     `--out`.
+   - Assert that a failing snapshot, and separately a failing submit, still
+     end in `Deployment complete.` with exit 0.
+   - Assert no AWS credential appears in either call.
+   - Then `deploy.sh` **GREEN**.
+4. Generate the key and add `public/indexnow-key.txt`, plus the
+   build-integration assertion.
+5. Verify:
+   - `npm test`; `npm run test:build`; `npm run check:secrets`;
+   - `npx astro check`: only the existing `tests/unit/audit.test.ts:148`
+     error is expected;
+   - `bash -n scripts/deploy.sh`.
+6. Ship, **when Jon says deploy**:
+   - `./scripts/deploy.sh`;
+   - confirm `curl -s https://jgreen.one/indexnow-key.txt` returns the key;
+   - then, once, `node scripts/indexnow.mjs submit --all` and expect 200 or
+     202;
+   - record the response here.
+7. Later: Bing Webmaster Tools → **IndexNow** shows the received URLs. That
+   confirms end to end.
+
+- [ ] Steps 1–5: built and tested
+- [ ] Step 6: deployed, key file live, first `--all` submission accepted
+- [ ] Step 7: submissions visible in Bing Webmaster Tools
 
 ---
 
@@ -456,8 +573,9 @@ re-investigated.
       `test_dns.py`
 
 **Everything else — decisions recorded**
-- [ ] IndexNow decided yes/no, reasoning written here — recommendation
-      written (no, for now); decision pending
+- [x] IndexNow decided yes/no, reasoning written here — **yes** (Jon,
+      2026-09-22); design and steps in "Push protocols"
+- [ ] IndexNow built, deployed, and the first submission accepted
 - [x] Yandex, Baidu, DuckDuckGo decisions recorded — Yandex yes (verified,
       sitemap queued), Baidu no, DuckDuckGo covered by Bing
 - [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped —
@@ -553,5 +671,5 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
     - the Page-indexing reason strings;
     - the Rich Results Test outcome;
     - Brave and Mojeek. Marginalia: PR #734 opened 2026-09-22, awaiting merge;
-    - the IndexNow decision (recommendation: no);
+    - IndexNow: decided yes; design written, build starts 2026-09-23;
     - an article confirmed indexed in both Google and Bing.
