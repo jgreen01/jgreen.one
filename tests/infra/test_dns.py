@@ -109,6 +109,48 @@ class TestTlsRpt:
         assert "rua=mailto:" in value
 
 
+class TestSearchEngineVerification:
+    """Ownership proofs for the search consoles.
+
+    Managed by hand, like the mail records and for the same reason: Terraform
+    does not know these exist, so nothing else would notice a console edit or an
+    accidental deletion. Losing one silently de-verifies the property — the
+    sitemap stops being read and the reports go quiet, with no error anywhere.
+
+    Deliberately asserted by *destination* rather than by token. The token is
+    the record's own name and Bing may reissue it; pinning the literal would
+    make a legitimate re-verification look like a failure, and testing that a
+    hard-coded string equals itself proves nothing.
+    """
+
+    def _cnames_pointing_at(self, zone_records, target):
+        return [
+            name
+            for (name, rtype), values in zone_records.items()
+            if rtype == "CNAME" and any(v.rstrip(".") == target for v in values)
+        ]
+
+    def test_bing_verification_cname_exists(self, zone_records):
+        found = self._cnames_pointing_at(zone_records, "verify.bing.com")
+        assert found, (
+            "no CNAME points at verify.bing.com — Bing Webmaster Tools will "
+            "de-verify, and with it the sitemap and URL submissions"
+        )
+
+    def test_exactly_one_bing_verification_record(self, zone_records):
+        found = self._cnames_pointing_at(zone_records, "verify.bing.com")
+        assert len(found) == 1, f"expected one Bing verification CNAME, found {found}"
+
+    # Bing's index is read by ChatGPT Search, Copilot and DuckDuckGo, so this
+    # record reaches considerably further than Bing's own search share implies.
+    def test_the_bing_record_is_a_subdomain_of_the_site(self, zone_records):
+        found = self._cnames_pointing_at(zone_records, "verify.bing.com")
+        for name in found:
+            assert name.endswith(f".{APEX}"), (
+                f"{name} is not under {APEX}; it proves ownership of nothing"
+            )
+
+
 class TestNoStaleProviderRecords:
     """Guards against leftovers from the Tutanota → ProtonMail cutover.
 
