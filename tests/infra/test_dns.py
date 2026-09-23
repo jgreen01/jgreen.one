@@ -1,8 +1,10 @@
 """Pin the mail-related DNS records in Route 53.
 
-These records are managed **by hand** in the console, not by Terraform, so
-nothing else in the repository would notice an accidental edit or deletion. That
-is what these assertions are for.
+These records were made by hand and have been managed by Terraform since task K
+(`infra/live/dns.tf`). The two answer different questions. Terraform keeps the
+zone matching the config, but it only notices drift when someone runs a plan,
+and it applies a wrong value as faithfully as a right one. These assertions
+check that the live records are *correct*: one SPF, DMARC at p=reject, and so on.
 
 Read-only, like the rest of the infra suite. Route 53 is the authority — what the
 zone holds. It is not the same question as what the world resolves; use `dig` for
@@ -112,10 +114,10 @@ class TestTlsRpt:
 class TestSearchEngineVerification:
     """Ownership proofs for the search consoles.
 
-    Managed by hand, like the mail records and for the same reason: Terraform
-    does not know these exist, so nothing else would notice a console edit or an
-    accidental deletion. Losing one silently de-verifies the property — the
-    sitemap stops being read and the reports go quiet, with no error anywhere.
+    Managed by Terraform, like the mail records, which restores a deleted one
+    only when someone next runs a plan. Until then, losing one silently
+    de-verifies the property — the sitemap stops being read and the reports go
+    quiet, with no error anywhere.
 
     Deliberately asserted by *destination* rather than by token. The token is
     the record's own name and Bing may reissue it; pinning the literal would
@@ -169,10 +171,10 @@ class TestNoStaleProviderRecords:
         assert not any("tuta" in v.lower() for v in spf), spf
 
     def test_search_console_verification_is_present(self, zone_records):
-        # These TXT records are maintained by hand rather than by Terraform, so
-        # nothing else would notice one being dropped. Losing this token
-        # silently unverifies the Search Console property, and the first
-        # symptom is a report nobody can open rather than an error.
+        # Terraform restores a dropped token only when someone next runs a
+        # plan. Until then, losing it silently unverifies the Search Console
+        # property, and the first symptom is a report nobody can open rather
+        # than an error.
         tokens = [
             value
             for value in txt_values(zone_records, APEX)
