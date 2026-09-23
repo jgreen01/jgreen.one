@@ -1,9 +1,9 @@
 # Submit the site to search engines
 
 **Priority**: MEDIUM
-**Status**: TODO
+**Status**: IN PROGRESS
 **Created**: 2026-09-19
-**Updated**: 2026-09-19
+**Updated**: 2026-09-22
 
 ## Description
 
@@ -158,10 +158,10 @@ order to work through — see below.
 
 | # | Engine | Share | Status |
 |---|---|---:|---|
-| 1 | Google | **91.1%** | ✅ sitemap submitted |
-| 2 | **Bing** | 4.5% | ⬅ **the highest-value item left** |
+| 1 | Google | **91.1%** | ✅ sitemap submitted, indexing requested |
+| 2 | **Bing** | 4.5% | ✅ verified by DNS, sitemap submitted |
 | 3 | Yahoo | 1.23% | covered by Bing — nothing to do |
-| 4 | Yandex | 0.99% | regional; decide |
+| 4 | Yandex | 0.99% | ✅ verified, sitemap queued |
 | 5 | DuckDuckGo | 0.89% | covered by Bing — nothing to submit |
 | 6 | Baidu | 0.62% | no |
 
@@ -257,23 +257,20 @@ family of assistants.
 Verification is near-free — Bing imports directly from Google Search Console,
 carrying ownership verification *and* sitemaps.
 
-- [ ] Sign in at <https://www.bing.com/webmasters> → **Import from Google
-      Search Console** → grant access → auto-verified in minutes
+- [x] **Verification record — done by DNS instead of the Search Console
+      import.** A CNAME `<bing-token>.jgreen.one` → `verify.bing.com`, live
+      since 2026-09-22. It has been in `infra/live/dns.tf` since task K, and
+      `TestSearchEngineVerification` in `tests/infra/test_dns.py` asserts it.
+- [x] Verified in Bing Webmaster Tools (Jon, 2026-09-22)
+- [x] Submitted `https://jgreen.one/sitemap-index.xml` (Jon, 2026-09-22). DNS
+      verification imports nothing from Search Console, so this had to be done
+      by hand.
+- [ ] Use **URL Submission** for `/` and the articles — ❓ not confirmed
 
-🟡 The import flow is documented by Bing and described in current third-party
-2026 guides, but Bing's own help page is a JS app that could not be read
-directly on 2026-09-19. If the import option is not in the UI, fall back to
-DNS TXT or meta-tag verification — the end state is identical.
-- [ ] Confirm the sitemap came across; submit manually if not
-- [ ] Use **URL Submission** for `/` and the articles
-
-⚠️ Bing re-validates ownership by periodically syncing with GSC. If Google
-access is ever revoked, ownership lapses — so **also add the DNS TXT or meta
-verification** as a standing fallback. That is a one-line addition to
-`infra/live/dns.tf`, alongside the existing `google-site-verification` and
-`protonmail-verification` records, and `tests/infra/test_dns.py` already has a
-`test_no_orphaned_verification_tokens` guard whose `known_current` tuple would
-need the new prefix added.
+✅ **Choosing DNS also removed the import's one weakness.** Ownership imported
+from Search Console is re-validated against Google and lapses if that access is
+ever revoked. A DNS record depends on nothing else, so the "standing fallback"
+this section used to call for is no longer needed.
 
 ---
 
@@ -297,8 +294,12 @@ traffic, which is not this audience. Listed for completeness.
       (2026-09-22): `0 added, 1 changed, 0 destroyed`, one value added and
       none removed. Live on 8.8.8.8 and 1.1.1.1. The first verification to go
       through Terraform rather than the console.
-- [ ] Click **Verify** in Yandex Webmaster
-- [ ] Submit `https://jgreen.one/sitemap-index.xml` there
+- [x] Verified in Yandex Webmaster (2026-09-22). Yandex accepts a sitemap only
+      for a verified site, so the next item proves it.
+- [x] Submitted `https://jgreen.one/sitemap-index.xml` (2026-09-22): "added to
+      the processing queue". Processing takes **up to 1–2 weeks**; a Site
+      Diagnostics warning about missing processed files clears on its own once
+      it is done.
 
 ---
 
@@ -347,7 +348,9 @@ minutes because they are genuinely independent indexes, and Brave propagates
 into Kagi.
 
 - [ ] Submit to Brave
-- [ ] Submit to Marginalia (PR or email)
+- [x] Submitted to Marginalia — PR [#734](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search/pull/734)
+      (2026-09-22), adding `jgreen.one` to `sites.txt`. Once merged, the site
+      is picked up by the next crawl, which "may be a month or more".
 - [ ] Check the Mojeek forum, or decide to skip
 
 ---
@@ -398,7 +401,21 @@ Notes if this is built:
 - Per the TDD rules: the submitter is a shell-out, so mock it, assert exact
   arguments, and assert no key is echoed into build output or logs.
 
-- [ ] Decide yes/no
+**Recommendation (2026-09-22): no, not now.**
+
+- **It solves a different problem.** IndexNow speeds up *discovery of
+  changes*. It does not get a new domain accepted into an index, which is this
+  site's actual problem, and the sitemap already handles discovery.
+- **The manual route covers this publishing rate for free.** When an article
+  ships, Bing Webmaster Tools' **URL Submission** and Yandex Webmaster's
+  page-reindexing tool each take the URL in seconds.
+- **Building it is not free:** a key file, a network call added to
+  `deploy.sh`, working out which URLs changed, and mocked tests for all of it.
+  All of that is for the engines outside Google.
+- **Revisit** if publishing becomes weekly or more, or if a post's timeliness
+  starts to matter.
+
+- [ ] Decide yes/no — **Jon's call**; recommendation above
 - [ ] If yes: generate key, add key file, add deploy step + tests
 
 ---
@@ -424,23 +441,31 @@ re-investigated.
 - [x] `X-Robots-Tag: noindex` on `.md` twins — done, shipped with task J.
       Applies only to a direct request for the twin's own URL: a *negotiated*
       Markdown response is served at the page's URL, and marking that would tell
-      a crawler not to index the article itself. **Committed, not yet deployed.**
+      a crawler not to index the article itself. **Live** — verified
+      2026-09-22: the twin's URL sends `X-Robots-Tag: noindex`, the HTML page
+      does not.
 
 **Google and Bing — where 95% of search actually is**
-- [ ] Sitemap submitted in Google Search Console
-- [ ] Indexing requested for `/` and the articles
+- [x] Sitemap submitted in Google Search Console — 2026-09-21, 36 pages
+- [x] Indexing requested for `/` and the articles — 2026-09-21
 - [ ] Page-indexing reason strings recorded per URL
-- [ ] Bing Webmaster Tools verified, sitemap present, URLs submitted
-- [ ] Bing fallback verification in `infra/live/dns.tf` + `test_dns.py` updated,
-      **or** an explicit decision not to
+- [ ] Bing Webmaster Tools verified, sitemap present, URLs submitted —
+      verified and sitemap done 2026-09-22; URL Submission not confirmed
+- [x] Bing fallback verification in `infra/live/dns.tf` + `test_dns.py` — moot:
+      DNS *is* the verification, in `dns.tf` since task K and asserted by
+      `test_dns.py`
 
 **Everything else — decisions recorded**
-- [ ] IndexNow decided yes/no, reasoning written here
-- [ ] Yandex, Baidu, DuckDuckGo decisions recorded
-- [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped
+- [ ] IndexNow decided yes/no, reasoning written here — recommendation
+      written (no, for now); decision pending
+- [x] Yandex, Baidu, DuckDuckGo decisions recorded — Yandex yes (verified,
+      sitemap queued), Baidu no, DuckDuckGo covered by Bing
+- [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped —
+      Marginalia PR #734 open
 
 **Outcome**
-- [ ] GitHub repo `homepage` + `description` fields set
+- [x] GitHub repo `homepage` + `description` fields set — verified 2026-09-22
+      with `gh repo view`, plus six topics
 - [ ] At least one article confirmed indexed in Google **and** Bing
 
 ## Notes
@@ -506,3 +531,27 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
   DuckDuckGo gained its own section rather than a footnote. Verified 2026-09-21
   that `DuckDuckBot` fetches the site (200) and that `robots.txt` blocks nobody.
   There is still no submission form: doing Bing is doing DuckDuckGo.
+- [2026-09-22] **Reconciled against live state**; ticked only what was
+  verified or reported.
+  - **Verified here:**
+    - `noindex` live on the twins' own URLs;
+    - repo homepage, description and topics set;
+    - Bing's DNS record live and in Terraform (task K);
+    - Yandex's TXT live.
+  - **Reported by Jon:**
+    - the Google sitemap and indexing requests (2026-09-21);
+    - the Yandex sitemap queued (2026-09-22), which also proves the site is
+      verified there;
+    - Bing verified and the sitemap submitted (2026-09-22).
+  - **Fixed on the way:** `test_no_orphaned_verification_tokens` only matched
+    tokens written `name=value`, so it never saw Yandex's
+    `yandex-verification: <code>`. The suite passed because the guard missed
+    the token, not because it approved it. Widened the match to `[=:]` (RED on
+    the live token), then added Yandex to `known_current` (GREEN).
+  - **Still open:**
+    - Bing URL Submission (not confirmed);
+    - the Page-indexing reason strings;
+    - the Rich Results Test outcome;
+    - Brave and Mojeek. Marginalia: PR #734 opened 2026-09-22, awaiting merge;
+    - the IndexNow decision (recommendation: no);
+    - an article confirmed indexed in both Google and Bing.
