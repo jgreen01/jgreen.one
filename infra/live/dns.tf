@@ -52,6 +52,7 @@ resource "aws_route53_record" "apex_txt" {
     "google-site-verification=13KJGqY9aCTTX8gB1Shjz1dcJVEkCFseS8o6c7YzbUo",
     "protonmail-verification=0b761c29c3c61e6e127b149ee58a6afb5c3200d7",
     "v=spf1 include:_spf.protonmail.ch ~all",
+    "yandex-verification: 984783dd75302675",
   ]
 
   lifecycle {
