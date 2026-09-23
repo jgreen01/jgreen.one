@@ -186,13 +186,27 @@ The property is verified. Remaining:
 
 - [x] Submit `https://jgreen.one/sitemap-index.xml` under **Sitemaps** —
       done 2026-09-21: **Success, 36 pages discovered**
-- [ ] **URL Inspection → Request indexing** on `/` and 2–3 articles.
+- [x] **URL Inspection → Request indexing** on `/` and 2–3 articles. Done
+      2026-09-21.
       Quota is **10–12 URLs/day per property**, unpublished by Google and
       varying with account history and site size. Spend it on articles, never
       on tag pages. (The Search Console *API* allows 2,000 inspections/day, but
       inspection is not submission — it does not queue a URL for indexing.)
-- [ ] Record the robots.txt report's *last fetched* timestamp
-- [ ] **Run Google's [Rich Results Test](https://search.google.com/test/rich-results)**
+- [x] Record the robots.txt report's *last fetched* timestamp — **2026-09-21
+      02:55**, `http://jgreen.one/robots.txt`, Fetched, **4,282 bytes**, 28
+      warnings. Size matches the live file exactly, so Google holds the current
+      version. The `http://` is a **domain property** listing a scheme variant,
+      not a misconfiguration: `http://` 301s to `https://`, and a URL-prefix
+      `http://` property would have rejected the all-https sitemap that
+      submitted successfully.
+
+      The 28 warnings are the 14 `Content-Usage` + 14 `Content-Signal` lines,
+      confirmed by count. RFC 9309 requires a parser to ignore records it does
+      not recognise, so "Rule ignored by Googlebot" is correct behaviour rather
+      than an error — and it also means neither vocabulary does anything for
+      Google today. See the open decision in Notes.
+- [x] **Run Google's [Rich Results Test](https://search.google.com/test/rich-results)** — done 2026-09-21.
+      ⚠️ Outcome not recorded here; see the note below.
       on `/entries/this-site/` and `/about/`. Inherited from task A, whose
       implementation is complete and validated two other ways — this is the one
       check that needs a signed-in Google account, so it belongs with the rest of
@@ -203,7 +217,20 @@ The property is verified. Remaining:
       breadcrumb trail in one `@graph`. One test validates both. Listing pages
       carry `CollectionPage`, which Google parses but renders no rich result for
       — an empty result there is expected, not a failure.
-- [ ] Check **Page indexing** and note the exact reason string per URL
+- [x] Check **Page indexing** — done 2026-09-21.
+      ⚠️ Reason strings not recorded here; see the note below.
+
+⚠️ **Two outputs were not captured, and they were the point of those steps.**
+The actions are done; what they produced is not written down. Neither blocks
+anything, but both are the only diagnostic information available:
+
+1. **The Page-indexing reason strings.** These distinguish ordinary new-domain
+   latency from something fixable — see the table below. Worth a look if the
+   count of indexed pages stops climbing.
+2. **The Rich Results Test outcome.** Inherited from task A, which closed on the
+   basis that this was the last unrun check. If it reported errors on `Article`
+   or `BreadcrumbList`, that is a real defect and task A should reopen; a clean
+   pass closes the loop properly.
 
 The reason string matters — these mean different things:
 
