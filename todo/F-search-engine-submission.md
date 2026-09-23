@@ -291,7 +291,14 @@ entirely.** Recorded so it is not re-investigated.
 Independent index, supports IndexNow. Real value only for Russian-language
 traffic, which is not this audience. Listed for completeness.
 
-- [ ] Decide — recommend no
+- [x] Decide — recommended no; **Jon chose yes** (2026-09-22). Kagi also draws
+      on Yandex's index.
+- [x] Verification TXT added to the apex TXT in `infra/live/dns.tf` and applied
+      (2026-09-22): `0 added, 1 changed, 0 destroyed`, one value added and
+      none removed. Live on 8.8.8.8 and 1.1.1.1. The first verification to go
+      through Terraform rather than the console.
+- [ ] Click **Verify** in Yandex Webmaster
+- [ ] Submit `https://jgreen.one/sitemap-index.xml` there
 
 ---
 
