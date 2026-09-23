@@ -32,7 +32,10 @@ SITE_BUCKET = os.environ.get("JGREEN_SITE_BUCKET", "jgreen-one-site")
 WAF_NAME = os.environ.get("JGREEN_WAF_NAME", "jgreen-one-waf")
 SNS_TOPIC_NAME = os.environ.get("JGREEN_SNS_TOPIC", "jgreen-one-billing-alerts")
 BUDGET_NAME = os.environ.get("JGREEN_BUDGET_NAME", "jgreen-one-monthly-budget")
-HOSTED_ZONE_ID = os.environ.get("JGREEN_HOSTED_ZONE_ID", "Z01752721Z1AXUQEVQZ2D")
+# No default. The ID is looked up from Route 53 by domain name on every run (see
+# the hosted_zone_id fixture) rather than hardcoded: it changes if the zone is
+# ever recreated. The env var remains for pointing the suite at another stack.
+HOSTED_ZONE_ID = os.environ.get("JGREEN_HOSTED_ZONE_ID")
 
 # CloudFront, WAF for CloudFront, billing metrics and Budgets are all global
 # services addressed through us-east-1.
@@ -89,7 +92,26 @@ def route53(sts_identity):
 
 
 @pytest.fixture(scope="session")
-def zone_records(route53):
+def hosted_zone_id(route53):
+    """The site's public hosted zone, found by domain name rather than hardcoded.
+
+    Looked up fresh each run, because the ID changes if the zone is recreated.
+    JGREEN_HOSTED_ZONE_ID overrides it, for pointing the suite at another stack.
+    """
+    if HOSTED_ZONE_ID:
+        return HOSTED_ZONE_ID
+    wanted = f"{SITE_DOMAIN}."
+    # Results start at SITE_DOMAIN in lexical order and may run past it, so
+    # match the name exactly, and ignore any private zone of the same name.
+    zones = route53.list_hosted_zones_by_name(DNSName=SITE_DOMAIN)["HostedZones"]
+    matches = [z for z in zones if z["Name"] == wanted and not z["Config"]["PrivateZone"]]
+    if len(matches) != 1:
+        pytest.fail(f"expected exactly one public hosted zone named {wanted}, found {len(matches)}")
+    return matches[0]["Id"].split("/")[-1]
+
+
+@pytest.fixture(scope="session")
+def zone_records(route53, hosted_zone_id):
     """Every record in the hosted zone, keyed by ``(name, type)``.
 
     Names keep their trailing dot as Route 53 returns them; values are the raw
@@ -101,7 +123,7 @@ def zone_records(route53):
     """
     records = {}
     paginator = route53.get_paginator("list_resource_record_sets")
-    for page in paginator.paginate(HostedZoneId=HOSTED_ZONE_ID):
+    for page in paginator.paginate(HostedZoneId=hosted_zone_id):
         for record in page["ResourceRecordSets"]:
             key = (record["Name"], record["Type"])
             values = [r["Value"] for r in record.get("ResourceRecords", [])]
