@@ -8,10 +8,11 @@
  * words and sails straight through. This matches secret-shaped VALUES instead.
  *
  * Two severities:
- *   error — a credential. Fails the run.
- *   info  — an infrastructure identifier (distribution, zone). Not a credential
- *           and not an account ID, which is an error. Surfaced so a reader can
- *           decide. Never fails the run unless --strict is passed.
+ *   error — a credential, or an infrastructure identifier. Fails the run.
+ *   info  — reported for awareness; never fails the run unless --strict is
+ *           passed. No detector currently uses it: infrastructure identifiers
+ *           were informational until 2026-09-22 and now block, because the
+ *           rule is to look them up fresh rather than hardcode them.
  *
  * Findings never carry the matched value. A scanner that prints what it found
  * has copied the secret into CI logs and terminal scrollback, which is the
@@ -54,72 +55,84 @@ export const DETECTORS = [
   {
     id: "private-key-block",
     severity: "error",
+    kind: "credential",
     description: "PEM private key block",
     pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g,
   },
   {
     id: "aws-access-key-id",
     severity: "error",
+    kind: "credential",
     description: "AWS access key ID",
     pattern: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
   },
   {
     id: "github-fine-grained-token",
     severity: "error",
+    kind: "credential",
     description: "GitHub fine-grained personal access token",
     pattern: /\bgithub_pat_[A-Za-z0-9_]{50,}/g,
   },
   {
     id: "github-token",
     severity: "error",
+    kind: "credential",
     description: "GitHub token",
     pattern: /\bgh[pousr]_[A-Za-z0-9]{36}\b/g,
   },
   {
     id: "anthropic-key",
     severity: "error",
+    kind: "credential",
     description: "Anthropic API key",
     pattern: /\bsk-ant-[A-Za-z0-9_-]{20,}/g,
   },
   {
     id: "openai-key",
     severity: "error",
+    kind: "credential",
     description: "OpenAI-style API key",
     pattern: /\bsk-(?!ant-)[A-Za-z0-9]{32,}\b/g,
   },
   {
     id: "stripe-live-key",
     severity: "error",
+    kind: "credential",
     description: "Stripe live key",
     pattern: /\b[srp]k_live_[A-Za-z0-9]{20,}\b/g,
   },
   {
     id: "slack-token",
     severity: "error",
+    kind: "credential",
     description: "Slack token",
     pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}/g,
   },
   {
     id: "google-api-key",
     severity: "error",
+    kind: "credential",
     description: "Google API key",
     pattern: /\bAIza[0-9A-Za-z_-]{35}\b/g,
   },
   {
     id: "npm-token",
     severity: "error",
+    kind: "credential",
     description: "npm access token",
     pattern: /\bnpm_[A-Za-z0-9]{36}\b/g,
   },
   {
     id: "jwt",
     severity: "error",
+    kind: "credential",
     description: "JSON Web Token",
     pattern: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]*/g,
   },
   {
     id: "url-credentials",
     severity: "error",
+    kind: "credential",
     description: "credentials embedded in a URL",
     pattern: /\b[a-z][a-z0-9+.-]*:\/\/[^/\s:@]+:[^/\s:@]+@/gi,
   },
@@ -129,6 +142,7 @@ export const DETECTORS = [
     // token is matched and then searched, rather than relying on \b.
     id: "assigned-secret",
     severity: "error",
+    kind: "credential",
     description: "long value assigned to a secret-shaped name",
     // The only detector that honours placeholders. The structural patterns
     // above deliberately do NOT: a false positive costs one line of review,
@@ -150,6 +164,7 @@ export const DETECTORS = [
     // common to flag — a byte count or a millisecond timestamp would trip it.
     id: "aws-account-id",
     severity: "error",
+    kind: "identifier",
     description: "AWS account ID",
     // A detector may carry several patterns for one concept.
     pattern: [
@@ -158,17 +173,29 @@ export const DETECTORS = [
     ],
     valueGroup: 1,
   },
+  // Infrastructure identifiers. Not secrets, and blocked anyway: the rule is to
+  // look them up fresh from Terraform state or the AWS API every time rather
+  // than hardcode them, because a copy in a file goes stale the moment the
+  // resource is recreated. See "Environment & Secrets" in AGENTS.md.
+  //
+  // Both patterns require at least one digit. Real IDs mix letters and digits;
+  // an all-caps word of the same length ("EXTRAORDINARY", "ZOOMORPHICALLY")
+  // has none, and once these block a commit a false positive stops work
+  // outright. The cost is a real ID that happens to contain no digit slipping
+  // through — acceptable for a backstop, since the rule is the control.
   {
     id: "cloudfront-distribution-id",
-    severity: "info",
+    severity: "error",
+    kind: "identifier",
     description: "CloudFront distribution ID",
-    pattern: /\bE[A-Z0-9]{12,13}\b/g,
+    pattern: /\bE(?=[A-Z0-9]*\d)[A-Z0-9]{12,13}\b/g,
   },
   {
     id: "route53-zone-id",
-    severity: "info",
+    severity: "error",
+    kind: "identifier",
     description: "Route 53 hosted zone ID",
-    pattern: /\bZ[A-Z0-9]{13,}\b/g,
+    pattern: /\bZ(?=[A-Z0-9]*\d)[A-Z0-9]{13,}\b/g,
   },
 ];
 
@@ -227,6 +254,7 @@ export function scanText(text, file = "<input>") {
           findings.push({
             id: detector.id,
             severity: detector.severity,
+            kind: detector.kind,
             description: detector.description,
             file,
             line: index + 1,

@@ -37,8 +37,10 @@ const FAKE_ENV = {
   AWS_SESSION_TOKEN: "fake-session-token-must-never-be-echoed",
 };
 
+// Obviously fake, and deliberately not ID-shaped: the deploy script only passes
+// the value through, and a realistic one would trip the identifier check.
 const DEFAULT_TF_OUTPUT = JSON.stringify({
-  cloudfront_id: { value: "E2G3DB3OD7XU6F" },
+  cloudfront_id: { value: "E-FAKE-DISTRIBUTION" },
   site_bucket: { value: "jgreen-one-site" },
 });
 
@@ -428,7 +430,7 @@ describe("scripts/deploy.sh", () => {
         "cloudfront",
         "create-invalidation",
         "--distribution-id",
-        "E2G3DB3OD7XU6F",
+        "E-FAKE-DISTRIBUTION",
         "--paths",
         "/*",
       ]);
@@ -439,7 +441,7 @@ describe("scripts/deploy.sh", () => {
       workdir = mkdtempSync(join(tmpdir(), "deploy-sh-"));
       setupWorkdir(
         JSON.stringify({
-          cloudfront_id: { value: "EDIFFERENT123" },
+          cloudfront_id: { value: "E-OTHER-DISTRIBUTION" },
           site_bucket: { value: "some-other-bucket" },
         }),
       );
@@ -447,7 +449,7 @@ describe("scripts/deploy.sh", () => {
       runDeploy();
       const args = callsTo("aws").map((i) => i.args.join(" "));
       expect(args.some((a) => a.includes("s3://some-other-bucket/"))).toBe(true);
-      expect(args.some((a) => a.includes("EDIFFERENT123"))).toBe(true);
+      expect(args.some((a) => a.includes("E-OTHER-DISTRIBUTION"))).toBe(true);
     });
   });
 

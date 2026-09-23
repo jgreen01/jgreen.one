@@ -94,18 +94,39 @@ describe("scanText — what must NOT be flagged", () => {
 });
 
 describe("scanText — infrastructure identifiers", () => {
-  // Distribution and zone IDs are not secrets and stay informational.
+  // Blocked, not merely reported. The rule is to look IDs up fresh from
+  // Terraform state or the AWS API every time rather than hardcode them: a copy
+  // in a file goes stale the moment the resource is recreated. Synthetic values
+  // here, never the real ones — the fixture only needs the shape.
   it.each([
-    ["cloudfront-distribution-id", "distribution E2G3DB3OD7XU6F"],
-    ["route53-zone-id", "zone Z01752721Z1AXUQEVQZ2D"],
-  ])("flags %s as info", (id, text) => {
+    ["cloudfront-distribution-id", "distribution E0EXAMPLE12345"],
+    ["route53-zone-id", "zone Z0EXAMPLE12345"],
+  ])("blocks %s as an error", (id, text) => {
     const findings = find(text);
     expect(findings.map((f) => f.id)).toContain(id);
-    expect(findings.find((f) => f.id === id)!.severity).toBe("info");
+    expect(findings.find((f) => f.id === id)!.severity).toBe("error");
   });
 
-  it("marks real secrets as errors, not info", () => {
+  it("recognises a long modern hosted zone ID", () => {
+    expect(ids("zone Z0123456789EXAMPLE12")).toContain("route53-zone-id");
+  });
+
+  // Now that these block a commit, a false positive stops work outright. Real
+  // IDs mix letters and digits; an all-caps word of the same length has none.
+  it.each(["EXTRAORDINARY", "ENVIRONMENTAL", "ZOOMORPHICALLY"])(
+    "does not block the ordinary word %s",
+    (word) => {
+      expect(find(`This is ${word} prose.`)).toEqual([]);
+    },
+  );
+
+  it("marks real secrets as errors", () => {
     expect(find('k = "AKIA2E0A8F3B5C7D9E1F"')[0].severity).toBe("error");
+  });
+
+  it("carries the kind onto each finding", () => {
+    expect(find("zone Z0EXAMPLE12345")[0].kind).toBe("identifier");
+    expect(find('k = "AKIA2E0A8F3B5C7D9E1F"')[0].kind).toBe("credential");
   });
 });
 
@@ -167,6 +188,20 @@ describe("DETECTORS", () => {
       expect(["error", "info"]).toContain(d.severity);
       expect(d.description.length).toBeGreaterThan(0);
     }
+  });
+
+  // A credential and an identifier call for different fixes: one has to be
+  // rotated, the other only has to be looked up instead of written down. The
+  // CLI's advice depends on telling them apart, so every detector says which.
+  it("every detector says whether it finds a credential or an identifier", () => {
+    for (const d of DETECTORS) expect(["credential", "identifier"]).toContain(d.kind);
+  });
+
+  it("classes exactly the provider-assigned IDs as identifiers", () => {
+    const identifiers = DETECTORS.filter((d) => d.kind === "identifier")
+      .map((d) => d.id)
+      .sort();
+    expect(identifiers).toEqual(["aws-account-id", "cloudfront-distribution-id", "route53-zone-id"]);
   });
 
   it("has unique ids", () => {

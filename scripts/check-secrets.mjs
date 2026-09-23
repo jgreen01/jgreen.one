@@ -7,10 +7,11 @@
  *   node scripts/check-secrets.mjs todo src        # explicit paths
  *   node scripts/check-secrets.mjs --staged        # what git is about to commit
  *   node scripts/check-secrets.mjs --history       # every blob ever committed
- *   node scripts/check-secrets.mjs --strict        # infrastructure IDs fail too
+ *   node scripts/check-secrets.mjs --strict        # informational findings fail too
  *   node scripts/check-secrets.mjs --json          # machine-readable
  *
- * Exits 1 when a credential is found, so it can gate a commit or CI.
+ * Exits 1 when a credential or an infrastructure identifier is found, so it
+ * can gate a commit or CI.
  * Detection and file selection live in scripts/lib/secrets.mjs and are
  * unit-tested; this file is only I/O and output.
  */
@@ -158,32 +159,52 @@ if (asJson) {
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const scope = history ? "historical " : staged ? "staged " : "";
 
-if (errors.length > 0) {
-  console.error(`\n✖ ${plural(errors.length, "credential")} in ${scope}files:\n`);
-  for (const f of errors) {
+// A credential and an identifier need different fixes, so they are reported
+// separately: one has to be rotated, the other only has to stop being written
+// down. Telling someone to rotate a hosted zone ID would be wrong advice.
+const credentials = errors.filter((f) => f.kind !== "identifier");
+const identifiers = errors.filter((f) => f.kind === "identifier");
+
+const list = (items) => {
+  for (const f of items) {
     console.error(`  ${f.file}:${f.line}  ${f.id} — ${f.description}`);
     console.error(`    value: ${f.preview}  (redacted)`);
   }
+};
+
+if (credentials.length > 0) {
+  console.error(`\n✖ ${plural(credentials.length, "credential")} in ${scope}files:\n`);
+  list(credentials);
   console.error("\nRemove it, then use an env var, a Terraform data source, or a");
   console.error("<placeholder>. If the value is real, ROTATE IT — and if it has ever");
   console.error("been committed, rotate it regardless: git history keeps it.\n");
+}
+
+if (identifiers.length > 0) {
+  console.error(`\n✖ ${plural(identifiers.length, "infrastructure identifier")} in ${scope}files:\n`);
+  list(identifiers);
+  console.error("\nNot a secret, and nothing to rotate — but don't hardcode it. IDs change");
+  console.error("when a resource is recreated, so look it up fresh each time: reference");
+  console.error("it in Terraform, or use `terraform -chdir=infra/live output -raw <name>`");
+  console.error("or the AWS CLI. In docs and commit messages, use a placeholder such as");
+  console.error("<zone-id>. See \"Environment & Secrets\" in AGENTS.md.\n");
 }
 
 if (infos.length > 0) {
   const grouped = new Map();
   for (const f of infos) grouped.set(f.id, (grouped.get(f.id) ?? 0) + 1);
   const stream = strict ? console.error : console.log;
-  stream(`\n${strict ? "✖" : "•"} ${plural(infos.length, "infrastructure identifier")}:`);
+  stream(`\n${strict ? "✖" : "•"} ${plural(infos.length, "informational finding")}:`);
   for (const [id, count] of [...grouped].sort()) stream(`    ${id} ×${count}`);
   stream(
     strict
       ? "\n--strict was passed, so these fail the run.\n"
-      : "\nDistribution and zone IDs. Not credentials and not account identifiers,\nwhich are errors — listed for awareness only; they do not fail the run.\n",
+      : "\nReported for awareness only; these do not fail the run.\n",
   );
 }
 
 if (errors.length === 0) {
-  console.log(`✓ scanned ${plural(sources.length, `${scope}file`)} — no credentials found.`);
+  console.log(`✓ scanned ${plural(sources.length, `${scope}file`)} — no credentials or identifiers found.`);
 }
 
 process.exit(failed ? 1 : 0);
