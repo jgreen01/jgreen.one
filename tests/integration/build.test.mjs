@@ -18,6 +18,7 @@ import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import robotsParser from "robots-parser";
 import { parse as parseHtml } from "node-html-parser";
+import { validateKey } from "../../scripts/lib/indexnow.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const DIST = join(ROOT, "dist");
@@ -1424,5 +1425,16 @@ describe("tag links", () => {
     const html = read("tags/astro/index.html");
     const selfLinks = [...html.matchAll(/href="\/tags\/astro\/"/g)].length;
     assert.equal(selfLinks, 0, "the astro tag page links back to itself");
+  });
+});
+
+// IndexNow engines fetch this file to confirm a submission came from the site.
+// It must ship at the root, where it validates every URL on the host, and hold
+// the key alone: the spec does not say engines strip whitespace.
+describe("the IndexNow key file", () => {
+  test("ships at the root holding exactly one valid key", () => {
+    const text = read("indexnow-key.txt");
+    assert.equal(text, text.trim(), "the key file must hold only the key, with no trailing newline");
+    assert.ok(validateKey(text), "indexnow-key.txt does not hold a valid IndexNow key");
   });
 });
