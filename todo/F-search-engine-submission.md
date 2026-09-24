@@ -363,7 +363,16 @@ A push protocol: ping once, and participating engines share the submission
 between them. **Google has publicly declined to join** and still does not
 support it as of 2026, so this buys nothing for Gemini.
 
-**Participants:** Bing, Yandex, Naver, Seznam, Yep.
+**Participants** (per `https://www.indexnow.org/searchengines.json`, checked
+2026-09-23): Bing, Yandex, Naver, Seznam, Yep, **Amazon** (endpoint
+`indexnow.amazonbot.amazon`) and the **Internet Archive**. The earlier list of
+five was out of date.
+
+**Endpoint:** the FAQ (<https://www.indexnow.org/faq>) lists
+`https://api.indexnow.org/indexnow` first, as the "IndexNow global endpoint", and
+says each endpoint's submissions are "shared across all IndexNow-enabled search
+engines". So one POST there reaches all seven. Any engine's own endpoint
+(`www.bing.com/indexnow`, say) would do the same.
 
 **The honest case for:** it reaches Bing's index — and therefore ChatGPT Search,
 Copilot and Perplexity — within minutes rather than waiting for a crawl.
@@ -397,8 +406,8 @@ Implementation (from <https://www.indexnow.org/documentation>, read 2026-09-19):
 I recommended against it: it speeds up discovery of changes rather than
 getting a new domain indexed, and pasting URLs in by hand covers a handful of
 articles a year. Jon's case is the stronger one for this site. A deploy step
-is never forgotten, and one ping reaches Bing, Yandex, Naver, Seznam and Yep
-together. It also covers pages nobody would resubmit by hand, such as edited
+is never forgotten, and one ping reaches every participant together (seven as
+of 2026-09-23, including Bing, Yandex and Amazon). It also covers pages nobody would resubmit by hand, such as edited
 articles and the tag and listing pages a new post changes. It costs nothing
 to run.
 
@@ -531,7 +540,7 @@ What `scripts/lib/indexnow.mjs` exports:
 7. Later: Bing Webmaster Tools → **IndexNow** shows the received URLs. That
    confirms end to end.
 
-- [ ] Steps 1–5: built and tested
+- [x] Steps 1–5: built and tested (2026-09-23). The details are in the Log.
 - [ ] Step 6: deployed, key file live, first `--all` submission accepted
 - [ ] Step 7: submissions visible in Bing Webmaster Tools
 
@@ -575,7 +584,7 @@ re-investigated.
 **Everything else — decisions recorded**
 - [x] IndexNow decided yes/no, reasoning written here — **yes** (Jon,
       2026-09-22); design and steps in "Push protocols"
-- [ ] IndexNow built, deployed, and the first submission accepted
+- [ ] IndexNow built ✓ (2026-09-23), deployed, and the first submission accepted
 - [x] Yandex, Baidu, DuckDuckGo decisions recorded — Yandex yes (verified,
       sitemap queued), Baidu no, DuckDuckGo covered by Bing
 - [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped —
@@ -673,3 +682,34 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
     - Brave and Mojeek. Marginalia: PR #734 opened 2026-09-22, awaiting merge;
     - IndexNow: decided yes; design written, build starts 2026-09-23;
     - an article confirmed indexed in both Google and Bing.
+- [2026-09-23] **IndexNow built, test-first; not deployed.** Steps 1–5 done.
+  - `scripts/lib/indexnow.mjs`: 50 unit tests, RED first, against sitemaps
+    recorded from a build byte-identical to the live site.
+  - `scripts/indexnow.mjs`: the command-line wrapper. Exit codes: 0 when done
+    or when the other end failed (with a warning); 1 for a local problem, such
+    as no build or a bad key file; 2 for a usage error.
+  - `deploy.sh` has two new steps: step 4 records the live sitemap before the
+    sync, and step 8 submits after the invalidation. Both are guarded so a
+    failure only warns. 9 new deploy tests (7 RED first, 2 guards); the
+    credential test covers the new calls automatically.
+  - `public/indexnow-key.txt`: 32 hex characters, no trailing newline. A
+    build-integration test checks it ships as exactly one valid key.
+  - The viewer-request function leaves `/indexnow-key.txt` alone (checked).
+  - **Dry runs against the live site:**
+    - a fresh snapshot gives 0 changes (build == live);
+    - `--all` lists 36 URLs;
+    - a hand-altered snapshot gives exactly the 3 URLs altered: a changed
+      lastmod, one new in the build, and one gone from it.
+  - **Checks:**
+    - `npm test` 997 passed; `check:secrets` clean;
+    - `astro check`: only the existing `audit.test.ts:148` error;
+    - `test:build` 95/96. The one failure was already there and is unrelated:
+      `--strict` media-check flags three `public/media/rocket-reliability-*.webp`
+      files from 2026-09-02 that are in no manifest and referenced nowhere.
+      `deploy.sh` runs media-check without `--strict`, so it does not block a
+      deploy, but `aws s3 sync` would upload those files.
+  - **One unexplained run:** a single `test:build` run showed 11 failures.
+    Two reruns (alone, and after `astro check` as before) showed only the
+    media one. That run coincided with the editor's connection dropping.
+  - **Next:** step 6, when Jon says deploy: deploy, confirm the key file is
+    live, then `node scripts/indexnow.mjs submit --all` once.
