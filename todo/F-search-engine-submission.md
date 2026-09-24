@@ -163,7 +163,7 @@ order to work through — see below.
 | 3 | Yahoo | 1.23% | covered by Bing — nothing to do |
 | 4 | Yandex | 0.99% | ✅ verified, sitemap queued |
 | 5 | DuckDuckGo | 0.89% | covered by Bing — nothing to submit |
-| 6 | Baidu | 0.62% | no |
+| 6 | Baidu | 0.62% | no: registration needs a mainland Chinese mobile number (§6) |
 
 ### Why the ranking understates Bing
 
@@ -322,36 +322,188 @@ DuckDuckGo** — that is the only lever that exists.
 
 ## 6. Baidu — 0.62%
 
+**No.** Registration isn't possible from outside China. Checked 2026-09-23.
 
+- **The blocker is the account, not the site.**
+  - Baidu wants a mainland Chinese mobile number for SMS verification
+    ([SEO for China, 2026](https://www.seoforchina.com/technical/baidu-webmaster-tools.html)).
+  - Its overseas registration form, `passport.baidu.com/v2/?reg&overseas=1`,
+    was tried on 2026-09-23 and **did not work**.
+  - Without an account there is no Search Resource Platform
+    (<https://ziyuan.baidu.com>), so no verification and no sitemap
+    submission.
+- **An ICP licence is not the obstacle.** It is needed to *host* in mainland
+  China, not to be *indexed*. An earlier version of this section said
+  otherwise.
+- **Baidu has never crawled the site.** Verified 2026-09-23: all 18
+  "Baiduspider" requests in 30 days were fakes. A real one resolves,
+  forward-confirmed, to `*.baidu.com` or `*.baidu.jp`.
+- **No IndexNow route.** Baidu is not a participant.
+- **Nothing blocks Baiduspider.** `robots.txt` allows it through
+  `User-agent: *`, so Baidu can still find the site through links.
 
-Effectively requires Chinese hosting and an ICP licence. The site is on
-CloudFront PriceClass_100 and the audience is not in China. **No.**
+**Revisit only with a mainland Chinese mobile number.** The steps would be:
+register, add and verify the site with the file method (the file goes in
+`public/`), then submit the sitemap. For content, Baidu favours Simplified
+Chinese.
+
+---
+
+## Archives and open datasets (checked 2026-09-23)
+
+Not search engines, but they keep the site **over time**, and Common Crawl is
+the main open dataset that AI models are trained on.
+
+| Archive | Has the site? | Can it be requested? |
+|---|---|---|
+| **Common Crawl** | **No.** 0 captures in the last 8 crawls (CC-MAIN-2026-08 through -39); the same query finds `example.com`, so the query works. No real CCBot visits in 30 days: none came from its published ranges (`3.41.188.32/29`, `18.97.9.168/29`, `18.97.14.80/29`, `18.97.14.88/30`, `2600:1f28:365:8000::/56`). | **No.** Its FAQ says the dataset "is a sample of the web", finds pages by "following links from other sites", and uses the sitemap in `robots.txt` once it visits. So the lever is inbound links. `robots.txt` already allows `CCBot` by name. |
+| **Internet Archive** (Wayback) | **Apparently not.** The availability API returns no snapshot. The full index query was rate-limited (429), so this is not conclusive. No `archive.org_bot` visits in 30 days. | **Yes, by hand:** "Save Page Now" (`https://web.archive.org/save/<url>`) is free. A free account can also capture a page's outlinks. The Internet Archive is also an **IndexNow participant**, so the deploy step may lead to captures (unverified). |
+| **Software Heritage** | **No.** Its API returns "Origin … not found" for `github.com/jgreen01/jgreen.one`. | **Yes, by hand:** "Save code now" at <https://archive.softwareheritage.org/save/>. It archives the *repository*, and every post is Markdown in the repo, so the content is preserved even if the site goes. |
+
+### Internet Archive (Wayback Machine): by hand, free
+
+1. **Optional but worth it:** create a free account at <https://archive.org>.
+   Save Page Now offers more options when you are signed in.
+2. Go to <https://web.archive.org/save> and enter `https://jgreen.one/`.
+3. Signed in, tick two options
+   ([Internet Archive blog](https://blog.archive.org/2019/10/23/the-wayback-machines-save-page-now-is-new-and-improved/)):
+   - **Save outlinks** saves the page "and also all linked pages". So one
+     capture of the homepage takes the articles, listings and tag pages with
+     it. Signed out, only the single page is saved.
+   - **Save also in my web archive** keeps a list under your account.
+4. **Check:** <https://web.archive.org/web/*/jgreen.one/*> lists every
+   captured URL.
+5. After each new post, save the new article, or rely on IndexNow (below).
+
+The Internet Archive is an **IndexNow participant**, so once the deploy step
+is live it may capture changed pages on its own. That is unverified; step 4
+shows whether it does.
+
+- [ ] Homepage saved with outlinks
+- [ ] Captures confirmed at web.archive.org
+
+### Software Heritage: archive the source
+
+Every post is Markdown in the repository, so archiving the repository
+preserves the content itself, independent of the site.
+
+1. Go to <https://archive.softwareheritage.org/save/> ("Save code now").
+2. Choose origin type **git**, enter `https://github.com/jgreen01/jgreen.one`,
+   and submit.
+3. GitHub is on its authorised list, so the request is accepted without manual
+   review and normally finishes within hours
+   ([Software Heritage FAQ](https://docs.softwareheritage.org/user/faq/index.html)).
+4. **Check:**
+   <https://archive.softwareheritage.org/browse/origin/?origin_url=https://github.com/jgreen01/jgreen.one>
+5. Repeat after significant changes. Software Heritage also documents
+   webhooks that archive every push, which could be a small task later.
+
+- [ ] Repository saved; the visit is visible at Software Heritage
+
+### Common Crawl: cannot be requested
+
+- **No submission route.** The dataset "is a sample of the web", and pages
+  are found by "following links from other sites"
+  ([FAQ](https://commoncrawl.org/faq)).
+- **Our side is already done.** `robots.txt` allows `CCBot` by name and
+  announces the sitemap, which CCBot uses once it visits.
+- **The lever is inbound links** from pages Common Crawl already crawls: the
+  GitHub repo, profiles, and other blogs linking here.
+- **Check a new crawl.** Use this sparingly: the index is heavily rate-limited.
+
+  ```bash
+  API=$(curl -s https://index.commoncrawl.org/collinfo.json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["cdx-api"])')
+  curl -s "$API?url=jgreen.one/*&output=json" | head -3   # "No Captures found" = not in that crawl
+  ```
+- **Verify a CCBot visit by IP.** Only its published ranges (table above)
+  count.
+
+### archive.today (optional)
+
+<https://archive.ph> saves single pages on request, with no account. It is
+another independent copy, and there is nothing to set up.
 
 ---
 
 ## Below the measurement threshold, but cheap and well-aimed
 
-
-
 ❗ The original draft of this task called these "no submission process, skip."
-**That was wrong for two of them.** Verified 2026-09-19:
+**That was wrong for two of them.** Verified 2026-09-19 and re-checked
+2026-09-23:
 
 | Engine | Submission | Verdict |
 |---|---|---|
-| **Brave Search** | Public form: <https://search.brave.com/submit-url> | **Do it** — two minutes, independent index, powers Brave + feeds Kagi |
-| **Marginalia** | PR adding the domain to `sites.txt` in [MarginaliaSearch/submit-site-to-marginalia-search](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search), or email `contact@marginalia-search.com` | **Do it** — a hand-built site on an obscure domain is precisely its editorial target |
-| **Mojeek** | Unclear. Only guidance is a 2015 blog post; its own community forum has open threads from 2025 asking whether any current method exists. | Low value — try the forum or skip |
-| **Kagi** | No direct submission. Aggregates Brave, Mojeek and Yandex plus its own Teclis index. | Nothing to do — **Brave submission reaches it indirectly** |
+| **Brave Search** | Public form: <https://search.brave.com/submit-url> | **Do it.** Two minutes; an independent index that powers Brave and feeds Kagi. Steps below. |
+| **Marginalia** | PR adding the domain to `sites.txt` in [MarginaliaSearch/submit-site-to-marginalia-search](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search), or email `contact@marginalia-search.com` | ✅ PR #734 opened |
+| **Mojeek** | **No form.** Staff: "We used to just have an add URL page but it was mostly spam or low quality pages" ([Mojeek community](https://community.mojeek.com/t/submitting-my-personal-website-s-sitemap-to-mojeek/35), 2022). They do recrawl on request. | **Ask on the forum.** Steps below. |
+| **Kagi** | No submission to its search, which aggregates Brave, Mojeek and Yandex plus its own Teclis index. **Kagi Small Web** is separate: a curated list of personal blogs, joined by PR, and it **needs an RSS feed**. | Brave covers the search. Small Web waits on a feed (below). |
 
-These will not move traffic. Brave and Marginalia are worth the four combined
-minutes because they are genuinely independent indexes, and Brave propagates
-into Kagi.
+These will not move traffic much. They are worth the few minutes because they
+are genuinely independent indexes, and a small personal blog is what several
+of them exist to surface.
 
-- [ ] Submit to Brave
+### Brave: steps
+
+1. Open <https://search.brave.com/submit-url>, enter `https://jgreen.one/` and
+   submit. The crawler follows internal links from there, and submitting the
+   articles individually does no harm.
+2. **Nothing to configure**
+   ([Brave help](https://search.brave.com/help/brave-search-crawler)):
+   - The crawler "does not advertise a differentiated user agent", so its
+     visits cannot be picked out in the logs.
+   - "If a domain or page is not crawlable by Googlebot, then Brave Search's
+     bot will not crawl it either." `robots.txt` lets Googlebot in, so Brave
+     is in too.
+3. **Optional:** Brave also discovers pages through the Web Discovery Project,
+   an opt-in setting in the Brave browser (same help page). If you use Brave,
+   turning it on counts your own visits, this site's included.
+4. **Check after 1–2 weeks:** search `site:jgreen.one` at search.brave.com.
+
+- [ ] Submitted `https://jgreen.one/` at search.brave.com/submit-url
+- [ ] `site:jgreen.one` returns results on Brave
+
+### Marginalia
+
 - [x] Submitted to Marginalia — PR [#734](https://github.com/MarginaliaSearch/submit-site-to-marginalia-search/pull/734)
       (2026-09-22), adding `jgreen.one` to `sites.txt`. Once merged, the site
       is picked up by the next crawl, which "may be a month or more".
-- [ ] Check the Mojeek forum, or decide to skip
+
+### Mojeek: steps
+
+1. **There is no form, so ask.** Staff say they look at recrawling when asked,
+   and answer indexing questions in the community forum. Post at
+   <https://community.mojeek.com> asking for `https://jgreen.one/` to be
+   crawled, and mention `https://jgreen.one/sitemap-index.xml`.
+2. **The lasting lever is links** from sites Mojeek already crawls. The same
+   links help Common Crawl.
+3. **Check after a few weeks:** search `site:jgreen.one` at
+   <https://www.mojeek.com>.
+
+- [x] Checked for a submission route — none exists (2026-09-23)
+- [ ] Asked on the Mojeek forum
+- [ ] `site:jgreen.one` returns results on Mojeek
+
+### Kagi Small Web: blocked on an RSS feed
+
+A curated list of personal blogs, surfaced in Kagi's search and its Small Web
+reader. Its criteria ([kagisearch/smallweb](https://github.com/kagisearch/smallweb)):
+
+- English only;
+- personal blogs only, no multi-author blogs;
+- a post no older than 12 months;
+- no ads or undisclosed affiliate links, and no popups;
+- "No auto generated, LLM generated or spam content."
+
+To submit, open a PR adding the **feed URL** to `smallweb.txt` in sorted
+order. **"If submitting your own website, you must add at least 2 other sites
+that are not yours (and are not in list yet) in the same commit."**
+
+**The site has no RSS or Atom feed** (checked 2026-09-23: none in `dist/`, and
+`/rss.xml` is 404). A feed is a separate piece of work. It also serves feed
+readers and most blog directories, so it matters beyond Kagi.
+
+- [ ] RSS feed exists (separate task)
+- [ ] PR to kagisearch/smallweb with the feed and two other personal blogs
 
 ---
 
@@ -366,7 +518,8 @@ support it as of 2026, so this buys nothing for Gemini.
 **Participants** (per `https://www.indexnow.org/searchengines.json`, checked
 2026-09-23): Bing, Yandex, Naver, Seznam, Yep, **Amazon** (endpoint
 `indexnow.amazonbot.amazon`) and the **Internet Archive**. The earlier list of
-five was out of date.
+five was out of date. Amazon's crawlers are covered under "The AI crawlers"
+below.
 
 **Endpoint:** the FAQ (<https://www.indexnow.org/faq>) lists
 `https://api.indexnow.org/indexnow` first, as the "IndexNow global endpoint", and
@@ -550,12 +703,51 @@ What `scripts/lib/indexnow.mjs` exports:
 
 
 
-ClaudeBot, GPTBot, PerplexityBot, Amazonbot and the rest have **no index and no
+ClaudeBot, GPTBot, PerplexityBot and the rest have **no index and no
 submission process**. They fetch live, on demand. The crawler harness already
 proves they get 200s.
 
-**Nothing to do here, and nothing that can be done.** Recorded so it is not
-re-investigated.
+**Nothing to do for these, and nothing that can be done.** Recorded so it is
+not re-investigated.
+
+**Amazon is the exception** (corrected 2026-09-23; an earlier draft lumped
+Amazonbot in with the rest). Per <https://developer.amazon.com/amazonbot> it
+runs three crawlers:
+
+| Crawler | Purpose, in Amazon's words |
+|---|---|
+| **Amzn-SearchBot** | builds an index: content becomes "eligible to appear in search experiences such as Alexa". Not used to train AI models. |
+| **Amazonbot** | "improve our products and services… may be used to train Amazon AI models" |
+| **Amzn-User** | live fetches when a user asks Alexa something current; "may not follow all robots.txt directives" |
+
+- **There is a submission route: IndexNow.** Amazon participates, so the
+  deploy's IndexNow step reaches it. Amazon does not say which of the three
+  crawlers acts on a submission.
+- **All three are already allowed.** `robots.txt` names none of them, and
+  `User-agent: *` has `Allow: /`. Amazon says Amzn-SearchBot follows the rules
+  given to search bots when it is not named.
+- **Nothing else to do.** There is no public Amazon web search to submit to.
+- **No console, so the WAF logs are the only view.** Verified 2026-09-23 over
+  the logs' 30-day window: 301 requests claimed an Amazon user agent. Checked
+  against Amazon's published IP lists (`developer.amazon.com/amazonbot/`
+  `ip-addresses/`, `searchbot-ip-addresses/`, `live-ip-addresses/`):
+  - **Genuine Amazonbot: 104 page fetches, 0 probes**, from 2026-08-25 to
+    2026-09-23. That covers every article, the Markdown twins, the transcript,
+    the images and every tag page. Amazon has the content.
+  - **Genuine Amzn-SearchBot: none.** All 81 requests claiming to be it were
+    fakes, as were all the Amzn-User ones. No evidence yet that the site is in
+    Alexa's search index.
+  - The fakes were mostly scanners probing for `.env`, cloud credentials and
+    Vite `/@fs/` paths, harmless against a static S3 site. Some were this
+    repo's crawler harness, run from Jon's machine. **A user agent proves
+    nothing; only the IP check does.**
+  - (Note: Amazon's IP-list pages embed the visitor's own IP in their
+    analytics JSON before the real list. Parse the `prefixes` array, not the
+    first IP on the page. The lists spell the key `ipv4Prefix` or
+    `ip_prefix`.)
+- [ ] **After the first `--all` IndexNow submission, wait 1–2 weeks and rerun
+      the check.** A genuine Amzn-SearchBot appearing would show that
+      IndexNow reaches Amazon's search side, which Amazon's docs do not say.
 
 ---
 
@@ -586,9 +778,14 @@ re-investigated.
       2026-09-22); design and steps in "Push protocols"
 - [ ] IndexNow built ✓ (2026-09-23), deployed, and the first submission accepted
 - [x] Yandex, Baidu, DuckDuckGo decisions recorded — Yandex yes (verified,
-      sitemap queued), Baidu no, DuckDuckGo covered by Bing
+      sitemap queued), Baidu **no**: registration needs a mainland Chinese
+      mobile number, and the overseas form failed (2026-09-23). DuckDuckGo is
+      covered by Bing.
 - [ ] Submitted to Brave and Marginalia; Mojeek checked or skipped —
-      Marginalia PR #734 open
+      Marginalia PR #734 open; Mojeek has no form, ask on the forum
+- [ ] Archives: Internet Archive (homepage + outlinks) and Software Heritage
+      (the repo) saved
+- [ ] Kagi Small Web, once an RSS feed exists
 
 **Outcome**
 - [x] GitHub repo `homepage` + `description` fields set — verified 2026-09-22
@@ -713,3 +910,17 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
     media one. That run coincided with the editor's connection dropping.
   - **Next:** step 6, when Jon says deploy: deploy, confirm the key file is
     live, then `node scripts/indexnow.mjs submit --all` once.
+- [2026-09-23] **Instructions written for the archives, Brave and
+  Mojeek; Baidu re-examined**, at Jon's request: "I want to make sure as many people can find my
+  content as possible since this is a small blog site."
+  - **Baidu** was looked at again and stays **no**. Jon tried the overseas
+    registration form and it failed. Without an account there is no route,
+    so the instructions were removed.
+  - **Mojeek** confirmed to have no form; staff will recrawl on request.
+  - **Brave** documented from its own help page: no distinct user agent, and
+    it follows Googlebot's `robots.txt` rules.
+  - **Internet Archive:** signed-in Save Page Now can "Save outlinks".
+  - **Software Heritage:** GitHub requests need no review.
+  - **Kagi Small Web** found, but blocked: the site has no RSS feed.
+  - A search-summary claim that Baidu now requires ICP for sitemaps was **not
+    supported** by the sources it cited, so it was not written in as fact.
