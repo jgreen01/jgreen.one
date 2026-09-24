@@ -162,7 +162,7 @@ cd infra/live && terraform apply    # apply infra changes
   - `transcripts` — talk transcripts in `src/content/transcripts/`. Not posts: each names the `entries` id it belongs to and inherits that entry's draft status. Bodies are **generated** by `scripts/vtt-to-transcript.mjs` from a committed `.vtt` — edit the `.corrections.json` sibling, never the Markdown body. See `guides/transcripts.md`.
 - **Layouts/pages:** `Base` → `PageLayout` / `ArticleLayout`. Routes include `/`, `/about`, `/contact`, `/blog`, `/projects`, `/entries`, `/entries/[slug]`, `/tags`, `/tags/[tag]`, `/404`, plus the machine-readable set: `/llms.txt`, `/entries/[slug]/index.md`, and per transcript `/entries/[slug]/transcript`, `/entries/[slug]/transcript.md` and `/entries/[slug]/captions.vtt`.
 - **Infra (Terraform in `infra/`):** S3 (private, OAC, encryption, versioning) + CloudFront (PriceClass_100, `function.js` for clean-URL rewrites) + ACM (us-east-1) + Route 53. `bootstrap/` sets up the state backend; `live/` is the production stack.
-- **Deploy:** `scripts/deploy.sh` pulls Terraform outputs, runs `npm ci && npm run build`, `aws s3 sync ./dist --delete`, then a CloudFront `/*` invalidation.
+- **Deploy:** `scripts/deploy.sh` pulls Terraform outputs, runs `npm ci && npm run build`, `aws s3 sync ./dist --delete`, then a CloudFront `/*` invalidation, then an IndexNow submission of the URLs whose sitemap entry changed (`scripts/indexnow.mjs`; key in `public/indexnow-key.txt`, public by design). A failed submission warns and never fails the deploy.
 
 ## Repository Layout & Change Scope
 

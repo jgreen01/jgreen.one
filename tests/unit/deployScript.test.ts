@@ -95,6 +95,24 @@ function writeAuditStub(log: string, exitCode = 0) {
   );
 }
 
+/**
+ * Stubs `scripts/indexnow.mjs`, which deploy.sh invokes by path. Without it
+ * every test here would run the real script and reach the network. The first
+ * argument is the subcommand, so a snapshot and a submission can fail
+ * separately.
+ */
+function writeIndexNowStub(log: string, snapshotExit = 0, submitExit = 0) {
+  writeFileSync(
+    join(workdir, "scripts", "indexnow.mjs"),
+    [
+      "import { appendFileSync } from 'node:fs';",
+      `appendFileSync(${JSON.stringify(log)}, 'indexnow\\t' + process.cwd() + '\\t' + process.argv.slice(2).join('\\x1f') + '\\n');`,
+      `process.exit(process.argv[2] === 'snapshot' ? ${snapshotExit} : ${submitExit});`,
+    ].join("\n"),
+    "utf-8",
+  );
+}
+
 function writeFunctionTestStub(log: string, exitCode = 0) {
   const file = join(workdir, "scripts", "test-cloudfront-function.sh");
   writeFileSync(
@@ -153,6 +171,7 @@ function setupWorkdir(
   writeMediaCheckStub(log, mediaCheckExit);
   writeFunctionTestStub(log, functionTestExit);
   writeAuditStub(log, auditExit);
+  writeIndexNowStub(log);
 }
 
 function runDeploy() {
@@ -422,6 +441,56 @@ describe("scripts/deploy.sh", () => {
       });
     });
 
+    // IndexNow tells Bing, Yandex and the rest what changed, by diffing the
+    // live sitemap against the new build. So the live one must be read before
+    // the sync replaces it, and the submission must follow the invalidation,
+    // or the engines would fetch the old pages from cache.
+    describe("IndexNow", () => {
+      const at = (sub: string) =>
+        invocations().findIndex((i) => i.command === "indexnow" && i.args[0] === sub);
+      const call = (sub: string) =>
+        invocations().find((i) => i.command === "indexnow" && i.args[0] === sub)!;
+      const valueOf = (sub: string, name: string) => {
+        const args = call(sub).args;
+        return args[args.indexOf(name) + 1];
+      };
+      const sync = () =>
+        invocations().findIndex((i) => i.command === "aws" && i.args[0] === "s3" && i.args[1] === "sync");
+      const invalidation = () =>
+        invocations().findIndex((i) => i.command === "aws" && i.args[0] === "cloudfront");
+
+      it("records the live sitemap before the sync replaces it", () => {
+        runDeploy();
+        expect(at("snapshot")).toBeGreaterThanOrEqual(0);
+        expect(at("snapshot")).toBeLessThan(sync());
+      });
+
+      it("records it only once the build has passed its audit", () => {
+        runDeploy();
+        const audit = invocations().findIndex((i) => i.command === "audit");
+        expect(at("snapshot")).toBeGreaterThan(audit);
+      });
+
+      it("submits after the cache is invalidated", () => {
+        runDeploy();
+        expect(at("submit")).toBeGreaterThan(invalidation());
+      });
+
+      it("submits against the snapshot it took", () => {
+        const result = runDeploy();
+        expect(result.status).toBe(0);
+        const out = valueOf("snapshot", "--out");
+        expect(out).toBeTruthy();
+        expect(valueOf("submit", "--before")).toBe(out);
+      });
+
+      // The protocol asks for changed URLs only; --all is for the first run.
+      it("never submits everything on a routine deploy", () => {
+        runDeploy();
+        expect(call("submit").args).not.toContain("--all");
+      });
+    });
+
     it("invalidates the whole distribution using the Terraform output id", () => {
       runDeploy();
       const invalidation = callsTo("aws").find((i) => i.args[0] === "cloudfront");
@@ -550,6 +619,37 @@ describe("scripts/deploy.sh", () => {
     it("does not invalidate the cache", () => {
       runDeploy();
       expect(callsTo("aws").filter((i) => i.args[0] === "cloudfront")).toHaveLength(0);
+    });
+
+    it("does not contact IndexNow", () => {
+      runDeploy();
+      expect(callsTo("indexnow")).toHaveLength(0);
+    });
+  });
+
+  // By the time IndexNow runs the site has shipped, so failing to tell the
+  // engines is worth a warning, never a failed deploy.
+  describe("IndexNow failure", () => {
+    const log = () => join(workdir, "invocations.log");
+
+    it.each([
+      ["snapshot", 1, 0],
+      ["submission", 0, 1],
+    ])("a failed %s warns, and the deploy still completes", (_, snapshotExit, submitExit) => {
+      setupWorkdir();
+      writeIndexNowStub(log(), snapshotExit, submitExit);
+      const result = runDeploy();
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("Deployment complete.");
+      expect(result.stderr).toMatch(/IndexNow/);
+    });
+
+    it("a failed snapshot still ships and invalidates", () => {
+      setupWorkdir();
+      writeIndexNowStub(log(), 1, 0);
+      runDeploy();
+      expect(callsTo("aws").some((i) => i.args[0] === "s3" && i.args[1] === "sync")).toBe(true);
+      expect(callsTo("aws").some((i) => i.args[0] === "cloudfront")).toBe(true);
     });
   });
 

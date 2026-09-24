@@ -53,11 +53,21 @@ npm run build   # outputs to ./dist
 echo "Auditing the build with Lighthouse..."
 node scripts/audit.mjs --preview --base http://127.0.0.1:4322
 
-# 4) Sync static files to S3 (delete removed files)
+# 4) Record the live sitemap for IndexNow, before the sync replaces it.
+# The submission at the end diffs the new build against this, so the engines
+# hear only about what changed. A failure here costs this deploy its IndexNow
+# submission, never the deploy itself.
+INDEXNOW_SNAPSHOT=$(mktemp)
+trap 'rm -f "$INDEXNOW_SNAPSHOT"' EXIT
+echo "Recording the live sitemap for IndexNow..."
+node "$(dirname "${BASH_SOURCE[0]}")/indexnow.mjs" snapshot --out "$INDEXNOW_SNAPSHOT" \
+  || echo "Warning: IndexNow could not record the live sitemap; this deploy will not be submitted." >&2
+
+# 5) Sync static files to S3 (delete removed files)
 echo "Syncing files to S3..."
 aws s3 sync ./dist "s3://${BUCKET}/" --delete
 
-# 5) Declare the encoding on text formats.
+# 6) Declare the encoding on text formats.
 # `aws s3 sync` guesses Content-Type from the extension and never adds a
 # charset. Without one a client falls back to a legacy default and reads UTF-8
 # bytes as windows-1252, so an em dash arrives as mojibake. HTML escapes this
@@ -91,10 +101,20 @@ node "$(dirname "${BASH_SOURCE[0]}")/markdown-tokens.mjs" | while IFS=$'\t' read
     --metadata-directive REPLACE
 done
 
-# 6) Invalidate everything (1,000 paths/month free)
+# 7) Invalidate everything (1,000 paths/month free)
 echo "Invalidating CloudFront distribution..."
 aws cloudfront create-invalidation \
   --distribution-id "${DIST_ID}" \
   --paths "/*"
+
+# 8) Tell IndexNow what changed.
+# One submission reaches every participating engine (Bing, Yandex, Amazon and
+# others; see indexnow.org/searchengines.json). Only URLs that
+# are new, gone, or carry a new lastmod are sent. It runs after the
+# invalidation so the engines fetch the new pages, not cached ones. The site
+# has shipped by now, so a failure is a warning, never a failed deploy.
+echo "Submitting changed URLs to IndexNow..."
+node "$(dirname "${BASH_SOURCE[0]}")/indexnow.mjs" submit --before "$INDEXNOW_SNAPSHOT" \
+  || echo "Warning: IndexNow submission failed; the deploy itself succeeded." >&2
 
 echo "Deployment complete."
