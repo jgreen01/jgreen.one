@@ -694,7 +694,8 @@ What `scripts/lib/indexnow.mjs` exports:
    confirms end to end.
 
 - [x] Steps 1–5: built and tested (2026-09-23). The details are in the Log.
-- [ ] Step 6: deployed, key file live, first `--all` submission accepted
+- [x] Step 6: deployed, key file live, first `--all` submission accepted
+      (2026-09-23): **36 URLs → 202**, "accepted; key validation pending"
 - [ ] Step 7: submissions visible in Bing Webmaster Tools
 
 ---
@@ -776,7 +777,8 @@ runs three crawlers:
 **Everything else — decisions recorded**
 - [x] IndexNow decided yes/no, reasoning written here — **yes** (Jon,
       2026-09-22); design and steps in "Push protocols"
-- [ ] IndexNow built ✓ (2026-09-23), deployed, and the first submission accepted
+- [x] IndexNow built, deployed, and the first submission accepted —
+      2026-09-23, 36 URLs → 202
 - [x] Yandex, Baidu, DuckDuckGo decisions recorded — Yandex yes (verified,
       sitemap queued), Baidu **no**: registration needs a mainland Chinese
       mobile number, and the overseas form failed (2026-09-23). DuckDuckGo is
@@ -924,3 +926,24 @@ Full diagnostic record: `~/.session-notes/2026-09-19-jgreen-one-gemini-google-ex
   - **Kagi Small Web** found, but blocked: the site has no RSS feed.
   - A search-summary claim that Baidu now requires ICP for sitemaps was **not
     supported** by the sources it cited, so it was not written in as fact.
+- [2026-09-23] **IndexNow live: step 6 done.**
+  - Full deploy, exit 0. It ran 20:1x PDT; the Claude session closed midway,
+    but the process carried on and finished.
+  - Its new IndexNow steps ran for real for the first time: "recorded 36 live
+    URLs" before the sync, and "nothing changed; nothing to submit" after it,
+    which is correct since the content had not changed.
+  - `https://jgreen.one/indexnow-key.txt` returns HTTP 200,
+    `text/plain; charset=utf-8`, byte-identical to the committed file.
+  - Then `node scripts/indexnow.mjs submit --all` (2026-09-24T03:16Z):
+    **36 URLs → 202 "accepted; key validation pending"**, the expected reply
+    for a new key.
+  - The same deploy uploaded the three unreferenced
+    `media/rocket-reliability-*.webp` images. Jon accepted that when choosing
+    the full deploy.
+  - **Next (step 7):**
+    - Bing Webmaster Tools → IndexNow should list the received URLs.
+    - The WAF logs should show engines fetching `/indexnow-key.txt` to
+      validate. That is the first sign of key validation, and it can be
+      checked without logging into anything.
+    - In 1–2 weeks: rerun the Amazon check for a genuine Amzn-SearchBot, and
+      look for Wayback captures.
