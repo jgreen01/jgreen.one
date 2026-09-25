@@ -12,6 +12,7 @@ import mdx from "@astrojs/mdx";
 import favicons from "astro-favicons";
 
 import { parseEntry, lastmodFor } from './src/utils/sitemapLastmod';
+import { remarkCitations } from './src/utils/remarkCitations';
 
 /**
  * Entry dates for the sitemap, read straight from the Markdown.
@@ -33,6 +34,12 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+  },
+
+  markdown: {
+    // "[1]" in an article links to item 1 of its References list. Inert in any
+    // article without one; see src/utils/remarkCitations.ts.
+    remarkPlugins: [remarkCitations],
   },
 
   integrations: [

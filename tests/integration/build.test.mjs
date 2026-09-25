@@ -871,8 +871,10 @@ editedNote: "Fixture note."
 
   test("the page links every timestamp into the recording", () => {
     const html = read(`entries/${LIVE}/transcript/index.html`);
-    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(amp;)?t=0s/);
-    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(amp;)?t=96s/);
+    // The "&" may be spelled &, &amp; or &#x26; — all the same character to a
+    // browser. Astro switches to &#x26; whenever a remark plugin is registered.
+    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(?:amp;|#x26;|#38;)?t=0s/);
+    assert.match(html, /youtube\.com\/watch\?v=zzfixture01&(?:amp;|#x26;|#38;)?t=96s/);
   });
 
   test("the page links back to the article it belongs to", () => {

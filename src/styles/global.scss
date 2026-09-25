@@ -154,6 +154,23 @@ a:hover { color: var(--accent-color); }
   --tw-prose-td-borders: var(--text-color);
 }
 
+/* Citation markers ("[1]", linked by src/utils/remarkCitations.ts), set small
+   and raised like a superscript. vertical-align alone would push that line
+   further from its neighbours; line-height: 0 keeps the spacing even.
+   No underline at rest; it returns on hover and keyboard focus, since prose
+   links share the text colour and the underline is what marks them as links. */
+.prose a.citation {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.prose a.citation:hover,
+.prose a.citation:focus-visible {
+  text-decoration: underline;
+}
+
 .prose {
   --tw-prose-body: var(--text-color);
   --tw-prose-headings: var(--text-color);
