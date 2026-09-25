@@ -171,6 +171,167 @@ a:hover { color: var(--accent-color); }
   text-decoration: underline;
 }
 
+/* Diverging bar chart for articles, written as HTML in the Markdown:
+   <figure class="chart not-prose"> with one .chart-row per bar. Each bar and
+   value takes its magnitude from `--value` (percent) against a fixed scale of
+   ±--chart-max; `.chart-row--emphasis` marks the bar the story is about.
+   Emphasis form: the story's bar in the accent, the context in the muted
+   slate. The two stay distinct under colour blindness (ΔE ≥ 15, checked with
+   the dataviz validator). In light mode the accent sits below 3:1 on the
+   background, which is why every bar carries its value as text and the
+   figure is followed by a data table. All text uses --text-color: the muted
+   colour is 4.07:1 on the light background, under the 4.5:1 text minimum. */
+.chart {
+  --chart-max: 15;
+  --chart-emphasis: var(--accent-color);
+  --chart-context: var(--muted-color);
+  --chart-grid: var(--muted-color);
+  --chart-baseline: var(--text-color);
+  margin: 2rem 0;
+  color: var(--text-color);
+}
+
+.chart-title {
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.chart .nowrap {
+  white-space: nowrap;
+}
+
+.chart-subtitle {
+  font-size: 0.875rem;
+  margin-top: 0.15rem;
+}
+
+.chart-plot {
+  margin-top: 1rem;
+}
+
+.chart-row + .chart-row {
+  margin-top: 0.9rem;
+}
+
+.chart-label {
+  display: table;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+  padding-right: 0.4em;
+  background: var(--bg-color);
+}
+
+.chart-row--emphasis .chart-label {
+  font-weight: 600;
+}
+
+/* Gridlines run down all the rows, behind the bars, and stop above their axis
+   labels: a heavier zero line, and 1px lines at ±10. They use --muted-color at
+   full strength (4.07:1 light, 5.44:1 dark), above the 3:1 minimum for
+   graphics people need to read. Labels and values carry a background patch so
+   a line passes behind text rather than through it. */
+.chart-rows {
+  position: relative;
+  background:
+    linear-gradient(var(--chart-baseline), var(--chart-baseline)) 50% 0 / 2px 100% no-repeat,
+    linear-gradient(var(--chart-grid), var(--chart-grid)) calc(50% - 50% * 10 / var(--chart-max)) 0 / 1px 100% no-repeat,
+    linear-gradient(var(--chart-grid), var(--chart-grid)) calc(50% + 50% * 10 / var(--chart-max)) 0 / 1px 100% no-repeat;
+}
+
+.chart-track {
+  position: relative;
+  display: block;
+  height: 20px;
+}
+
+.chart-bar {
+  position: absolute;
+  top: 0;
+  height: 20px;
+  width: calc(var(--value) / var(--chart-max) * 50%);
+  background: var(--chart-context);
+}
+
+.chart-row--emphasis .chart-bar {
+  background: var(--chart-emphasis);
+}
+
+/* Square at the baseline, a 4px rounded data-end. */
+.chart-bar--down {
+  right: 50%;
+  border-radius: 4px 0 0 4px;
+}
+
+.chart-bar--up {
+  left: 50%;
+  border-radius: 0 4px 4px 0;
+}
+
+.chart-value {
+  position: absolute;
+  top: 0;
+  line-height: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.15em;
+  background: var(--bg-color);
+}
+
+.chart-value--down {
+  right: calc(50% + var(--value) / var(--chart-max) * 50% + 0.4em);
+}
+
+.chart-value--up {
+  left: calc(50% + var(--value) / var(--chart-max) * 50% + 0.4em);
+}
+
+.chart-axis {
+  position: relative;
+  display: block;
+  height: 1.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-axis span {
+  position: absolute;
+  left: calc(50% + var(--at) / var(--chart-max) * 50%);
+  transform: translateX(-50%);
+}
+
+.chart figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* Windows high-contrast and other forced-colour modes drop backgrounds; keep
+   the bars visible, with the emphasis bar in the system highlight. */
+@media (forced-colors: active) {
+  .chart-bar {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .chart-row--emphasis .chart-bar {
+    background: Highlight;
+  }
+}
+
+.chart-data summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.chart-data p {
+  font-size: 0.8125rem;
+}
+
 .prose {
   --tw-prose-body: var(--text-color);
   --tw-prose-headings: var(--text-color);
