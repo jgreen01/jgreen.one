@@ -77,6 +77,42 @@ describe("entryMarkdown", () => {
     });
   });
 
+  // A chart drawn in HTML is markup soup in a Markdown document. It can be
+  // fenced off for the HTML page only, as long as the same information stays in
+  // the document another way (a data table right after it), so the two formats
+  // still carry the same content.
+  describe("blocks marked for the page only", () => {
+    const START = "<!-- twin:omit -->";
+    const END = "<!-- /twin:omit -->";
+    const chart = `${START}\n<figure class="chart">\n  <div class="chart-bars">bars</div>\n</figure>\n${END}`;
+    const md = (body: string) => entryMarkdown({ ...entry, body });
+
+    it("leaves the marked block out and keeps what surrounds it", () => {
+      const out = md(`Before.\n\n${chart}\n\n| Group | Change |\n|---|---|\n| A | +1% |\n\nAfter.\n`);
+      expect(out).toContain("Before.");
+      expect(out).toContain("| Group | Change |");
+      expect(out).toContain("After.");
+      expect(out).not.toContain("<figure");
+      expect(out).not.toContain("twin:omit");
+    });
+
+    it("leaves no run of blank lines where the block was", () => {
+      expect(md(`Before.\n\n${chart}\n\nAfter.\n`)).toContain("Before.\n\nAfter.");
+    });
+
+    it("strips every marked block", () => {
+      const out = md(`One.\n\n${chart}\n\nTwo.\n\n${chart}\n\nThree.\n`);
+      expect(out).toContain("One.\n\nTwo.\n\nThree.");
+      expect(out).not.toContain("chart-bars");
+    });
+
+    it("drops nothing when a start marker has no end", () => {
+      // Better to leak some markup than silently lose the rest of an article.
+      const body = `Before.\n\n${START}\n<figure>unclosed</figure>\n\nAfter.\n`;
+      expect(md(body)).toContain(body.trim());
+    });
+  });
+
   describe("optional fields", () => {
     it("omits the updated line when there is no updatedDate", () => {
       const { updatedDate, ...data } = entry.data;

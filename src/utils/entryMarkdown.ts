@@ -21,6 +21,26 @@ export interface MarkdownableEntry {
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 /**
+ * Removes blocks fenced with `<!-- twin:omit -->` … `<!-- /twin:omit -->`.
+ *
+ * For markup that only makes sense on the HTML page, such as a chart drawn
+ * in HTML. The rule that keeps this from becoming cloaking: whatever is
+ * fenced off must also be in the document another way, e.g. the chart's
+ * data table right after it. A start marker with no end is left alone,
+ * because stripping to the end of the article would lose far more than a
+ * stray block of markup costs.
+ */
+const OMIT_BLOCK = /\n*<!-- twin:omit -->[\s\S]*?<!-- \/twin:omit -->\n*/g;
+
+function stripPageOnlyBlocks(body: string): string {
+  return body.replace(OMIT_BLOCK, (_block, offset: number, whole: string) => {
+    const atStart = offset === 0;
+    const atEnd = offset + _block.length === whole.length;
+    return atStart || atEnd ? "" : "\n\n";
+  });
+}
+
+/**
  * Renders an entry as a standalone Markdown document.
  *
  * This is the same content as the HTML page, in a lighter format — not a
@@ -53,7 +73,7 @@ export function entryMarkdown(entry: MarkdownableEntry): string {
     "",
     "---",
     "",
-    entry.body.trim(),
+    stripPageOnlyBlocks(entry.body).trim(),
     "",
     contactBlock(),
   ].join("\n");
