@@ -6,7 +6,7 @@ pubDate: 2026-09-23
 kind: "blog"
 heroImage: "/media/making-sense-of-ai-job-disruption.webp"
 tags: ["ai", "llm", "economics", "future-of-work"]
-draft: true
+draft: false
 ---
 
 Listen to the most prominent voices in technology, and it sounds like they are watching entirely different futures unfold.

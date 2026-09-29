@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-11",
+  "generatedAt": "2026-09-25",
   "bucket": "jgreen-one-site",
   "assets": [
     {
@@ -25,6 +25,18 @@
       "addedAt": "2026-08-31",
       "referencedBy": [
         "entries/how-this-site-was-made"
+      ]
+    },
+    {
+      "path": "making-sense-of-ai-job-disruption.webp",
+      "bytes": 105608,
+      "sha256": "ab46144d3d072a85d675160c5fc80f96e998aafc2c1cdd4d1b05b295e589f43d",
+      "width": 1536,
+      "height": 1024,
+      "contentType": "image/webp",
+      "addedAt": "2026-09-25",
+      "referencedBy": [
+        "entries/making-sense-of-ai-job-disruption"
       ]
     },
     {
