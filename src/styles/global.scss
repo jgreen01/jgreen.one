@@ -171,6 +171,13 @@ a:hover { color: var(--accent-color); }
   text-decoration: underline;
 }
 
+/* A bare URL, as in a reference list, has nowhere to break. One long one sets
+   the column's minimum width and the whole article scrolls sideways on a
+   phone. `anywhere`, unlike `break-word`, also lowers that minimum. */
+.prose a {
+  overflow-wrap: anywhere;
+}
+
 /* Diverging bar chart for articles, written as HTML in the Markdown:
    <figure class="chart not-prose"> with one .chart-row per bar. Each bar and
    value takes its magnitude from `--value` (percent) against a fixed scale of

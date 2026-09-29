@@ -101,4 +101,24 @@ test.describe("mobile layout", () => {
       clientWidth + 1,
     );
   });
+
+  // One wide thing anywhere in an article widens the whole column, so checking
+  // a single entry proves little. A bare URL in a reference list has no break
+  // opportunity and did exactly that. The sitemap lists every published entry,
+  // so a new article is covered without editing this test.
+  test("no entry page scrolls horizontally on a phone", async ({ page, request }) => {
+    const sitemap = await (await request.get("/sitemap-0.xml")).text();
+    const entries = [...sitemap.matchAll(/<loc>[^<]*?(\/entries\/[^/<]+\/)<\/loc>/g)].map((m) => m[1]);
+    expect(entries.length, "no entries found in the sitemap").toBeGreaterThan(0);
+
+    const overflowing: string[] = [];
+    for (const path of entries) {
+      await page.goto(path);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      if (overflow > 1) overflowing.push(`${path} (${overflow}px)`);
+    }
+    expect(overflowing).toEqual([]);
+  });
 });
