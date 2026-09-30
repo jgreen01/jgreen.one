@@ -28,7 +28,7 @@ export const GET: APIRoute = async () => {
     description: SEO_DEFAULTS.description,
     path: "/",
     intro:
-      "Senior software developer focused on reliable, scalable systems and clear, human-centered design. Currently expanding into data science (MCS-DS) and applied ML.",
+      "Senior software developer focused on reliable, scalable systems and clear, human-centered design. Also studying data science (MCS-DS) and applied ML.",
     entries: listed,
   }), {
     headers: {

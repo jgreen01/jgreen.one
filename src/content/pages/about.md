@@ -9,4 +9,4 @@ description: "Senior software developer (JS/Python) studying data science (MCS�
 
 **Beyond code**, I contribute to DEIB efforts, practice meditation, learn Portuguese, spend time with family, and I’m a regular blood donor.
 
-This site collects selected projects and occasional writing. *If our interests align, I’m open to thoughtful collaboration.*
+This site collects selected projects and occasional writing. *If something here sparks a thought, I’m happy to talk shop.*
