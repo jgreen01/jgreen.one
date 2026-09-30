@@ -59,7 +59,7 @@ Not hypotheticals. This week:
 
 **A deploy gate that silently blocked deploys.** The first version tested the CloudFront function by publishing to its `DEVELOPMENT` stage. Terraform compares against that stage — so priming it made `terraform plan` report *"No changes"* while the `LIVE` stage serving traffic stayed stale. The gate would have blocked the very change it was validating.
 
-That last one is my favourite, because it was caught by noticing that `terraform plan` said something implausible. Which is a kind of test too.
+That last one is my favorite, because it was caught by noticing that `terraform plan` said something implausible. Which is a kind of test too.
 
 ---
 
@@ -97,7 +97,7 @@ The intuition is that tests slow you down. In an AI loop the opposite holds, for
 
 **The agent can check its own work.** A test suite is a machine-readable definition of "done". Without one, every change ends with a human reading a diff. With one, most changes end with the agent noticing it broke something and fixing it before I ever see it.
 
-**Big changes stop being scary.** Migrating two Astro majors touched content config, route params, the render API and the schema. With 266 tests already in place it was a mechanical afternoon: change, run, read the failures, fix. Without them it would have been a week of clicking round the site hoping to spot what broke.
+**Big changes stop being scary.** Migrating two Astro majors touched content config, route params, the render API and the schema. With 266 tests already in place it was a mechanical afternoon: change, run, read the failures, fix. Without them it would have been a week of clicking around the site hoping to spot what broke.
 
 **Verification beats debate.** When the agent and I disagreed about the CloudFront runtime, the resolution wasn't a better argument — it was a throwaway function and thirty seconds:
 

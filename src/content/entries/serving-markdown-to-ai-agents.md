@@ -84,7 +84,7 @@ Sits next to your existing `[slug].astro` without conflict. The build emits both
 Three details that matter:
 
 - **Include the canonical URL.** The file is read with no surrounding page. Without it an agent can quote you but not cite you — and the citation is the whole return.
-- **Pass the body through untouched.** No summarising. The moment the Markdown says something the HTML doesn't, you're cloaking again.
+- **Pass the body through untouched.** No summarizing. The moment the Markdown says something the HTML doesn't, you're cloaking again.
 - **`site` already ends in a slash**, so it's `${site}entries/…`, not `${site}/entries/…`.
 
 ---

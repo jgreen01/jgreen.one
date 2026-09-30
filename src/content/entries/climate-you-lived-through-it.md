@@ -18,7 +18,7 @@ Pick one of 166 cities and follow its story. Miami went from 38 hot days a year 
 
 ## The chart is the argument
 
-The middle scenes use a waffle year: 365 cells, arranged in seven-day bands so the grid carries its own ruler. The denominator never grows, so watching the coloured days advance while the ordinary ones give way *is* the argument, not just the data. Chicago's 91 hot days aren't "about a quarter of the year" — they're thirteen countable weeks.
+The middle scenes use a waffle year: 365 cells, arranged in seven-day bands so the grid carries its own ruler. The denominator never grows, so watching the colored days advance while the ordinary ones give way *is* the argument, not just the data. Chicago's 91 hot days aren't "about a quarter of the year" — they're thirteen countable weeks.
 
 That choice is deliberate rather than decorative. The map encodes magnitude as shading, which is the weakest of Cleveland and McGill's elementary perceptual tasks, so it's used only to locate a city and read the broad pattern — which is itself the argument for drilling down. The closing line chart sits at the opposite end, encoding position along a common scale, which is why it carries the synthesis.
 

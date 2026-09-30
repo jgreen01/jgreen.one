@@ -28,7 +28,7 @@ Deploys are a script that pulls the Terraform outputs, hydrates managed media fr
 
 Every page has a Markdown twin. An agent that sends `Accept: text/markdown` to a normal article URL gets the words without the markup, about 73% fewer tokens for the same content.
 
-A CloudFront viewer-request function does the routing. The important constraint is that it branches on **what was asked for, never on who is asking**. Inspecting the User-Agent and serving different content by client is cloaking, and search engines penalise it. Same content, different format, chosen by the client, is ordinary negotiation.
+A CloudFront viewer-request function does the routing. The important constraint is that it branches on **what was asked for, never on who is asking**. Inspecting the User-Agent and serving different content by client is cloaking, and search engines penalize it. Same content, different format, chosen by the client, is ordinary negotiation.
 
 [Serving Markdown to AI Agents](/entries/serving-markdown-to-ai-agents) covers the implementation, including the two things that cost me time: publishing a CloudFront function does not validate it, and the ES5.1 limit is on syntax rather than the standard library.
 
