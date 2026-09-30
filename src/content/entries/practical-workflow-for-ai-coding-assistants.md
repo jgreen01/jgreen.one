@@ -9,7 +9,7 @@ tags: ["ai", "workflow", "testing", "notes", "claude", "conference"]
 draft: false
 ---
 
-I gave this talk at [Converge 2025](https://itcommunity.stanford.edu/converge/2025) on 11 December 2025 — Stanford IT's first combined conference, folding fourteen years of IT Unconference and six of CyberFest into one day at the Li Ka Shing Center.
+I gave this talk at [Converge 2025](https://itcommunity.stanford.edu/converge/2025) on December 11, 2025 — Stanford IT's first combined conference, folding fourteen years of IT Unconference and six of CyberFest into one day at the Li Ka Shing Center.
 
 The question I opened with:
 
